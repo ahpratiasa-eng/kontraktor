@@ -34,7 +34,6 @@ const db = getFirestore(app);
 const appId = 'kontraktor-pro-live'; 
 
 // --- TYPES ---
-// Role Definisi: Kontraktor (All), Keuangan (Finance Only), Pengawas (Workers Only)
 type UserRole = 'kontraktor' | 'keuangan' | 'pengawas';
 
 type AppUser = {
@@ -98,15 +97,19 @@ const App = () => {
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
+  
+  // ATTENDANCE & REKAP STATES
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({});
+  const [rekapFilter, setRekapFilter] = useState<'day' | 'week' | 'month'>('month');
+  const [rekapDate, setRekapDate] = useState(new Date().toISOString().split('T')[0]); // Date picker value for filter
+
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({});
 
   // --- PERMISSION CHECKERS ---
   const canAccessFinance = () => ['kontraktor', 'keuangan'].includes(userRole || '');
   const canAccessWorkers = () => ['kontraktor', 'pengawas'].includes(userRole || '');
   const canAccessManagement = () => userRole === 'kontraktor';
-  // Pengawas tidak boleh lihat nominal uang (Budget, Transaksi, Laporan)
   const canSeeMoney = () => ['kontraktor', 'keuangan'].includes(userRole || '');
 
   // --- LOGIC AUTH ---
@@ -207,7 +210,7 @@ const App = () => {
 
   const activeProject = projects.find(p => p.id === activeProjectId);
   const formatRupiah = (num: number) => {
-    if (!canSeeMoney()) return 'Rp ***'; // Sembunyikan jika Pengawas
+    if (!canSeeMoney()) return 'Rp ***'; 
     if (typeof num !== 'number' || isNaN(num)) return 'Rp 0';
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
   };
@@ -229,6 +232,55 @@ const App = () => {
       groups[key].items.push(t);
     });
     return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const getFilteredAttendance = () => {
+    if (!activeProject || !activeProject.attendanceLogs) return [];
+    
+    let filteredLogs = activeProject.attendanceLogs;
+    const targetDate = new Date(rekapDate);
+
+    if (rekapFilter === 'day') {
+      filteredLogs = filteredLogs.filter(l => l.date === rekapDate);
+    } else if (rekapFilter === 'month') {
+      const monthPrefix = rekapDate.slice(0, 7); // "2023-10"
+      filteredLogs = filteredLogs.filter(l => l.date.startsWith(monthPrefix));
+    } else if (rekapFilter === 'week') {
+      // Hitung awal dan akhir minggu dari tanggal yang dipilih
+      const day = targetDate.getDay();
+      const diff = targetDate.getDate() - day + (day === 0 ? -6 : 1); // Senin
+      const monday = new Date(targetDate.setDate(diff));
+      const sunday = new Date(targetDate.setDate(diff + 6));
+      monday.setHours(0,0,0,0);
+      sunday.setHours(23,59,59,999);
+
+      filteredLogs = filteredLogs.filter(l => {
+        const d = new Date(l.date);
+        return d >= monday && d <= sunday;
+      });
+    }
+
+    // Group by Worker
+    const workerStats: {[key: number]: {name: string, role: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {};
+    
+    // Init semua worker biar yang 0 kehadiran tetap muncul
+    activeProject.workers.forEach(w => {
+      workerStats[w.id] = { name: w.name, role: w.role, hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 };
+    });
+
+    filteredLogs.forEach(log => {
+      if (workerStats[log.workerId]) {
+        const worker = activeProject.workers.find(w => w.id === log.workerId);
+        const rate = worker ? worker.mandorRate : 0; // Hitungan RAB/Owner
+
+        if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += rate; }
+        else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (rate * 1.5); }
+        else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (rate * 0.5); }
+        else if (log.status === 'Absen') { workerStats[log.workerId].absen++; }
+      }
+    });
+
+    return Object.values(workerStats);
   };
 
   const generateSCurvePoints = (p: Project) => {
@@ -662,7 +714,47 @@ const App = () => {
           {activeTab === 'workers' && canAccessWorkers() && (
             <div className="space-y-4">
                <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-3 rounded-xl shadow font-bold flex justify-center gap-2"><Calendar size={20} /> Isi Absensi</button>
-               <div className="flex justify-between items-center mt-4 mb-2"><h3 className="font-bold text-slate-700">Tim Lapangan</h3><button onClick={() => openModal('newWorker')} className="text-xs bg-slate-200 px-2 py-1 rounded font-bold">+ Baru</button></div>
+               
+               {/* MODUL REKAP ABSENSI BARU */}
+               <div className="bg-white p-4 rounded-xl border shadow-sm mt-4">
+                 <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><FileText size={16}/> Rekap Kehadiran</h3>
+                 <div className="flex gap-2 mb-3">
+                   <select value={rekapFilter} onChange={(e) => setRekapFilter(e.target.value as any)} className="p-2 border rounded text-sm bg-slate-50 font-medium">
+                     <option value="day">Harian</option>
+                     <option value="week">Mingguan</option>
+                     <option value="month">Bulanan</option>
+                   </select>
+                   <input type={rekapFilter === 'month' ? 'month' : 'date'} value={rekapDate} onChange={(e) => setRekapDate(e.target.value)} className="flex-1 p-2 border rounded text-sm bg-slate-50"/>
+                 </div>
+                 
+                 <div className="overflow-x-auto">
+                   <table className="w-full text-xs">
+                     <thead>
+                       <tr className="border-b bg-slate-50 text-slate-500">
+                         <th className="p-2 text-left">Nama</th>
+                         <th className="p-2 text-center">Hadir</th>
+                         <th className="p-2 text-center">Lembur</th>
+                         <th className="p-2 text-center">1/2</th>
+                         {canSeeMoney() && <th className="p-2 text-right">Est. Upah</th>}
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {getFilteredAttendance().map((stat: any, idx) => (
+                         <tr key={idx} className="border-b last:border-0 hover:bg-slate-50">
+                           <td className="p-2 font-medium">{stat.name} <span className="text-[10px] text-slate-400 block">{stat.role}</span></td>
+                           <td className="p-2 text-center font-bold text-green-600">{stat.hadir}</td>
+                           <td className="p-2 text-center font-bold text-blue-600">{stat.lembur}</td>
+                           <td className="p-2 text-center font-bold text-orange-600">{stat.setengah}</td>
+                           {canSeeMoney() && <td className="p-2 text-right font-bold">{formatRupiah(stat.totalCost)}</td>}
+                         </tr>
+                       ))}
+                       {getFilteredAttendance().length === 0 && <tr><td colSpan={5} className="p-4 text-center text-slate-400">Tidak ada data di periode ini.</td></tr>}
+                     </tbody>
+                   </table>
+                 </div>
+               </div>
+
+               <div className="flex justify-between items-center mt-4 mb-2"><h3 className="font-bold text-slate-700">Daftar Tim</h3><button onClick={() => openModal('newWorker')} className="text-xs bg-slate-200 px-2 py-1 rounded font-bold">+ Baru</button></div>
                {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role}</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div>
                
                {/* Info Keuangan hanya muncul utk Kontraktor/Keuangan. Pengawas tidak lihat gaji. */}
