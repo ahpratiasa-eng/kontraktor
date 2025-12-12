@@ -5,12 +5,12 @@ import { getFirestore } from "firebase/firestore";
 
 // --- GANTI INI DENGAN CONFIG ANDA SENDIRI ---
 const firebaseConfig = {
-  apiKey: "AIzaSyDxxxxxxxxx...",
+  apiKey: "AIzaSyBSy6poKIVLX1BazVWxh2u7q0LlLR9V2cE",
   authDomain: "kontraktor-app.firebaseapp.com",
   projectId: "kontraktor-app",
-  storageBucket: "kontraktor-app.appspot.com",
-  messagingSenderId: "123456...",
-  appId: "1:123456..."
+  storageBucket: "kontraktor-app.firebasestorage.app",
+  messagingSenderId: "116953182014",
+  appId: "1:116953182014:web:56fe2108845033e037066f"
 };
 
 // Initialize Firebase
