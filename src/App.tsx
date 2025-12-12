@@ -35,8 +35,7 @@ const db = getFirestore(app);
 const appId = 'kontraktor-pro-live'; 
 
 // --- TYPES ---
-// Role Baru: super_admin (bisa semua), kontraktor (bisa semua KECUALI user mgmt)
-type UserRole = 'super_admin' | 'kontraktor' | 'keuangan' | 'pengawas';
+type UserRole = 'kontraktor' | 'keuangan' | 'pengawas' | 'super_admin';
 
 type AppUser = {
   email: string;
@@ -88,23 +87,66 @@ type GroupedTransaction = {
 
 // --- HELPER COMPONENTS ---
 
-const SCurveChart = ({ stats, compact = false }: { stats: any, compact?: boolean }) => (
-  <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4'}`}>
-    {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Visualisasi Proyek</h3>}
-    <div className={`relative border-l border-b border-slate-300 mx-2 ${compact ? 'h-32 mt-2' : 'h-48 mt-4'} bg-slate-50`}>
-       <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
-       <svg className="absolute inset-0 w-full h-full overflow-visible">
-          <line x1="0" y1="100%" x2="100%" y2="0" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="5" />
-          <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="3" points={stats.curvePoints} />
-          <circle cx={`${stats.timeProgress}%`} cy={`${100 - stats.prog}%`} r="4" fill="white" stroke="black" strokeWidth="2" />
-       </svg>
+// SCurve Chart Component (Updated with X-Axis Dates)
+const SCurveChart = ({ stats, project, compact = false }: { stats: any, project: Project, compact?: boolean }) => {
+  // Helper untuk generate label tanggal di sumbu X
+  const getAxisDates = () => {
+    if (!project.startDate || !project.endDate) return [];
+    const start = new Date(project.startDate);
+    const end = new Date(project.endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    
+    // Kita ambil 5 titik tanggal: 0%, 25%, 50%, 75%, 100%
+    const points = [0, 0.25, 0.5, 0.75, 1];
+    return points.map(p => {
+      const d = new Date(start.getTime() + (diffDays * p * 24 * 60 * 60 * 1000));
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    });
+  };
+
+  const dateLabels = getAxisDates();
+
+  return (
+    <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4'}`}>
+      {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Visualisasi Proyek</h3>}
+      <div className={`relative border-l border-b border-slate-300 mx-2 ${compact ? 'h-32 mt-2' : 'h-48 mt-4'} bg-slate-50`}>
+         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> 
+         <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
+         
+         <svg className="absolute inset-0 w-full h-full overflow-visible">
+            {/* Grid Lines Horizontal */}
+            <line x1="0" y1="25%" x2="100%" y2="25%" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4" />
+            <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4" />
+            <line x1="0" y1="75%" x2="100%" y2="75%" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4" />
+
+            {/* Diagonal Target Line */}
+            <line x1="0" y1="100%" x2="100%" y2="0" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="5" />
+            
+            {/* Real Progress Line */}
+            <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="3" points={stats.curvePoints} />
+            
+            {/* Current Point Dot */}
+            <circle cx={`${stats.timeProgress}%`} cy={`${100 - stats.prog}%`} r="4" fill="white" stroke="black" strokeWidth="2" />
+         </svg>
+
+         {/* X-Axis Date Labels */}
+         <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">
+            {dateLabels.map((date, idx) => (
+              <span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>
+                {date}
+              </span>
+            ))}
+         </div>
+      </div>
+      
+      <div className={`grid grid-cols-2 gap-2 text-xs ${compact ? 'mt-6' : 'mt-8'}`}>
+         <div className="p-1.5 bg-slate-100 rounded text-center"><span className="block text-slate-500 text-[10px]">Waktu Berjalan</span><span className="font-bold">{stats.timeProgress.toFixed(0)}%</span></div>
+         <div className={`p-1.5 rounded text-center ${stats.prog >= stats.timeProgress ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}><span className="block opacity-80 text-[10px]">Fisik Realisasi</span><span className="font-bold">{stats.prog.toFixed(0)}%</span></div>
+      </div>
     </div>
-    <div className={`grid grid-cols-2 gap-2 text-xs ${compact ? 'mt-2' : 'mt-6'}`}>
-       <div className="p-1.5 bg-slate-100 rounded text-center"><span className="block text-slate-500 text-[10px]">Waktu</span><span className="font-bold">{stats.timeProgress.toFixed(0)}%</span></div>
-       <div className={`p-1.5 rounded text-center ${stats.prog >= stats.timeProgress ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}><span className="block opacity-80 text-[10px]">Fisik</span><span className="font-bold">{stats.prog.toFixed(0)}%</span></div>
-    </div>
-  </div>
-);
+  );
+};
 
 const TransactionGroup = ({ group, isExpanded, onToggle }: any) => {
   const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
@@ -162,14 +204,12 @@ const App = () => {
   const [stockDate, setStockDate] = useState(new Date().toISOString().split('T')[0]);
   const [stockNotes, setStockNotes] = useState('');
 
-  // Task & Progress Inputs
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
-
-  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState(0);
   
   // ATTENDANCE & REKAP
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
@@ -177,18 +217,14 @@ const App = () => {
   const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // UI STATES
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
   const [expandedReportIds, setExpandedReportIds] = useState<{[id: string]: boolean}>({});
 
   // --- PERMISSION CHECKERS ---
   const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
   const canAccessWorkers = () => ['super_admin', 'kontraktor', 'pengawas'].includes(userRole || '');
-  // Hanya Super Admin yang bisa kelola user
   const canAccessManagement = () => userRole === 'super_admin';
-  // Kontraktor & Super Admin bisa edit data proyek (hapus dll)
   const canEditProject = () => ['super_admin', 'kontraktor'].includes(userRole || '');
-  
   const canSeeMoney = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
 
   // --- LOGIC AUTH ---
@@ -314,7 +350,6 @@ const App = () => {
     return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  // --- LOGIC REKAP ABSENSI ---
   const getFilteredAttendance = () => {
     if (!activeProject || !activeProject.attendanceLogs) return [];
     
@@ -352,29 +387,6 @@ const App = () => {
     return Object.values(workerStats);
   };
 
-  const generateSCurvePoints = (p: Project) => {
-    if (!p.taskLogs || p.taskLogs.length === 0) return "0,100"; 
-    const start = new Date(p.startDate).getTime(); const end = new Date(p.endDate).getTime(); const totalDuration = end - start;
-    if (totalDuration <= 0) return "0,100";
-    const uniqueDates = Array.from(new Set(p.taskLogs.map(l => l.date))).sort();
-    if (!uniqueDates.includes(p.startDate.split('T')[0])) uniqueDates.unshift(p.startDate.split('T')[0]);
-    const today = new Date().toISOString().split('T')[0];
-    if (!uniqueDates.includes(today)) uniqueDates.push(today);
-    const points: string[] = [];
-    const taskProgressState: {[taskId: number]: number} = {};
-    p.tasks.forEach(t => taskProgressState[t.id] = 0);
-    uniqueDates.forEach(dateStr => {
-      const dateVal = new Date(dateStr).getTime();
-      const logsUntilNow = p.taskLogs.filter(l => new Date(l.date).getTime() <= dateVal);
-      logsUntilNow.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(log => { taskProgressState[log.taskId] = log.newProgress; });
-      let totalProg = 0;
-      p.tasks.forEach(t => { const currentProg = taskProgressState[t.id] || 0; totalProg += (currentProg * t.weight / 100); });
-      let x = ((dateVal - start) / totalDuration) * 100; x = Math.max(0, Math.min(100, x));
-      let y = 100 - totalProg; points.push(`${x},${y}`);
-    });
-    return points.join(" ");
-  };
-
   const getStats = (p: Project) => {
     const tx = p.transactions || [];
     const inc = tx.filter(t => t.type === 'income').reduce((a, b) => a + (b.amount || 0), 0);
@@ -405,7 +417,33 @@ const App = () => {
       realCost += days * (w.realRate / divider); 
     });
 
-    return { inc, exp, prog, leak: mandorCost - realCost, timeProgress, curvePoints: generateSCurvePoints(p) };
+    // Generate Points for SCurve
+    const uniqueDates = Array.from(new Set((p.taskLogs || []).map(l => l.date))).sort();
+    if (!uniqueDates.includes(p.startDate.split('T')[0])) uniqueDates.unshift(p.startDate.split('T')[0]);
+    const today = new Date().toISOString().split('T')[0];
+    if (!uniqueDates.includes(today)) uniqueDates.push(today);
+    
+    const points: string[] = [];
+    const taskProgressState: {[taskId: number]: number} = {};
+    p.tasks.forEach(t => taskProgressState[t.id] = 0);
+    
+    uniqueDates.forEach(dateStr => {
+      const dateVal = new Date(dateStr).getTime();
+      const logsUntilNow = (p.taskLogs || []).filter(l => new Date(l.date).getTime() <= dateVal);
+      logsUntilNow.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(log => { taskProgressState[log.taskId] = log.newProgress; });
+      
+      let totalProg = 0;
+      p.tasks.forEach(t => { 
+        const currentProg = taskProgressState[t.id] || 0; 
+        totalProg += (currentProg * t.weight / 100); 
+      });
+      
+      let x = ((dateVal - start) / totalDuration) * 100; x = Math.max(0, Math.min(100, x));
+      let y = 100 - totalProg; 
+      points.push(`${x},${y}`);
+    });
+
+    return { inc, exp, prog, leak: mandorCost - realCost, timeProgress, curvePoints: points.join(" ") };
   };
 
   const calculateTotalDays = (logs: AttendanceLog[], workerId: number) => {
@@ -463,6 +501,61 @@ const App = () => {
     updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false);
   };
 
+  // --- WORKER MANAGEMENT (ADD, EDIT, DELETE) ---
+  const handleSaveWorker = () => {
+    if(!activeProject) return;
+    
+    // Check if Edit or New
+    if (selectedWorkerId) {
+      // Edit Mode
+      const updatedWorkers = activeProject.workers.map(w => {
+        if(w.id === selectedWorkerId) {
+          return {
+            ...w,
+            name: inputName,
+            role: inputWorkerRole,
+            wageUnit: inputWageUnit,
+            realRate: inputRealRate,
+            mandorRate: inputMandorRate
+          };
+        }
+        return w;
+      });
+      updateProject({ workers: updatedWorkers });
+    } else {
+      // Add New Mode
+      const newWorker: Worker = {
+        id: Date.now(),
+        name: inputName,
+        role: inputWorkerRole,
+        wageUnit: inputWageUnit,
+        realRate: inputRealRate,
+        mandorRate: inputMandorRate
+      };
+      updateProject({ workers: [...(activeProject.workers || []), newWorker] });
+    }
+    setShowModal(false);
+  };
+
+  const handleEditWorker = (w: Worker) => {
+    setSelectedWorkerId(w.id);
+    setInputName(w.name);
+    setInputWorkerRole(w.role);
+    setInputWageUnit(w.wageUnit);
+    setInputRealRate(w.realRate);
+    setInputMandorRate(w.mandorRate);
+    setModalType('newWorker'); // Re-use modal, but logic is handled by handleSaveWorker
+    setShowModal(true);
+  };
+
+  const handleDeleteWorker = (w: Worker) => {
+    if(!activeProject) return;
+    if(confirm(`Yakin hapus ${w.name}?`)) {
+      const updatedWorkers = activeProject.workers.filter(worker => worker.id !== w.id);
+      updateProject({ workers: updatedWorkers });
+    }
+  };
+
   // LOGIC UPDATE STOK
   const handleStockMovement = () => {
     if (!activeProject || !selectedMaterial || stockQty <= 0) return;
@@ -512,6 +605,8 @@ const App = () => {
     if (type === 'newProject') { setInputDuration(30); } 
     if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); }
     if (type === 'newWorker') { 
+      // Reset for NEW worker
+      setSelectedWorkerId(null);
       setInputName(''); 
       setInputRealRate(150000); 
       setInputMandorRate(170000); 
@@ -663,7 +758,7 @@ const App = () => {
                       <input type="number" className="w-full p-2 border rounded" value={inputMandorRate} onChange={e=>setInputMandorRate(Number(e.target.value))}/>
                     </div>
                   </div>
-                  <button onClick={()=>createItem('workers', {id:Date.now(), name:inputName, role:inputWorkerRole, wageUnit:inputWageUnit, realRate:inputRealRate, mandorRate:inputMandorRate})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button>
+                  <button onClick={handleSaveWorker} className="w-full bg-blue-600 text-white p-2 rounded font-bold">{selectedWorkerId ? 'Simpan Perubahan' : 'Simpan'}</button>
                 </>
               )}
 
@@ -886,7 +981,7 @@ const App = () => {
                  </div>
                )}
 
-               <SCurveChart stats={getStats(activeProject)} compact={true} />
+               <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
                
                {canSeeMoney() && (
                  <button onClick={() => setView('report-view')} className="w-full bg-white border-2 border-blue-600 text-blue-600 p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-50 transition-colors"><FileText size={20}/> Lihat Laporan Detail</button>
@@ -954,7 +1049,22 @@ const App = () => {
                </div>
 
                <div className="flex justify-between items-center mt-4 mb-2"><h3 className="font-bold text-slate-700">Daftar Tim</h3><button onClick={() => openModal('newWorker')} className="text-xs bg-slate-200 px-2 py-1 rounded font-bold">+ Baru</button></div>
-               {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div>{canSeeMoney() && (<div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3"><div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>{f.balance > 0 ? (<button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>) : (<span className="text-xs font-bold text-green-600 flex items-center gap-1"><CheckCircle size={14}/> Lunas</span>)}</div>)}</div>)})}
+               {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div>
+               
+               {/* EDIT & DELETE BUTTONS FOR WORKER */}
+               <div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3">
+                 {canSeeMoney() && <div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>}
+                 <div className="flex gap-2">
+                    {canSeeMoney() && f.balance > 0 && <button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>}
+                    {canAccessWorkers() && (
+                      <>
+                        <button onClick={() => handleEditWorker(w)} className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200"><Edit size={14}/></button>
+                        <button onClick={() => handleDeleteWorker(w)} className="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200"><Trash2 size={14}/></button>
+                      </>
+                    )}
+                 </div>
+               </div>
+               </div>)})}
             </div>
           )}
           
@@ -1001,7 +1111,7 @@ const App = () => {
 
           {activeTab === 'progress' && (
              <div className="space-y-4">
-                <SCurveChart stats={getStats(activeProject)} compact={true} />
+                <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
                 <button onClick={() => openModal('newTask')} className="text-sm font-bold text-blue-600">+ Tambah Pekerjaan</button>
                 {(activeProject.tasks || []).map(t => (
                   <div key={t.id} className="bg-white p-3 rounded-xl border shadow-sm">
