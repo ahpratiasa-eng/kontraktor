@@ -44,7 +44,17 @@ type AppUser = {
 
 type Transaction = { id: number; date: string; category: string; description: string; amount: number; type: 'expense' | 'income'; workerId?: number; };
 type Material = { id: number; name: string; unit: string; stock: number; minStock: number; };
-type Worker = { id: number; name: string; role: 'Tukang' | 'Kenek' | 'Mandor'; realRate: number; mandorRate: number; };
+
+// Update Worker Type untuk support Satuan Upah
+type Worker = { 
+  id: number; 
+  name: string; 
+  role: 'Tukang' | 'Kenek' | 'Mandor'; 
+  realRate: number; 
+  mandorRate: number; 
+  wageUnit: 'Harian' | 'Mingguan' | 'Bulanan'; // Field Baru
+};
+
 type Task = { id: number; name: string; weight: number; progress: number; lastUpdated: string; };
 type AttendanceLog = { id: number; date: string; workerId: number; status: 'Hadir' | 'Setengah' | 'Lembur' | 'Absen'; note: string; };
 type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
@@ -90,6 +100,7 @@ const App = () => {
   const [inputRealRate, setInputRealRate] = useState(150000);
   const [inputMandorRate, setInputMandorRate] = useState(170000);
   const [inputWorkerRole, setInputWorkerRole] = useState<'Tukang' | 'Kenek' | 'Mandor'>('Tukang');
+  const [inputWageUnit, setInputWageUnit] = useState<'Harian' | 'Mingguan' | 'Bulanan'>('Harian');
 
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
@@ -101,10 +112,14 @@ const App = () => {
   // ATTENDANCE & REKAP STATES
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({});
-  const [rekapFilter, setRekapFilter] = useState<'day' | 'week' | 'month'>('month');
-  const [rekapDate, setRekapDate] = useState(new Date().toISOString().split('T')[0]); // Date picker value for filter
+  
+  // FILTER RANGE BARU
+  const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({});
+  // UI STATES
+  const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
+  const [expandedReportIds, setExpandedReportIds] = useState<{[id: string]: boolean}>({});
 
   // --- PERMISSION CHECKERS ---
   const canAccessFinance = () => ['kontraktor', 'keuangan'].includes(userRole || '');
@@ -234,48 +249,40 @@ const App = () => {
     return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
+  // --- LOGIC REKAP ABSENSI (RANGE & COST CALC) ---
   const getFilteredAttendance = () => {
     if (!activeProject || !activeProject.attendanceLogs) return [];
     
-    let filteredLogs = activeProject.attendanceLogs;
-    const targetDate = new Date(rekapDate);
+    // Filter berdasarkan Range Tanggal
+    const start = new Date(filterStartDate); start.setHours(0,0,0,0);
+    const end = new Date(filterEndDate); end.setHours(23,59,59,999);
 
-    if (rekapFilter === 'day') {
-      filteredLogs = filteredLogs.filter(l => l.date === rekapDate);
-    } else if (rekapFilter === 'month') {
-      const monthPrefix = rekapDate.slice(0, 7); // "2023-10"
-      filteredLogs = filteredLogs.filter(l => l.date.startsWith(monthPrefix));
-    } else if (rekapFilter === 'week') {
-      // Hitung awal dan akhir minggu dari tanggal yang dipilih
-      const day = targetDate.getDay();
-      const diff = targetDate.getDate() - day + (day === 0 ? -6 : 1); // Senin
-      const monday = new Date(targetDate.setDate(diff));
-      const sunday = new Date(targetDate.setDate(diff + 6));
-      monday.setHours(0,0,0,0);
-      sunday.setHours(23,59,59,999);
+    const filteredLogs = activeProject.attendanceLogs.filter(l => {
+      const d = new Date(l.date);
+      return d >= start && d <= end;
+    });
 
-      filteredLogs = filteredLogs.filter(l => {
-        const d = new Date(l.date);
-        return d >= monday && d <= sunday;
-      });
-    }
-
-    // Group by Worker
-    const workerStats: {[key: number]: {name: string, role: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {};
+    const workerStats: {[key: number]: {name: string, role: string, unit: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {};
     
-    // Init semua worker biar yang 0 kehadiran tetap muncul
     activeProject.workers.forEach(w => {
-      workerStats[w.id] = { name: w.name, role: w.role, hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 };
+      workerStats[w.id] = { name: w.name, role: w.role, unit: w.wageUnit || 'Harian', hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 };
     });
 
     filteredLogs.forEach(log => {
       if (workerStats[log.workerId]) {
         const worker = activeProject.workers.find(w => w.id === log.workerId);
-        const rate = worker ? worker.mandorRate : 0; // Hitungan RAB/Owner
+        
+        // LOGIKA KONVERSI UPAH KE HARIAN (UNTUK ESTIMASI BIAYA)
+        let dailyRate = 0;
+        if (worker) {
+          if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7;
+          else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30;
+          else dailyRate = worker.mandorRate; // Default Harian
+        }
 
-        if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += rate; }
-        else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (rate * 1.5); }
-        else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (rate * 0.5); }
+        if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += dailyRate; }
+        else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (dailyRate * 1.5); }
+        else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (dailyRate * 0.5); }
         else if (log.status === 'Absen') { workerStats[log.workerId].absen++; }
       }
     });
@@ -317,8 +324,26 @@ const App = () => {
     const totalDuration = end - start; const elapsed = latestUpdate - start;
     let timeProgress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
     if (totalDuration <= 0) timeProgress = 0;
+    
+    // Estimasi Leak/Cost perlu memperhitungkan unit upah
     let mandorCost = 0; let realCost = 0;
-    (p.workers || []).forEach(w => { const logs = p.attendanceLogs || []; const days = logs.filter(l => l.workerId === w.id && ['Hadir','Lembur','Setengah'].includes(l.status)).length; mandorCost += days * w.mandorRate; realCost += days * w.realRate; });
+    (p.workers || []).forEach(w => { 
+      const logs = p.attendanceLogs || []; 
+      const days = logs.filter(l => l.workerId === w.id && ['Hadir','Lembur','Setengah'].includes(l.status)).reduce((acc, curr) => {
+        if(curr.status === 'Hadir') return acc + 1;
+        if(curr.status === 'Lembur') return acc + 1.5;
+        if(curr.status === 'Setengah') return acc + 0.5;
+        return acc;
+      }, 0);
+      
+      let divider = 1;
+      if(w.wageUnit === 'Mingguan') divider = 7;
+      if(w.wageUnit === 'Bulanan') divider = 30;
+
+      mandorCost += days * (w.mandorRate / divider); 
+      realCost += days * (w.realRate / divider); 
+    });
+
     return { inc, exp, prog, leak: mandorCost - realCost, timeProgress, curvePoints: generateSCurvePoints(p) };
   };
 
@@ -329,7 +354,14 @@ const App = () => {
 
   const calculateWorkerFinancials = (p: Project, workerId: number) => {
     const worker = p.workers.find(w => w.id === workerId); if (!worker) return { totalDue: 0, totalPaid: 0, balance: 0 };
-    const days = calculateTotalDays(p.attendanceLogs, workerId); const totalDue = days * worker.mandorRate;
+    const days = calculateTotalDays(p.attendanceLogs, workerId); 
+    
+    // Hitung hutang berdasarkan unit
+    let dailyRate = worker.mandorRate;
+    if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7;
+    if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30;
+
+    const totalDue = days * dailyRate;
     const totalPaid = (p.transactions || []).filter(t => t.workerId === workerId && t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
     return { totalDue, totalPaid, balance: totalDue - totalPaid };
   };
@@ -337,6 +369,10 @@ const App = () => {
   // --- HANDLERS ---
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
+
+  const toggleReportGroup = (groupId: string) => {
+    setExpandedReportIds(prev => ({ ...prev, [groupId]: !prev[groupId] }));
   };
 
   const handleTransaction = (e: React.FormEvent) => {
@@ -375,7 +411,13 @@ const App = () => {
     if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); }
     if (type === 'newProject') { setInputDuration(30); } 
     if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); }
-    if (type === 'newWorker') { setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); }
+    if (type === 'newWorker') { 
+      setInputName(''); 
+      setInputRealRate(150000); 
+      setInputMandorRate(170000); 
+      setInputWorkerRole('Tukang'); 
+      setInputWageUnit('Harian'); 
+    }
     setShowModal(true);
   };
 
@@ -400,6 +442,7 @@ const App = () => {
     </div>
   );
 
+  // COMPONENT UNTUK TAB KEUANGAN
   const TransactionGroup = ({ group, isExpanded, onToggle }: any) => (
     <div className="bg-white rounded-xl border shadow-sm mb-2 overflow-hidden transition-all">
       <div onClick={onToggle} className="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-50">
@@ -431,7 +474,8 @@ const App = () => {
       ],
       materials: [],
       workers: [
-        {id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000}, {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000},
+        {id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000, wageUnit:'Harian'}, 
+        {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000, wageUnit:'Harian'},
       ],
       tasks: [
         {id:1, name:'Persiapan & Gali', weight:5, progress:100, lastUpdated: d(1)}, {id:2, name:'Struktur Beton', weight:25, progress:100, lastUpdated: d(3)},
@@ -495,24 +539,31 @@ const App = () => {
               {modalType === 'newTask' && <><input className="w-full p-2 border rounded" placeholder="Pekerjaan" value={inputName} onChange={e => setInputName(e.target.value)} /><div className="flex gap-2"><input type="number" className="w-24 p-2 border rounded" placeholder="Bobot %" value={inputWeight || ''} onChange={e => setInputWeight(Number(e.target.value))} /></div><button onClick={() => createItem('tasks', { id: Date.now(), name: inputName, weight: inputWeight, progress: 0, lastUpdated: new Date().toISOString() })} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
               {modalType === 'updateProgress' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={progressInput} onChange={e => setProgressInput(Number(e.target.value))} /><input type="date" className="w-full p-2 border rounded" value={progressDate} onChange={e => setProgressDate(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Catatan" value={progressNote} onChange={e => setProgressNote(e.target.value)} /><button onClick={handleUpdateProgress} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Update</button></>}
               
-              {/* MODAL PEKERJA DENGAN INPUT GAJI */}
+              {/* MODAL PEKERJA DENGAN INPUT GAJI & SATUAN */}
               {modalType === 'newWorker' && (
                 <>
                   <input className="w-full p-2 border rounded" placeholder="Nama" value={inputName} onChange={e=>setInputName(e.target.value)}/>
-                  <select className="w-full p-2 border rounded" value={inputWorkerRole} onChange={(e) => setInputWorkerRole(e.target.value as any)}>
-                    <option>Tukang</option><option>Kenek</option><option>Mandor</option>
-                  </select>
+                  <div className="flex gap-2">
+                    <select className="flex-1 p-2 border rounded" value={inputWorkerRole} onChange={(e) => setInputWorkerRole(e.target.value as any)}>
+                      <option>Tukang</option><option>Kenek</option><option>Mandor</option>
+                    </select>
+                    <select className="flex-1 p-2 border rounded bg-slate-50" value={inputWageUnit} onChange={(e) => setInputWageUnit(e.target.value as any)}>
+                      <option value="Harian">Per Hari</option>
+                      <option value="Mingguan">Per Minggu</option>
+                      <option value="Bulanan">Per Bulan</option>
+                    </select>
+                  </div>
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <label className="text-xs text-slate-500">Upah Asli (Real)</label>
+                      <label className="text-xs text-slate-500">Upah Asli ({inputWageUnit})</label>
                       <input type="number" className="w-full p-2 border rounded" value={inputRealRate} onChange={e=>setInputRealRate(Number(e.target.value))}/>
                     </div>
                     <div className="flex-1">
-                      <label className="text-xs text-slate-500">Upah RAB (Owner)</label>
+                      <label className="text-xs text-slate-500">Upah RAB ({inputWageUnit})</label>
                       <input type="number" className="w-full p-2 border rounded" value={inputMandorRate} onChange={e=>setInputMandorRate(Number(e.target.value))}/>
                     </div>
                   </div>
-                  <button onClick={()=>createItem('workers', {id:Date.now(), name:inputName, role:inputWorkerRole, realRate:inputRealRate, mandorRate:inputMandorRate})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button>
+                  <button onClick={()=>createItem('workers', {id:Date.now(), name:inputName, role:inputWorkerRole, wageUnit:inputWageUnit, realRate:inputRealRate, mandorRate:inputMandorRate})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button>
                 </>
               )}
 
@@ -525,7 +576,7 @@ const App = () => {
       )}
 
       {/* HEADER */}
-      <header className="bg-white px-4 py-3 sticky top-0 z-10 shadow-sm flex justify-between items-center">
+      <header className="bg-white px-4 py-3 sticky top-0 z-10 shadow-sm flex justify-between items-center print:hidden">
         {view === 'project-list' || view === 'user-management' ? (
           <div className="flex items-center gap-2 font-bold text-slate-800">
              <Building2 className="text-blue-600"/> 
@@ -539,7 +590,6 @@ const App = () => {
         )}
         
         <div className="flex items-center gap-2">
-          {/* Menu Management hanya untuk Kontraktor */}
           {canAccessManagement() && view === 'project-list' && (
              <button onClick={() => setView('user-management')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200">
                <Settings size={18} />
@@ -556,40 +606,28 @@ const App = () => {
         </div>
       </header>
 
-      {/* USER MANAGEMENT VIEW (Only Kontraktor) */}
+      {/* USER MANAGEMENT VIEW */}
       {view === 'user-management' && canAccessManagement() && (
         <main className="p-4 max-w-md mx-auto space-y-4">
           <div className="bg-blue-600 text-white p-6 rounded-xl shadow-lg mb-6">
             <h2 className="font-bold text-lg flex items-center gap-2"><ShieldCheck/> Kelola Akses</h2>
             <p className="text-sm text-blue-100 mt-1">Atur role: Kontraktor, Keuangan, atau Pengawas.</p>
           </div>
-
           <button onClick={() => openModal('addUser')} className="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 p-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-blue-50">
             <UserPlus size={20}/> Tambah User Baru
           </button>
-
           <div className="space-y-2">
             {appUsers.map((u) => (
               <div key={u.email} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-slate-800">{u.name}</p>
-                  <p className="text-xs text-slate-500">{u.email}</p>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block ${u.role === 'kontraktor' ? 'bg-purple-100 text-purple-700' : u.role === 'keuangan' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
-                    {u.role.toUpperCase()}
-                  </span>
-                </div>
-                {u.email !== user?.email && (
-                  <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2">
-                    <Trash2 size={18}/>
-                  </button>
-                )}
+                <div><p className="font-bold text-slate-800">{u.name}</p><p className="text-xs text-slate-500">{u.email}</p><span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block ${u.role === 'kontraktor' ? 'bg-purple-100 text-purple-700' : u.role === 'keuangan' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>{u.role.toUpperCase()}</span></div>
+                {u.email !== user?.email && <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={18}/></button>}
               </div>
             ))}
           </div>
         </main>
       )}
 
-      {/* PROJECT LIST VIEW (ALL ROLES) */}
+      {/* PROJECT LIST VIEW */}
       {view === 'project-list' && (
         <main className="p-4 max-w-md mx-auto space-y-4">
            {projects.length === 0 && <div className="text-center py-10 border border-dashed rounded-xl text-slate-400"><p>Belum ada proyek.</p><button onClick={loadDemoData} disabled={isSyncing} className="bg-green-600 text-white px-4 py-2 mt-4 rounded-lg font-bold text-sm hover:bg-green-700 shadow-lg flex items-center gap-2 mx-auto">{isSyncing ? <Loader2 className="animate-spin"/> : <RefreshCw size={16}/>} Muat Demo</button></div>}
@@ -604,66 +642,85 @@ const App = () => {
         </main>
       )}
 
-      {/* REPORT VIEW (FIXED: DETAILED & TABLE FORMAT) */}
+      {/* REPORT VIEW (GROUP BY CATEGORY) */}
       {view === 'report-view' && activeProject && canSeeMoney() && (
         <div className="min-h-screen bg-white">
-          <header className="bg-slate-800 text-white px-4 py-4 flex items-center gap-3 sticky top-0 shadow-md z-20"><button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1 rounded"><ArrowLeft/></button><div><h2 className="font-bold uppercase tracking-wider text-sm">Laporan Detail</h2><p className="text-xs text-slate-300">{activeProject.name}</p></div></header>
-          <main className="p-4 max-w-3xl mx-auto print:max-w-none">
+          <header className="bg-slate-800 text-white px-4 py-4 flex items-center gap-3 sticky top-0 shadow-md z-20 print:hidden"><button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1 rounded"><ArrowLeft/></button><div><h2 className="font-bold uppercase tracking-wider text-sm">Laporan Detail</h2><p className="text-xs text-slate-300">{activeProject.name}</p></div></header>
+          
+          <main className="p-4 max-w-3xl mx-auto print:max-w-none print:p-0">
+            <div className="hidden print:block mb-4 text-center">
+              <h1 className="text-2xl font-bold uppercase">{activeProject.name}</h1>
+              <p className="text-sm text-slate-500">Laporan Keuangan Proyek</p>
+            </div>
+
             {/* Summary Box */}
-            <section className="mb-6 grid grid-cols-2 gap-4 text-sm border-b pb-6">
-               <div className="p-3 bg-green-50 rounded border border-green-100"><p className="text-slate-500 text-xs uppercase">Pemasukan</p><p className="font-bold text-green-600 text-lg">{formatRupiah(getStats(activeProject).inc)}</p></div>
-               <div className="p-3 bg-red-50 rounded border border-red-100"><p className="text-slate-500 text-xs uppercase">Pengeluaran</p><p className="font-bold text-red-600 text-lg">{formatRupiah(getStats(activeProject).exp)}</p></div>
-               <div className="p-3 bg-blue-50 rounded col-span-2 flex justify-between items-center border border-blue-100"><span className="text-slate-500 font-bold">SISA SALDO</span><span className="font-bold text-blue-600 text-xl">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</span></div>
+            <section className="mb-6 grid grid-cols-2 gap-4 text-sm border-b pb-6 print:border-none print:pb-2">
+               <div className="p-3 bg-green-50 rounded border border-green-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pemasukan</p><p className="font-bold text-green-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).inc)}</p></div>
+               <div className="p-3 bg-red-50 rounded border border-red-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pengeluaran</p><p className="font-bold text-red-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).exp)}</p></div>
+               <div className="p-3 bg-blue-50 rounded col-span-2 flex justify-between items-center border border-blue-100 print:bg-transparent print:border-black"><span className="text-slate-500 font-bold">SISA SALDO</span><span className="font-bold text-blue-600 text-xl print:text-black">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</span></div>
             </section>
             
-            {/* Detailed Table */}
+            {/* Detailed Lists Grouped by Category */}
             <section className="mb-6">
-              <h3 className="font-bold text-lg mb-4 text-slate-800">Rincian Transaksi</h3>
               
               {/* PEMASUKAN */}
               <div className="mb-6">
-                <h4 className="text-green-700 font-bold border-b border-green-200 pb-1 mb-2">PEMASUKAN</h4>
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-500">
-                    <tr>
-                      <th className="p-2">Tanggal</th>
-                      <th className="p-2">Keterangan</th>
-                      <th className="p-2 text-right">Jumlah</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeProject.transactions.filter(t => t.type === 'income').sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(t => (
-                      <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="p-2 text-slate-500 whitespace-nowrap">{t.date}</td>
-                        <td className="p-2 font-medium text-slate-700">{t.description} <span className="text-xs text-slate-400">({t.category})</span></td>
-                        <td className="p-2 text-right font-bold text-green-600">{formatRupiah(t.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <h4 className="text-green-700 font-bold border-b border-green-200 pb-1 mb-2 print:text-black print:border-black">PEMASUKAN</h4>
+                <div className="space-y-1">
+                  {getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'income')).map((group) => (
+                    <div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none">
+                      <div onClick={() => toggleReportGroup(group.id)} className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold">
+                        <span className="text-sm font-medium">{group.date} • {group.category}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-green-600 print:text-black">{formatRupiah(group.totalAmount)}</span>
+                          <span className="print:hidden">{expandedReportIds[group.id] ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</span>
+                        </div>
+                      </div>
+                      <div className={`${expandedReportIds[group.id] ? 'block' : 'hidden'} print:block bg-white`}>
+                        <table className="w-full text-xs text-left">
+                          <tbody className="divide-y divide-slate-100">
+                            {group.items.map(t => (
+                              <tr key={t.id}>
+                                <td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td>
+                                <td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* PENGELUARAN */}
               <div>
-                <h4 className="text-red-700 font-bold border-b border-red-200 pb-1 mb-2">PENGELUARAN</h4>
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-500">
-                    <tr>
-                      <th className="p-2">Tanggal</th>
-                      <th className="p-2">Keterangan</th>
-                      <th className="p-2 text-right">Jumlah</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeProject.transactions.filter(t => t.type === 'expense').sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(t => (
-                      <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="p-2 text-slate-500 whitespace-nowrap">{t.date}</td>
-                        <td className="p-2 font-medium text-slate-700">{t.description} <span className="text-xs text-slate-400">({t.category})</span></td>
-                        <td className="p-2 text-right font-bold text-red-600">{formatRupiah(t.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <h4 className="text-red-700 font-bold border-b border-red-200 pb-1 mb-2 print:text-black print:border-black">PENGELUARAN</h4>
+                <div className="space-y-1">
+                  {getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'expense')).map((group) => (
+                    <div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none">
+                      <div onClick={() => toggleReportGroup(group.id)} className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold">
+                        <span className="text-sm font-medium">{group.date} • {group.category}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-red-600 print:text-black">{formatRupiah(group.totalAmount)}</span>
+                          <span className="print:hidden">{expandedReportIds[group.id] ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</span>
+                        </div>
+                      </div>
+                      <div className={`${expandedReportIds[group.id] ? 'block' : 'hidden'} print:block bg-white`}>
+                        <table className="w-full text-xs text-left">
+                          <tbody className="divide-y divide-slate-100">
+                            {group.items.map(t => (
+                              <tr key={t.id}>
+                                <td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td>
+                                <td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
             </section>
@@ -694,37 +751,35 @@ const App = () => {
             </div>
           )}
 
-          {/* TAB KEUANGAN (Hanya Kontraktor & Keuangan) */}
           {activeTab === 'finance' && canAccessFinance() && (
             <div className="space-y-4">
               <div className="bg-white p-4 rounded-xl border shadow-sm">
                 <div className="flex gap-2 mb-3 bg-slate-100 p-1 rounded-lg"><button onClick={() => setTxType('expense')} className={`flex-1 py-1 text-xs font-bold rounded ${txType === 'expense' ? 'bg-white shadow text-red-600' : 'text-slate-500'}`}>Pengeluaran</button><button onClick={() => setTxType('income')} className={`flex-1 py-1 text-xs font-bold rounded ${txType === 'income' ? 'bg-white shadow text-green-600' : 'text-slate-500'}`}>Pemasukan</button></div>
                 <form onSubmit={handleTransaction} className="space-y-3"><select name="cat" className="w-full p-2 border rounded text-sm bg-white">{txType === 'expense' ? <><option>Material</option><option>Upah Tukang</option><option>Operasional</option></> : <option>Termin/DP</option>}</select><input required name="desc" placeholder="Keterangan" className="w-full p-2 border rounded text-sm"/><input required name="amount" type="number" placeholder="Nominal" className="w-full p-2 border rounded text-sm"/><button className={`w-full text-white p-2 rounded font-bold text-sm ${txType === 'expense' ? 'bg-red-600' : 'bg-green-600'}`}>Simpan</button></form>
               </div>
-              
-              <div className="space-y-2">
-                {getGroupedTransactions(activeProject.transactions).map(group => (
-                  <TransactionGroup key={group.id} group={group} isExpanded={expandedGroups[group.id]} onToggle={() => toggleGroup(group.id)} />
-                ))}
-              </div>
+              <div className="space-y-2">{getGroupedTransactions(activeProject.transactions).map(group => (<TransactionGroup key={group.id} group={group} isExpanded={expandedGroups[group.id]} onToggle={() => toggleGroup(group.id)} />))}</div>
             </div>
           )}
 
-          {/* TAB WORKERS (Kontraktor & Pengawas) */}
           {activeTab === 'workers' && canAccessWorkers() && (
             <div className="space-y-4">
                <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-3 rounded-xl shadow font-bold flex justify-center gap-2"><Calendar size={20} /> Isi Absensi</button>
                
-               {/* MODUL REKAP ABSENSI BARU */}
+               {/* MODUL REKAP ABSENSI BARU: RANGE DATE PICKER */}
                <div className="bg-white p-4 rounded-xl border shadow-sm mt-4">
-                 <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><FileText size={16}/> Rekap Kehadiran</h3>
-                 <div className="flex gap-2 mb-3">
-                   <select value={rekapFilter} onChange={(e) => setRekapFilter(e.target.value as any)} className="p-2 border rounded text-sm bg-slate-50 font-medium">
-                     <option value="day">Harian</option>
-                     <option value="week">Mingguan</option>
-                     <option value="month">Bulanan</option>
-                   </select>
-                   <input type={rekapFilter === 'month' ? 'month' : 'date'} value={rekapDate} onChange={(e) => setRekapDate(e.target.value)} className="flex-1 p-2 border rounded text-sm bg-slate-50"/>
+                 <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><FileText size={16}/> Rekap & Filter</h3>
+                 
+                 {/* DATE RANGE FILTER UI */}
+                 <div className="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                   <div className="flex-1">
+                     <label className="text-[10px] text-slate-400 block mb-1">Dari</label>
+                     <input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" />
+                   </div>
+                   <div className="flex items-center text-slate-400">-</div>
+                   <div className="flex-1">
+                     <label className="text-[10px] text-slate-400 block mb-1">Sampai</label>
+                     <input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" />
+                   </div>
                  </div>
                  
                  <div className="overflow-x-auto">
@@ -734,38 +789,32 @@ const App = () => {
                          <th className="p-2 text-left">Nama</th>
                          <th className="p-2 text-center">Hadir</th>
                          <th className="p-2 text-center">Lembur</th>
-                         <th className="p-2 text-center">1/2</th>
                          {canSeeMoney() && <th className="p-2 text-right">Est. Upah</th>}
                        </tr>
                      </thead>
                      <tbody>
                        {getFilteredAttendance().map((stat: any, idx) => (
                          <tr key={idx} className="border-b last:border-0 hover:bg-slate-50">
-                           <td className="p-2 font-medium">{stat.name} <span className="text-[10px] text-slate-400 block">{stat.role}</span></td>
+                           <td className="p-2 font-medium">
+                             {stat.name} 
+                             <span className="text-[9px] text-slate-400 block">{stat.role} • {stat.unit}</span>
+                           </td>
                            <td className="p-2 text-center font-bold text-green-600">{stat.hadir}</td>
                            <td className="p-2 text-center font-bold text-blue-600">{stat.lembur}</td>
-                           <td className="p-2 text-center font-bold text-orange-600">{stat.setengah}</td>
                            {canSeeMoney() && <td className="p-2 text-right font-bold">{formatRupiah(stat.totalCost)}</td>}
                          </tr>
                        ))}
-                       {getFilteredAttendance().length === 0 && <tr><td colSpan={5} className="p-4 text-center text-slate-400">Tidak ada data di periode ini.</td></tr>}
+                       {getFilteredAttendance().length === 0 && <tr><td colSpan={canSeeMoney() ? 4 : 3} className="p-4 text-center text-slate-400">Tidak ada data di periode ini.</td></tr>}
                      </tbody>
                    </table>
                  </div>
                </div>
 
                <div className="flex justify-between items-center mt-4 mb-2"><h3 className="font-bold text-slate-700">Daftar Tim</h3><button onClick={() => openModal('newWorker')} className="text-xs bg-slate-200 px-2 py-1 rounded font-bold">+ Baru</button></div>
-               {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role}</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div>
-               
-               {/* Info Keuangan hanya muncul utk Kontraktor/Keuangan. Pengawas tidak lihat gaji. */}
-               {canSeeMoney() && (
-                 <div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3"><div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>{f.balance > 0 ? (<button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>) : (<span className="text-xs font-bold text-green-600 flex items-center gap-1"><CheckCircle size={14}/> Lunas</span>)}</div>
-               )}
-               </div>)})}
+               {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div>{canSeeMoney() && (<div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3"><div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>{f.balance > 0 ? (<button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>) : (<span className="text-xs font-bold text-green-600 flex items-center gap-1"><CheckCircle size={14}/> Lunas</span>)}</div>)}</div>)})}
             </div>
           )}
           
-          {/* TAB LOGISTICS & PROGRESS (All Roles) */}
           {activeTab === 'logistics' && (
              <div className="space-y-3"><button onClick={() => openModal('newMaterial')} className="w-full py-2 border border-dashed rounded text-sm font-bold text-slate-500">+ Tambah Material</button>{(activeProject.materials || []).map(m => (<div key={m.id} className="bg-white p-3 rounded border flex justify-between items-center"><div><div className="font-bold text-sm">{m.name}</div><div className="text-xs text-slate-500">Stok: {m.stock} {m.unit}</div></div><div className="flex gap-2"><button onClick={() => updateProject({materials: activeProject.materials.map(x=>x.id===m.id?{...x,stock:x.stock-1}:x)})} className="w-8 h-8 bg-red-100 text-red-600 rounded flex items-center justify-center"><Minus size={14}/></button><button onClick={() => updateProject({materials: activeProject.materials.map(x=>x.id===m.id?{...x,stock:x.stock+1}:x)})} className="w-8 h-8 bg-green-100 text-green-600 rounded flex items-center justify-center"><Plus size={14}/></button></div></div>))}</div>
           )}
@@ -786,16 +835,11 @@ const App = () => {
 
       {/* NAVIGATION BAR */}
       {view === 'project-detail' && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t pb-safe z-40">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t pb-safe z-40 print:hidden">
            <div className="max-w-md mx-auto flex justify-between px-2">
              <button onClick={() => setActiveTab('dashboard')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='dashboard'?'text-blue-600':'text-slate-400'}`}><LayoutDashboard size={20}/><span className="text-[10px]">Home</span></button>
-             
-             {/* MENU KEUANGAN (Hidden for Pengawas) */}
              {canAccessFinance() && <button onClick={() => setActiveTab('finance')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='finance'?'text-blue-600':'text-slate-400'}`}><Wallet size={20}/><span className="text-[10px]">Uang</span></button>}
-             
-             {/* MENU WORKERS (Hidden for Keuangan - kecuali Kontraktor bisa semua) */}
              {canAccessWorkers() && <button onClick={() => setActiveTab('workers')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='workers'?'text-blue-600':'text-slate-400'}`}><Users size={20}/><span className="text-[10px]">Tim</span></button>}
-             
              <button onClick={() => setActiveTab('logistics')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='logistics'?'text-blue-600':'text-slate-400'}`}><Package size={20}/><span className="text-[10px]">Stok</span></button>
              <button onClick={() => setActiveTab('progress')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='progress'?'text-blue-600':'text-slate-400'}`}><TrendingUp size={20}/><span className="text-[10px]">Kurva S</span></button>
            </div>
