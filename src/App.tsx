@@ -3,11 +3,10 @@ import {
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Minus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
-  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn
+  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
-// IMPORT LOGIN GOOGLE
 import { 
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
 } from 'firebase/auth';
@@ -15,10 +14,10 @@ import type { User } from 'firebase/auth';
 
 import { 
   getFirestore, collection, doc, addDoc, updateDoc, 
-  deleteDoc, onSnapshot, query
+  deleteDoc, onSnapshot, query, setDoc, getDoc, where
 } from 'firebase/firestore';
 
-// --- KONFIGURASI FIREBASE ANDA ---
+// --- KONFIGURASI FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyBSy6poKIVLX1BazVWxh2u7q0LlLR9V2cE",
   authDomain: "kontraktor-app.firebaseapp.com",
@@ -30,7 +29,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider(); // Provider Google
+const googleProvider = new GoogleAuthProvider();
 const db = getFirestore(app);
 const appId = 'kontraktor-pro-live'; 
 
@@ -49,24 +48,36 @@ type Project = {
   attendanceLogs: AttendanceLog[]; taskLogs: TaskLog[];
 };
 
+// Tipe Data untuk User Aplikasi
+type AppUser = {
+  email: string;
+  role: 'admin' | 'staff';
+  name: string;
+};
+
 type GroupedTransaction = {
   id: string; date: string; category: string; type: 'expense' | 'income'; totalAmount: number; items: Transaction[];
 };
 
 const App = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'staff' | null>(null); // State Role User
   const [authStatus, setAuthStatus] = useState<'loading' | 'connected' | 'error'>('loading');
-  const [view, setView] = useState<'project-list' | 'project-detail' | 'report-view'>('project-list');
+  const [view, setView] = useState<'project-list' | 'project-detail' | 'report-view' | 'user-management'>('project-list');
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [projects, setProjects] = useState<Project[]>([]);
+  const [appUsers, setAppUsers] = useState<AppUser[]>([]); // State list user aplikasi
   const [isSyncing, setIsSyncing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<any>(null);
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
+  const [loginError, setLoginError] = useState('');
   
   // FORM INPUTS
   const [inputName, setInputName] = useState('');
+  const [inputEmail, setInputEmail] = useState('');
+  const [inputRole, setInputRole] = useState<'admin' | 'staff'>('staff');
   const [inputClient, setInputClient] = useState('');
   const [inputDuration, setInputDuration] = useState(30);
   const [inputBudget, setInputBudget] = useState(0);
@@ -83,37 +94,109 @@ const App = () => {
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({});
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({});
 
-  // --- LOGIC LOGIN/LOGOUT ---
+  // --- LOGIC AUTHENTICATION DENGAN DB CHECK ---
   useEffect(() => {
-    // Hanya listen auth state, tidak auto login anonim lagi
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setAuthStatus('connected');
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (u) {
+        // Cek ke Firestore collection 'app_users'
+        try {
+          // Kita pakai email sebagai ID dokumen agar pencarian cepat
+          const userDocRef = doc(db, 'app_users', u.email!);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data() as AppUser;
+            setUser(u);
+            setUserRole(userData.role); // Set role dari database
+            setAuthStatus('connected');
+            setLoginError('');
+          } else {
+            // Jika user Google login tapi tidak ada di database -> Logout
+            await signOut(auth);
+            setUser(null);
+            setUserRole(null);
+            setAuthStatus('connected');
+            setLoginError(`Email ${u.email} tidak terdaftar di sistem. Hubungi Admin.`);
+          }
+        } catch (error) {
+          console.error("Error verifying user:", error);
+          setAuthStatus('error');
+        }
+      } else {
+        setUser(null);
+        setUserRole(null);
+        setAuthStatus('connected');
+      }
     });
     return () => unsubscribe();
   }, []);
 
+  // Sync Daftar User Aplikasi (Hanya jika admin)
+  useEffect(() => {
+    if (userRole === 'admin') {
+      const q = query(collection(db, 'app_users'));
+      const unsub = onSnapshot(q, (snapshot) => {
+        const users = snapshot.docs.map(d => d.data() as AppUser);
+        setAppUsers(users);
+      });
+      return () => unsub();
+    }
+  }, [userRole]);
+
   const handleLogin = async () => {
+    setLoginError('');
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Login gagal", error);
-      alert("Login Gagal. Cek koneksi atau popup blocker.");
+      setLoginError("Terjadi kesalahan saat mencoba login.");
     }
   };
 
   const handleLogout = async () => {
     if(confirm("Yakin ingin keluar?")) {
       await signOut(auth);
-      setProjects([]); // Bersihkan data di memori
+      setProjects([]); 
+      setView('project-list');
+    }
+  };
+
+  // --- USER MANAGEMENT HANDLERS ---
+  const handleAddUser = async () => {
+    if (!inputEmail || !inputName) return;
+    try {
+      // Simpan dengan Email sebagai Document ID agar unik
+      await setDoc(doc(db, 'app_users', inputEmail), {
+        email: inputEmail,
+        name: inputName,
+        role: inputRole
+      });
+      alert("User berhasil ditambahkan!");
+      setShowModal(false);
+      setInputEmail(''); setInputName('');
+    } catch (e) {
+      alert("Gagal menambah user.");
+      console.error(e);
+    }
+  };
+
+  const handleDeleteUser = async (emailToDelete: string) => {
+    if (emailToDelete === user?.email) {
+      alert("Anda tidak bisa menghapus akun sendiri!");
+      return;
+    }
+    if (confirm(`Yakin hapus akses untuk ${emailToDelete}?`)) {
+      try {
+        await deleteDoc(doc(db, 'app_users', emailToDelete));
+      } catch (e) {
+        alert("Gagal menghapus user.");
+      }
     }
   };
 
   // --- FIRESTORE SYNC ---
   useEffect(() => {
     if (!user) return;
-    // Query data user-specific (Optional: tambahkan where('userId', '==', user.uid) jika ingin data private per user)
-    // Untuk sekarang kita biarkan global agar mudah dites
     const q = query(collection(db, 'app_data', appId, 'projects'));
     return onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map(d => {
@@ -131,6 +214,11 @@ const App = () => {
       });
       list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
       setProjects(list);
+    }, (error) => {
+      if (error.code === 'permission-denied') {
+        alert("Sesi Anda tidak valid atau Anda tidak memiliki izin database.");
+        signOut(auth);
+      }
     });
   }, [user]);
 
@@ -250,6 +338,7 @@ const App = () => {
     if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); }
     if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); }
     if (type === 'newProject') { setInputDuration(30); } // FIX UNUSED VAR
+    if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('staff'); }
     setShowModal(true);
   };
 
@@ -335,17 +424,23 @@ const App = () => {
     try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); }
   };
 
-  // --- TAMPILAN LOGIN (JIKA BELUM LOGIN) ---
+  // --- TAMPILAN LOGIN ---
   if (!user && authStatus !== 'loading') {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
           <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building2 className="text-blue-600" size={32} />
+            <Lock className="text-blue-600" size={32} />
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Kontraktor Pro</h1>
-          <p className="text-slate-500 mb-8 text-sm">Kelola proyek, keuangan, dan tim dengan mudah.</p>
+          <p className="text-slate-500 mb-8 text-sm">Hanya personel terdaftar yang dapat masuk.</p>
           
+          {loginError && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs mb-4 border border-red-200">
+              {loginError}
+            </div>
+          )}
+
           <button 
             onClick={handleLogin}
             className="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-all"
@@ -353,7 +448,7 @@ const App = () => {
             <LogIn size={20} />
             Masuk dengan Google
           </button>
-          <p className="mt-6 text-xs text-slate-400">Pastikan popup blocker nonaktif</p>
+          <p className="mt-6 text-xs text-slate-400">Hubungi admin jika butuh akses.</p>
         </div>
       </div>
     );
@@ -369,6 +464,22 @@ const App = () => {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex justify-between bg-slate-50 sticky top-0"><h3 className="font-bold">Input Data</h3><button onClick={() => setShowModal(false)}><X size={20}/></button></div>
             <div className="p-4 space-y-3">
+              {/* FORM TAMBAH USER (ADMIN ONLY) */}
+              {modalType === 'addUser' && (
+                <>
+                  <input className="w-full p-2 border rounded" placeholder="Nama Lengkap" value={inputName} onChange={e => setInputName(e.target.value)} />
+                  <input className="w-full p-2 border rounded" placeholder="Email Google" type="email" value={inputEmail} onChange={e => setInputEmail(e.target.value)} />
+                  <div className="flex gap-2 items-center">
+                    <label className="text-xs w-20">Role</label>
+                    <select className="flex-1 p-2 border rounded" value={inputRole} onChange={e => setInputRole(e.target.value as 'admin'|'staff')}>
+                      <option value="staff">Staff (Kerja Saja)</option>
+                      <option value="admin">Admin (Bisa Add User)</option>
+                    </select>
+                  </div>
+                  <button onClick={handleAddUser} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Tambah User</button>
+                </>
+              )}
+
               {modalType === 'newProject' && <><input className="w-full p-2 border rounded" placeholder="Nama Proyek" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Client" value={inputClient} onChange={e => setInputClient(e.target.value)} /><div className="flex gap-2 items-center"><label className="text-xs w-20">Durasi (Hari)</label><input className="w-20 p-2 border rounded" type="number" value={inputDuration} onChange={e => setInputDuration(Number(e.target.value))} /></div><button onClick={() => { const s = new Date(); const e = new Date(); e.setDate(s.getDate() + (inputDuration || 30)); addDoc(collection(db, 'app_data', appId, 'projects'), { name: inputName, client: inputClient, location: '-', status: 'Berjalan', budgetLimit: 0, startDate: s.toISOString(), endDate: e.toISOString(), transactions: [], materials: [], workers: [], tasks: [], attendanceLogs: [], taskLogs: [] }); setShowModal(false); }} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
               {modalType === 'editProject' && <><input className="w-full p-2 border rounded" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" value={inputClient} onChange={e => setInputClient(e.target.value)} /><input className="w-full p-2 border rounded" type="number" value={inputBudget} onChange={e => setInputBudget(Number(e.target.value))} /><input type="date" className="w-full p-2 border rounded" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /><input type="date" className="w-full p-2 border rounded" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /><button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
               {modalType === 'newTask' && <><input className="w-full p-2 border rounded" placeholder="Pekerjaan" value={inputName} onChange={e => setInputName(e.target.value)} /><div className="flex gap-2"><input type="number" className="w-24 p-2 border rounded" placeholder="Bobot %" value={inputWeight || ''} onChange={e => setInputWeight(Number(e.target.value))} /></div><button onClick={() => createItem('tasks', { id: Date.now(), name: inputName, weight: inputWeight, progress: 0, lastUpdated: new Date().toISOString() })} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
@@ -383,12 +494,12 @@ const App = () => {
       )}
 
       <header className="bg-white px-4 py-3 sticky top-0 z-10 shadow-sm flex justify-between items-center">
-        {view === 'project-list' ? (
+        {view === 'project-list' || view === 'user-management' ? (
           <div className="flex items-center gap-2 font-bold text-slate-800">
              <Building2 className="text-blue-600"/> 
              <div className="flex flex-col">
                <span>Kontraktor App</span>
-               {user && <span className="text-[10px] text-slate-400 font-normal">Hi, {user.displayName?.split(' ')[0]}</span>}
+               {user && <span className="text-[10px] text-slate-400 font-normal">{userRole === 'admin' ? '👑 Admin' : 'Staff'}: {user.displayName?.split(' ')[0]}</span>}
              </div>
           </div>
         ) : (
@@ -396,10 +507,53 @@ const App = () => {
         )}
         
         <div className="flex items-center gap-2">
+          {userRole === 'admin' && view === 'project-list' && (
+             <button onClick={() => setView('user-management')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200">
+               <Settings size={18} />
+             </button>
+          )}
+          {view === 'user-management' && (
+            <button onClick={() => setView('project-list')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200">
+              <LayoutDashboard size={18} />
+            </button>
+          )}
+
           {view === 'project-list' && <button onClick={() => openModal('newProject')} className="bg-blue-600 text-white p-2 rounded-full shadow"><Plus size={20}/></button>}
           <button onClick={handleLogout} className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100"><LogOut size={18} /></button>
         </div>
       </header>
+
+      {view === 'user-management' && userRole === 'admin' && (
+        <main className="p-4 max-w-md mx-auto space-y-4">
+          <div className="bg-blue-600 text-white p-6 rounded-xl shadow-lg mb-6">
+            <h2 className="font-bold text-lg flex items-center gap-2"><ShieldCheck/> Kelola Akses</h2>
+            <p className="text-sm text-blue-100 mt-1">Tambah atau hapus email karyawan yang boleh login ke aplikasi.</p>
+          </div>
+
+          <button onClick={() => openModal('addUser')} className="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 p-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-blue-50">
+            <UserPlus size={20}/> Tambah User Baru
+          </button>
+
+          <div className="space-y-2">
+            {appUsers.map((u) => (
+              <div key={u.email} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-slate-800">{u.name}</p>
+                  <p className="text-xs text-slate-500">{u.email}</p>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
+                    {u.role.toUpperCase()}
+                  </span>
+                </div>
+                {u.email !== user?.email && (
+                  <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2">
+                    <Trash2 size={18}/>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </main>
+      )}
 
       {view === 'project-list' && (
         <main className="p-4 max-w-md mx-auto space-y-4">
@@ -508,3 +662,50 @@ const App = () => {
 };
 
 export default App;
+```
+
+---
+
+### Perbarui Firestore Rules
+
+Sekarang kita harus memberi tahu database: **"Hanya bolehkan akses jika email user ada di dalam daftar `app_users`"**.
+
+Buka **Firebase Console > Firestore > Rules**, lalu ganti dengan ini:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fungsi bantuan: Cek apakah user ada di collection 'app_users'
+    function isAuthorized() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/app_users/$(request.auth.token.email));
+    }
+
+    // Fungsi bantuan: Cek apakah user adalah admin
+    function isAdmin() {
+      return isAuthorized() && 
+             get(/databases/$(database)/documents/app_users/$(request.auth.token.email)).data.role == 'admin';
+    }
+
+    // ATURAN 1: Collection 'app_users' (Daftar User)
+    match /app_users/{email} {
+      // Siapa saja yang authorized boleh BACA daftar user (untuk validasi login)
+      allow read: if isAuthorized(); 
+      // HANYA Admin yang boleh TULIS (tambah/hapus user)
+      allow write: if isAdmin();
+    }
+
+    // ATURAN 2: Data Proyek (app_data)
+    match /app_data/{projectId}/projects/{docId} {
+      // Semua user yang terdaftar (admin & staff) boleh baca/tulis proyek
+      allow read, write: if isAuthorized();
+    }
+    
+    // Fallback: Blokir akses lainnya
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
