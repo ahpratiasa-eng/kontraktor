@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Minus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
-  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus, Eye
+  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
