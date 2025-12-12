@@ -85,6 +85,45 @@ type GroupedTransaction = {
   id: string; date: string; category: string; type: 'expense' | 'income'; totalAmount: number; items: Transaction[];
 };
 
+// --- HELPER COMPONENTS (OUTSIDE APP) ---
+
+// 1. SCurve Chart Component
+const SCurveChart = ({ stats, compact = false }: { stats: any, compact?: boolean }) => (
+  <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4'}`}>
+    {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Visualisasi Proyek</h3>}
+    <div className={`relative border-l border-b border-slate-300 mx-2 ${compact ? 'h-32 mt-2' : 'h-48 mt-4'} bg-slate-50`}>
+       <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
+       <svg className="absolute inset-0 w-full h-full overflow-visible">
+          <line x1="0" y1="100%" x2="100%" y2="0" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="5" />
+          <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="3" points={stats.curvePoints} />
+          <circle cx={`${stats.timeProgress}%`} cy={`${100 - stats.prog}%`} r="4" fill="white" stroke="black" strokeWidth="2" />
+       </svg>
+    </div>
+    <div className={`grid grid-cols-2 gap-2 text-xs ${compact ? 'mt-2' : 'mt-6'}`}>
+       <div className="p-1.5 bg-slate-100 rounded text-center"><span className="block text-slate-500 text-[10px]">Waktu</span><span className="font-bold">{stats.timeProgress.toFixed(0)}%</span></div>
+       <div className={`p-1.5 rounded text-center ${stats.prog >= stats.timeProgress ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}><span className="block opacity-80 text-[10px]">Fisik</span><span className="font-bold">{stats.prog.toFixed(0)}%</span></div>
+    </div>
+  </div>
+);
+
+// 2. Transaction Group Component
+const TransactionGroup = ({ group, isExpanded, onToggle }: any) => {
+  const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+  return (
+    <div className="bg-white rounded-xl border shadow-sm mb-2 overflow-hidden transition-all">
+      <div onClick={onToggle} className="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-full ${group.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>{group.type === 'income' ? <TrendingUp size={16} /> : <Banknote size={16} />}</div>
+          <div><div className="font-bold text-sm text-slate-800">{group.category}</div><div className="text-xs text-slate-500 flex items-center gap-1">{group.date} • {group.items.length} Transaksi</div></div>
+        </div>
+        <div className="text-right"><div className={`font-bold ${group.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{group.type === 'expense' ? '-' : '+'} {formatRupiah(group.totalAmount)}</div>{isExpanded ? <ChevronUp size={16} className="ml-auto text-slate-400"/> : <ChevronDown size={16} className="ml-auto text-slate-400"/>}</div>
+      </div>
+      {isExpanded && (<div className="bg-slate-50 border-t border-slate-100">{group.items.map((t: any, idx: number) => (<div key={t.id} className={`p-3 flex justify-between items-center text-sm ${idx !== group.items.length - 1 ? 'border-b border-slate-100' : ''}`}><div className="flex-1"><span className="text-slate-700">{t.description}</span></div><div className="flex items-center gap-3"><span className="font-medium text-slate-600">{formatRupiah(t.amount)}</span></div></div>))}</div>)}
+    </div>
+  );
+};
+
+// --- MAIN APP COMPONENT ---
 const App = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null); 
@@ -135,7 +174,7 @@ const App = () => {
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({});
   
-  // FILTER RANGE (Pengganti rekapFilter lama)
+  // FILTER RANGE
   const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -482,6 +521,65 @@ const App = () => {
   };
 
   const createItem = (field: string, newItem: any) => { if(!activeProject) return; updateProject({ [field]: [...(activeProject as any)[field], newItem] }); setShowModal(false); }
+
+  const loadDemoData = async () => {
+    if (!user) return; setIsSyncing(true);
+    const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6);
+    const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; };
+
+    const demo: Omit<Project, 'id'> = {
+      name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 1000000000, 
+      startDate: start.toISOString(), endDate: end.toISOString(),
+      transactions: [
+        {id:1, date:d(0), category:'Termin', description:'DP 30%', amount:300000000, type:'income'},
+        {id:5, date:d(0), category:'Material', description:'Besi Beton & Semen', amount:150000000, type:'expense'},
+        {id:6, date:d(1), category:'Material', description:'Bata Merah 50rb Pcs', amount:45000000, type:'expense'},
+        {id:7, date:d(3), category:'Material', description:'Granit Lantai', amount:120000000, type:'expense'},
+        {id:80, date:d(6), category:'Upah Tukang', description:'Gaji Pak Mamat', amount:2500000, type:'expense', workerId:1},
+        {id:81, date:d(6), category:'Upah Tukang', description:'Gaji Kang Ujang', amount:2000000, type:'expense', workerId:2},
+      ],
+      materials: [
+        {id:1, name:'Semen Tiga Roda', unit:'Sak', stock:50, minStock:20}, 
+        {id:2, name:'Bata Merah', unit:'Pcs', stock:5000, minStock:1000}
+      ],
+      materialLogs: [
+        {id:1, materialId:1, date:d(0), type:'in', quantity:100, notes:'Beli Awal', actor:'Admin'},
+        {id:2, materialId:1, date:d(2), type:'out', quantity:50, notes:'Cor Pondasi', actor:'Admin'}
+      ],
+      workers: [
+        {id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000, wageUnit:'Harian'}, 
+        {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000, wageUnit:'Harian'},
+      ],
+      tasks: [
+        {id:1, name:'Persiapan & Gali', weight:5, progress:100, lastUpdated: d(1)}, {id:2, name:'Struktur Beton', weight:25, progress:100, lastUpdated: d(3)},
+        {id:3, name:'Dinding & Plester', weight:20, progress:100, lastUpdated: d(4)}, 
+      ],
+      taskLogs: [
+        {id:1, date:d(0.5), taskId:1, previousProgress:0, newProgress:50, note:'Gali'}, {id:2, date:d(1), taskId:1, previousProgress:50, newProgress:100, note:'Selesai Gali'},
+        {id:3, date:d(1.5), taskId:2, previousProgress:0, newProgress:30, note:'Sloof'}, {id:4, date:d(2), taskId:2, previousProgress:30, newProgress:60, note:'Lantai 2'},
+        {id:5, date:d(3), taskId:2, previousProgress:60, newProgress:100, note:'Atap Dak'}, {id:6, date:d(3.5), taskId:3, previousProgress:0, newProgress:50, note:'Bata'},
+      ],
+      attendanceLogs: Array.from({length: 10}).map((_, i) => ({id: i, date: d(6), workerId: i+1, status: 'Hadir' as const, note: 'Closingan'}))
+    };
+    try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); }
+  };
+
+  // --- LOGIN SCREEN ---
+  if (!user && authStatus !== 'loading') {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
+          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><Lock className="text-blue-600" size={32} /></div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Kontraktor Pro</h1>
+          <p className="text-slate-500 mb-8 text-sm">Hanya personel terdaftar yang dapat masuk.</p>
+          {loginError && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs mb-4 border border-red-200">{loginError}</div>}
+          <button onClick={handleLogin} className="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-all"><LogIn size={20} />Masuk dengan Google</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === 'loading') return <div className="h-screen flex flex-col items-center justify-center text-slate-500"><Loader2 className="animate-spin mb-2"/>Loading System...</div>;
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-900 pb-20 relative">
