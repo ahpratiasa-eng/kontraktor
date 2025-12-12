@@ -35,7 +35,8 @@ const db = getFirestore(app);
 const appId = 'kontraktor-pro-live'; 
 
 // --- TYPES ---
-type UserRole = 'kontraktor' | 'keuangan' | 'pengawas';
+// Role Baru: super_admin (bisa semua), kontraktor (bisa semua KECUALI user mgmt)
+type UserRole = 'super_admin' | 'kontraktor' | 'keuangan' | 'pengawas';
 
 type AppUser = {
   email: string;
@@ -85,9 +86,8 @@ type GroupedTransaction = {
   id: string; date: string; category: string; type: 'expense' | 'income'; totalAmount: number; items: Transaction[];
 };
 
-// --- HELPER COMPONENTS (OUTSIDE APP) ---
+// --- HELPER COMPONENTS ---
 
-// 1. SCurve Chart Component
 const SCurveChart = ({ stats, compact = false }: { stats: any, compact?: boolean }) => (
   <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4'}`}>
     {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Visualisasi Proyek</h3>}
@@ -106,7 +106,6 @@ const SCurveChart = ({ stats, compact = false }: { stats: any, compact?: boolean
   </div>
 );
 
-// 2. Transaction Group Component
 const TransactionGroup = ({ group, isExpanded, onToggle }: any) => {
   const formatRupiah = (num: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
   return (
@@ -163,29 +162,34 @@ const App = () => {
   const [stockDate, setStockDate] = useState(new Date().toISOString().split('T')[0]);
   const [stockNotes, setStockNotes] = useState('');
 
-  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState(0);
+  // Task & Progress Inputs
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
+
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
   
   // ATTENDANCE & REKAP
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({});
-  
-  // FILTER RANGE
   const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
 
+  // UI STATES
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
   const [expandedReportIds, setExpandedReportIds] = useState<{[id: string]: boolean}>({});
 
   // --- PERMISSION CHECKERS ---
-  const canAccessFinance = () => ['kontraktor', 'keuangan'].includes(userRole || '');
-  const canAccessWorkers = () => ['kontraktor', 'pengawas'].includes(userRole || '');
-  const canAccessManagement = () => userRole === 'kontraktor';
-  const canSeeMoney = () => ['kontraktor', 'keuangan'].includes(userRole || '');
+  const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
+  const canAccessWorkers = () => ['super_admin', 'kontraktor', 'pengawas'].includes(userRole || '');
+  // Hanya Super Admin yang bisa kelola user
+  const canAccessManagement = () => userRole === 'super_admin';
+  // Kontraktor & Super Admin bisa edit data proyek (hapus dll)
+  const canEditProject = () => ['super_admin', 'kontraktor'].includes(userRole || '');
+  
+  const canSeeMoney = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
 
   // --- LOGIC AUTH ---
   useEffect(() => {
@@ -222,7 +226,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (userRole === 'kontraktor') {
+    if (userRole === 'super_admin') {
       const q = query(collection(db, 'app_users'));
       const unsub = onSnapshot(q, (snapshot) => {
         const users = snapshot.docs.map(d => d.data() as AppUser);
@@ -499,8 +503,7 @@ const App = () => {
   const openModal = (type: any) => {
     setModalType(type); setInputName(''); setInputWeight(0); 
     
-    // SAFEGUARD: Ensure activeProject exists for project-specific modals
-    if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory'].includes(type) && !activeProject) {
+    if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory'].includes(type) && !activeProject) {
       return; 
     }
 
@@ -515,7 +518,6 @@ const App = () => {
       setInputWorkerRole('Tukang'); 
       setInputWageUnit('Harian'); 
     }
-    // Set default stock date to today
     setStockDate(new Date().toISOString().split('T')[0]);
     setShowModal(true);
   };
@@ -599,7 +601,8 @@ const App = () => {
                     <select className="flex-1 p-2 border rounded" value={inputRole} onChange={e => setInputRole(e.target.value as UserRole)}>
                       <option value="pengawas">Pengawas (Absen & Tukang Only)</option>
                       <option value="keuangan">Keuangan (Uang Only)</option>
-                      <option value="kontraktor">Kontraktor (Full Access)</option>
+                      <option value="kontraktor">Kontraktor (Project Manager)</option>
+                      <option value="super_admin">Super Admin (Owner)</option>
                     </select>
                   </div>
                   <button onClick={handleAddUser} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Tambah User</button>
@@ -612,6 +615,30 @@ const App = () => {
               {modalType === 'newTask' && <><input className="w-full p-2 border rounded" placeholder="Pekerjaan" value={inputName} onChange={e => setInputName(e.target.value)} /><div className="flex gap-2"><input type="number" className="w-24 p-2 border rounded" placeholder="Bobot %" value={inputWeight || ''} onChange={e => setInputWeight(Number(e.target.value))} /></div><button onClick={() => createItem('tasks', { id: Date.now(), name: inputName, weight: inputWeight, progress: 0, lastUpdated: new Date().toISOString() })} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
               {modalType === 'updateProgress' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={progressInput} onChange={e => setProgressInput(Number(e.target.value))} /><input type="date" className="w-full p-2 border rounded" value={progressDate} onChange={e => setProgressDate(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Catatan" value={progressNote} onChange={e => setProgressNote(e.target.value)} /><button onClick={handleUpdateProgress} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Update</button></>}
               
+              {/* MODAL TASK HISTORY */}
+              {modalType === 'taskHistory' && selectedTask && activeProject && (
+                <div className="max-h-96 overflow-y-auto">
+                  <h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedTask.name}</h4>
+                  <div className="space-y-3">
+                    {(activeProject.taskLogs || []).filter(l => l.taskId === selectedTask.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (
+                      <div key={log.id} className="text-sm border-b pb-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-slate-700">{log.date}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400 line-through">{log.previousProgress}%</span>
+                            <span className="font-bold text-blue-600">{log.newProgress}%</span>
+                          </div>
+                        </div>
+                        <div className="text-slate-500 text-xs mt-1">
+                          {log.note || '-'}
+                        </div>
+                      </div>
+                    ))}
+                    {(activeProject.taskLogs || []).filter(l => l.taskId === selectedTask.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat progres.</p>}
+                  </div>
+                </div>
+              )}
+
               {/* MODAL PEKERJA DENGAN INPUT GAJI & SATUAN */}
               {modalType === 'newWorker' && (
                 <>
@@ -698,7 +725,7 @@ const App = () => {
              <Building2 className="text-blue-600"/> 
              <div className="flex flex-col">
                <span>Kontraktor App</span>
-               {user && <span className="text-[10px] text-slate-400 font-normal uppercase">{userRole}: {user.displayName?.split(' ')[0]}</span>}
+               {user && <span className="text-[10px] text-slate-400 font-normal uppercase">{userRole?.replace('_', ' ')}: {user.displayName?.split(' ')[0]}</span>}
              </div>
           </div>
         ) : (
@@ -717,7 +744,7 @@ const App = () => {
             </button>
           )}
 
-          {view === 'project-list' && canAccessManagement() && <button onClick={() => openModal('newProject')} className="bg-blue-600 text-white p-2 rounded-full shadow"><Plus size={20}/></button>}
+          {view === 'project-list' && canEditProject() && <button onClick={() => openModal('newProject')} className="bg-blue-600 text-white p-2 rounded-full shadow"><Plus size={20}/></button>}
           <button onClick={handleLogout} className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100"><LogOut size={18} /></button>
         </div>
       </header>
@@ -727,7 +754,7 @@ const App = () => {
         <main className="p-4 max-w-md mx-auto space-y-4">
           <div className="bg-blue-600 text-white p-6 rounded-xl shadow-lg mb-6">
             <h2 className="font-bold text-lg flex items-center gap-2"><ShieldCheck/> Kelola Akses</h2>
-            <p className="text-sm text-blue-100 mt-1">Atur role: Kontraktor, Keuangan, atau Pengawas.</p>
+            <p className="text-sm text-blue-100 mt-1">Hanya Super Admin yang bisa melihat halaman ini.</p>
           </div>
           <button onClick={() => openModal('addUser')} className="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 p-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-blue-50">
             <UserPlus size={20}/> Tambah User Baru
@@ -735,7 +762,7 @@ const App = () => {
           <div className="space-y-2">
             {appUsers.map((u) => (
               <div key={u.email} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
-                <div><p className="font-bold text-slate-800">{u.name}</p><p className="text-xs text-slate-500">{u.email}</p><span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block ${u.role === 'kontraktor' ? 'bg-purple-100 text-purple-700' : u.role === 'keuangan' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>{u.role.toUpperCase()}</span></div>
+                <div><p className="font-bold text-slate-800">{u.name}</p><p className="text-xs text-slate-500">{u.email}</p><span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block bg-slate-100 text-slate-700`}>{u.role.toUpperCase().replace('_', ' ')}</span></div>
                 {u.email !== user?.email && <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={18}/></button>}
               </div>
             ))}
@@ -752,7 +779,7 @@ const App = () => {
                  <div className="flex justify-between mb-2"><h3 className="font-bold text-lg">{p.name}</h3><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{p.status}</span></div>
                  <p className="text-sm text-slate-500 mb-3">{p.client}</p>
                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2"><div className="bg-blue-600 h-full" style={{ width: `${getStats(p).prog}%` }}></div></div>
-                 <div className="flex justify-between text-xs text-slate-400 mt-2"><span>Progres: {getStats(p).prog.toFixed(0)}%</span>{userRole === 'kontraktor' && <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db, 'app_data', appId, 'projects', p.id))}} className="hover:text-red-500"><Trash2 size={14}/></button>}</div>
+                 <div className="flex justify-between text-xs text-slate-400 mt-2"><span>Progres: {getStats(p).prog.toFixed(0)}%</span>{canEditProject() && <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db, 'app_data', appId, 'projects', p.id))}} className="hover:text-red-500"><Trash2 size={14}/></button>}</div>
              </div>
            ))}
         </main>
@@ -979,7 +1006,10 @@ const App = () => {
                 {(activeProject.tasks || []).map(t => (
                   <div key={t.id} className="bg-white p-3 rounded-xl border shadow-sm">
                     <div className="flex justify-between text-sm mb-2"><div><p className="font-bold">{t.name}</p><p className="text-xs text-slate-500">Bobot: {t.weight}%</p></div><div className="text-right"><span className="font-bold text-blue-600 text-lg">{t.progress}%</span><p className="text-[10px] text-slate-400">Last: {t.lastUpdated ? new Date(t.lastUpdated).toLocaleDateString() : '-'}</p></div></div>
-                    <button onClick={() => { setSelectedTask(t); setProgressInput(t.progress); setProgressDate(new Date().toISOString().split('T')[0]); openModal('updateProgress'); }} className="w-full py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-2 border border-slate-200"><Edit size={14} /> Update Progres</button>
+                    <div className="flex gap-2">
+                      <button onClick={() => { setSelectedTask(t); setProgressInput(t.progress); setProgressDate(new Date().toISOString().split('T')[0]); openModal('updateProgress'); }} className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-2 border border-slate-200"><Edit size={14} /> Update Progres</button>
+                      <button onClick={() => { setSelectedTask(t); openModal('taskHistory'); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded hover:bg-slate-100 border border-slate-200"><History size={16}/></button>
+                    </div>
                   </div>
                 ))}
              </div>
