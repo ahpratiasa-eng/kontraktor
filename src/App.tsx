@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
-  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
+  Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
   History, AlertTriangle
 } from 'lucide-react';
 
@@ -87,7 +87,6 @@ type GroupedTransaction = {
 
 // --- HELPER COMPONENTS ---
 
-// SCurve Chart Component (Updated with X-Axis Dates)
 const SCurveChart = ({ stats, project, compact = false }: { stats: any, project: Project, compact?: boolean }) => {
   // Helper untuk generate label tanggal di sumbu X
   const getAxisDates = () => {
@@ -417,7 +416,6 @@ const App = () => {
       realCost += days * (w.realRate / divider); 
     });
 
-    // Generate Points for SCurve
     const uniqueDates = Array.from(new Set((p.taskLogs || []).map(l => l.date))).sort();
     if (!uniqueDates.includes(p.startDate.split('T')[0])) uniqueDates.unshift(p.startDate.split('T')[0]);
     const today = new Date().toISOString().split('T')[0];
@@ -501,37 +499,19 @@ const App = () => {
     updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false);
   };
 
-  // --- WORKER MANAGEMENT (ADD, EDIT, DELETE) ---
+  // --- WORKER MANAGEMENT ---
   const handleSaveWorker = () => {
     if(!activeProject) return;
-    
-    // Check if Edit or New
     if (selectedWorkerId) {
-      // Edit Mode
       const updatedWorkers = activeProject.workers.map(w => {
         if(w.id === selectedWorkerId) {
-          return {
-            ...w,
-            name: inputName,
-            role: inputWorkerRole,
-            wageUnit: inputWageUnit,
-            realRate: inputRealRate,
-            mandorRate: inputMandorRate
-          };
+          return { ...w, name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate };
         }
         return w;
       });
       updateProject({ workers: updatedWorkers });
     } else {
-      // Add New Mode
-      const newWorker: Worker = {
-        id: Date.now(),
-        name: inputName,
-        role: inputWorkerRole,
-        wageUnit: inputWageUnit,
-        realRate: inputRealRate,
-        mandorRate: inputMandorRate
-      };
+      const newWorker: Worker = { id: Date.now(), name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate };
       updateProject({ workers: [...(activeProject.workers || []), newWorker] });
     }
     setShowModal(false);
@@ -544,7 +524,7 @@ const App = () => {
     setInputWageUnit(w.wageUnit);
     setInputRealRate(w.realRate);
     setInputMandorRate(w.mandorRate);
-    setModalType('newWorker'); // Re-use modal, but logic is handled by handleSaveWorker
+    setModalType('newWorker');
     setShowModal(true);
   };
 
@@ -556,63 +536,25 @@ const App = () => {
     }
   };
 
-  // LOGIC UPDATE STOK
   const handleStockMovement = () => {
     if (!activeProject || !selectedMaterial || stockQty <= 0) return;
-    
-    // 1. Update Stok di Array Material
     const updatedMaterials = activeProject.materials.map(m => {
-      if (m.id === selectedMaterial.id) {
-        return {
-          ...m,
-          stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty
-        };
-      }
+      if (m.id === selectedMaterial.id) return { ...m, stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty };
       return m;
     });
-
-    // 2. Catat Log
-    const newLog: MaterialLog = {
-      id: Date.now(),
-      materialId: selectedMaterial.id,
-      date: stockDate,
-      type: stockType,
-      quantity: stockQty,
-      notes: stockNotes || '-',
-      actor: user?.displayName || 'User'
-    };
-
-    updateProject({ 
-      materials: updatedMaterials, 
-      materialLogs: [newLog, ...(activeProject.materialLogs || [])] 
-    });
-    
-    setShowModal(false);
-    // Reset form
-    setStockQty(0);
-    setStockNotes('');
+    const newLog: MaterialLog = { id: Date.now(), materialId: selectedMaterial.id, date: stockDate, type: stockType, quantity: stockQty, notes: stockNotes || '-', actor: user?.displayName || 'User' };
+    updateProject({ materials: updatedMaterials, materialLogs: [newLog, ...(activeProject.materialLogs || [])] });
+    setShowModal(false); setStockQty(0); setStockNotes('');
   };
 
   const openModal = (type: any) => {
     setModalType(type); setInputName(''); setInputWeight(0); 
-    
-    if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory'].includes(type) && !activeProject) {
-      return; 
-    }
-
+    if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory'].includes(type) && !activeProject) return;
     if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); }
     if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); }
     if (type === 'newProject') { setInputDuration(30); } 
     if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); }
-    if (type === 'newWorker') { 
-      // Reset for NEW worker
-      setSelectedWorkerId(null);
-      setInputName(''); 
-      setInputRealRate(150000); 
-      setInputMandorRate(170000); 
-      setInputWorkerRole('Tukang'); 
-      setInputWageUnit('Harian'); 
-    }
+    if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); }
     setStockDate(new Date().toISOString().split('T')[0]);
     setShowModal(true);
   };
@@ -635,33 +577,16 @@ const App = () => {
         {id:80, date:d(6), category:'Upah Tukang', description:'Gaji Pak Mamat', amount:2500000, type:'expense', workerId:1},
         {id:81, date:d(6), category:'Upah Tukang', description:'Gaji Kang Ujang', amount:2000000, type:'expense', workerId:2},
       ],
-      materials: [
-        {id:1, name:'Semen Tiga Roda', unit:'Sak', stock:50, minStock:20}, 
-        {id:2, name:'Bata Merah', unit:'Pcs', stock:5000, minStock:1000}
-      ],
-      materialLogs: [
-        {id:1, materialId:1, date:d(0), type:'in', quantity:100, notes:'Beli Awal', actor:'Admin'},
-        {id:2, materialId:1, date:d(2), type:'out', quantity:50, notes:'Cor Pondasi', actor:'Admin'}
-      ],
-      workers: [
-        {id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000, wageUnit:'Harian'}, 
-        {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000, wageUnit:'Harian'},
-      ],
-      tasks: [
-        {id:1, name:'Persiapan & Gali', weight:5, progress:100, lastUpdated: d(1)}, {id:2, name:'Struktur Beton', weight:25, progress:100, lastUpdated: d(3)},
-        {id:3, name:'Dinding & Plester', weight:20, progress:100, lastUpdated: d(4)}, 
-      ],
-      taskLogs: [
-        {id:1, date:d(0.5), taskId:1, previousProgress:0, newProgress:50, note:'Gali'}, {id:2, date:d(1), taskId:1, previousProgress:50, newProgress:100, note:'Selesai Gali'},
-        {id:3, date:d(1.5), taskId:2, previousProgress:0, newProgress:30, note:'Sloof'}, {id:4, date:d(2), taskId:2, previousProgress:30, newProgress:60, note:'Lantai 2'},
-        {id:5, date:d(3), taskId:2, previousProgress:60, newProgress:100, note:'Atap Dak'}, {id:6, date:d(3.5), taskId:3, previousProgress:0, newProgress:50, note:'Bata'},
-      ],
+      materials: [{id:1, name:'Semen Tiga Roda', unit:'Sak', stock:50, minStock:20}, {id:2, name:'Bata Merah', unit:'Pcs', stock:5000, minStock:1000}],
+      materialLogs: [{id:1, materialId:1, date:d(0), type:'in', quantity:100, notes:'Beli Awal', actor:'Admin'}, {id:2, materialId:1, date:d(2), type:'out', quantity:50, notes:'Cor Pondasi', actor:'Admin'}],
+      workers: [{id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000, wageUnit:'Harian'}, {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000, wageUnit:'Harian'}],
+      tasks: [{id:1, name:'Persiapan & Gali', weight:5, progress:100, lastUpdated: d(1)}, {id:2, name:'Struktur Beton', weight:25, progress:100, lastUpdated: d(3)}, {id:3, name:'Dinding & Plester', weight:20, progress:100, lastUpdated: d(4)}],
+      taskLogs: [{id:1, date:d(0.5), taskId:1, previousProgress:0, newProgress:50, note:'Gali'}, {id:2, date:d(1), taskId:1, previousProgress:50, newProgress:100, note:'Selesai Gali'}, {id:3, date:d(1.5), taskId:2, previousProgress:0, newProgress:30, note:'Sloof'}, {id:4, date:d(2), taskId:2, previousProgress:30, newProgress:60, note:'Lantai 2'}, {id:5, date:d(3), taskId:2, previousProgress:60, newProgress:100, note:'Atap Dak'}, {id:6, date:d(3.5), taskId:3, previousProgress:0, newProgress:50, note:'Bata'}],
       attendanceLogs: Array.from({length: 10}).map((_, i) => ({id: i, date: d(6), workerId: i+1, status: 'Hadir' as const, note: 'Closingan'}))
     };
     try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); }
   };
 
-  // --- LOGIN SCREEN ---
   if (!user && authStatus !== 'loading') {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
@@ -686,125 +611,15 @@ const App = () => {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex justify-between bg-slate-50 sticky top-0"><h3 className="font-bold">Input Data</h3><button onClick={() => setShowModal(false)}><X size={20}/></button></div>
             <div className="p-4 space-y-3">
-              {/* MODAL USER MANAGEMENT */}
-              {modalType === 'addUser' && (
-                <>
-                  <input className="w-full p-2 border rounded" placeholder="Nama Lengkap" value={inputName} onChange={e => setInputName(e.target.value)} />
-                  <input className="w-full p-2 border rounded" placeholder="Email Google" type="email" value={inputEmail} onChange={e => setInputEmail(e.target.value)} />
-                  <div className="flex gap-2 items-center">
-                    <label className="text-xs w-20">Role</label>
-                    <select className="flex-1 p-2 border rounded" value={inputRole} onChange={e => setInputRole(e.target.value as UserRole)}>
-                      <option value="pengawas">Pengawas (Absen & Tukang Only)</option>
-                      <option value="keuangan">Keuangan (Uang Only)</option>
-                      <option value="kontraktor">Kontraktor (Project Manager)</option>
-                      <option value="super_admin">Super Admin (Owner)</option>
-                    </select>
-                  </div>
-                  <button onClick={handleAddUser} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Tambah User</button>
-                </>
-              )}
-
-              {/* MODAL LAINNYA */}
+              {modalType === 'addUser' && (<><input className="w-full p-2 border rounded" placeholder="Nama Lengkap" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Email Google" type="email" value={inputEmail} onChange={e => setInputEmail(e.target.value)} /><div className="flex gap-2 items-center"><label className="text-xs w-20">Role</label><select className="flex-1 p-2 border rounded" value={inputRole} onChange={e => setInputRole(e.target.value as UserRole)}><option value="pengawas">Pengawas (Absen & Tukang Only)</option><option value="keuangan">Keuangan (Uang Only)</option><option value="kontraktor">Kontraktor (Project Manager)</option><option value="super_admin">Super Admin (Owner)</option></select></div><button onClick={handleAddUser} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Tambah User</button></>)}
               {modalType === 'newProject' && <><input className="w-full p-2 border rounded" placeholder="Nama Proyek" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Client" value={inputClient} onChange={e => setInputClient(e.target.value)} /><div className="flex gap-2 items-center"><label className="text-xs w-20">Durasi (Hari)</label><input className="w-20 p-2 border rounded" type="number" value={inputDuration} onChange={e => setInputDuration(Number(e.target.value))} /></div><button onClick={() => { const s = new Date(); const e = new Date(); e.setDate(s.getDate() + (inputDuration || 30)); addDoc(collection(db, 'app_data', appId, 'projects'), { name: inputName, client: inputClient, location: '-', status: 'Berjalan', budgetLimit: 0, startDate: s.toISOString(), endDate: e.toISOString(), transactions: [], materials: [], workers: [], tasks: [], attendanceLogs: [], taskLogs: [] }); setShowModal(false); }} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
               {modalType === 'editProject' && <><input className="w-full p-2 border rounded" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" value={inputClient} onChange={e => setInputClient(e.target.value)} /><input className="w-full p-2 border rounded" type="number" value={inputBudget} onChange={e => setInputBudget(Number(e.target.value))} /><input type="date" className="w-full p-2 border rounded" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /><input type="date" className="w-full p-2 border rounded" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /><button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
               {modalType === 'newTask' && <><input className="w-full p-2 border rounded" placeholder="Pekerjaan" value={inputName} onChange={e => setInputName(e.target.value)} /><div className="flex gap-2"><input type="number" className="w-24 p-2 border rounded" placeholder="Bobot %" value={inputWeight || ''} onChange={e => setInputWeight(Number(e.target.value))} /></div><button onClick={() => createItem('tasks', { id: Date.now(), name: inputName, weight: inputWeight, progress: 0, lastUpdated: new Date().toISOString() })} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
               {modalType === 'updateProgress' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={progressInput} onChange={e => setProgressInput(Number(e.target.value))} /><input type="date" className="w-full p-2 border rounded" value={progressDate} onChange={e => setProgressDate(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Catatan" value={progressNote} onChange={e => setProgressNote(e.target.value)} /><button onClick={handleUpdateProgress} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Update</button></>}
-              
-              {/* MODAL TASK HISTORY */}
-              {modalType === 'taskHistory' && selectedTask && activeProject && (
-                <div className="max-h-96 overflow-y-auto">
-                  <h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedTask.name}</h4>
-                  <div className="space-y-3">
-                    {(activeProject.taskLogs || []).filter(l => l.taskId === selectedTask.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (
-                      <div key={log.id} className="text-sm border-b pb-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-slate-700">{log.date}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-400 line-through">{log.previousProgress}%</span>
-                            <span className="font-bold text-blue-600">{log.newProgress}%</span>
-                          </div>
-                        </div>
-                        <div className="text-slate-500 text-xs mt-1">
-                          {log.note || '-'}
-                        </div>
-                      </div>
-                    ))}
-                    {(activeProject.taskLogs || []).filter(l => l.taskId === selectedTask.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat progres.</p>}
-                  </div>
-                </div>
-              )}
-
-              {/* MODAL PEKERJA DENGAN INPUT GAJI & SATUAN */}
-              {modalType === 'newWorker' && (
-                <>
-                  <input className="w-full p-2 border rounded" placeholder="Nama" value={inputName} onChange={e=>setInputName(e.target.value)}/>
-                  <div className="flex gap-2">
-                    <select className="flex-1 p-2 border rounded" value={inputWorkerRole} onChange={(e) => setInputWorkerRole(e.target.value as any)}>
-                      <option>Tukang</option><option>Kenek</option><option>Mandor</option>
-                    </select>
-                    <select className="flex-1 p-2 border rounded bg-slate-50" value={inputWageUnit} onChange={(e) => setInputWageUnit(e.target.value as any)}>
-                      <option value="Harian">Per Hari</option>
-                      <option value="Mingguan">Per Minggu</option>
-                      <option value="Bulanan">Per Bulan</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <label className="text-xs text-slate-500">Upah Asli ({inputWageUnit})</label>
-                      <input type="number" className="w-full p-2 border rounded" value={inputRealRate} onChange={e=>setInputRealRate(Number(e.target.value))}/>
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs text-slate-500">Upah RAB ({inputWageUnit})</label>
-                      <input type="number" className="w-full p-2 border rounded" value={inputMandorRate} onChange={e=>setInputMandorRate(Number(e.target.value))}/>
-                    </div>
-                  </div>
-                  <button onClick={handleSaveWorker} className="w-full bg-blue-600 text-white p-2 rounded font-bold">{selectedWorkerId ? 'Simpan Perubahan' : 'Simpan'}</button>
-                </>
-              )}
-
-              {/* MODAL STOCK MOVEMENT */}
-              {modalType === 'stockMovement' && selectedMaterial && (
-                <>
-                  <h4 className="font-bold text-slate-700">{selectedMaterial.name}</h4>
-                  <p className="text-xs text-slate-500 mb-2">Stok Saat Ini: {selectedMaterial.stock} {selectedMaterial.unit}</p>
-                  
-                  <div className="flex gap-2 mb-2">
-                    <button onClick={() => setStockType('in')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='in' ? 'bg-green-100 border-green-300 text-green-700' : 'border-slate-200'}`}>Masuk (+)</button>
-                    <button onClick={() => setStockType('out')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='out' ? 'bg-red-100 border-red-300 text-red-700' : 'border-slate-200'}`}>Keluar (-)</button>
-                  </div>
-
-                  <input type="number" className="w-full p-2 border rounded font-bold text-lg" placeholder="Jumlah" value={stockQty} onChange={e => setStockQty(Number(e.target.value))}/>
-                  <input type="date" className="w-full p-2 border rounded" value={stockDate} onChange={e => setStockDate(e.target.value)}/>
-                  <input className="w-full p-2 border rounded" placeholder="Keterangan (Wajib)" value={stockNotes} onChange={e => setStockNotes(e.target.value)}/>
-                  
-                  <button onClick={handleStockMovement} disabled={!stockNotes || stockQty <= 0} className={`w-full text-white p-2 rounded font-bold ${!stockNotes || stockQty <= 0 ? 'bg-slate-300' : 'bg-blue-600'}`}>Simpan Riwayat</button>
-                </>
-              )}
-
-              {/* MODAL HISTORY LOGS */}
-              {modalType === 'stockHistory' && selectedMaterial && activeProject && (
-                <div className="max-h-96 overflow-y-auto">
-                  <h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedMaterial.name}</h4>
-                  <div className="space-y-3">
-                    {(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (
-                      <div key={log.id} className="text-sm border-b pb-2">
-                        <div className="flex justify-between">
-                          <span className="font-bold text-slate-700">{log.date}</span>
-                          <span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>
-                            {log.type === 'in' ? '+' : '-'}{log.quantity}
-                          </span>
-                        </div>
-                        <div className="text-slate-500 text-xs mt-1 flex justify-between">
-                          <span>{log.notes}</span>
-                          <span className="italic">{log.actor}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat.</p>}
-                  </div>
-                </div>
-              )}
-
+              {modalType === 'taskHistory' && selectedTask && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedTask.name}</h4><div className="space-y-3">{(activeProject.taskLogs || []).filter(l => l.taskId === selectedTask.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between items-center"><span className="font-bold text-slate-700">{log.date}</span><div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{log.previousProgress}%</span><span className="font-bold text-blue-600">{log.newProgress}%</span></div></div><div className="text-slate-500 text-xs mt-1">{log.note || '-'}</div></div>))}{(activeProject.taskLogs || []).filter(l => l.taskId === selectedTask.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat progres.</p>}</div></div>)}
+              {modalType === 'newWorker' && (<><input className="w-full p-2 border rounded" placeholder="Nama" value={inputName} onChange={e=>setInputName(e.target.value)}/><div className="flex gap-2"><select className="flex-1 p-2 border rounded" value={inputWorkerRole} onChange={(e) => setInputWorkerRole(e.target.value as any)}><option>Tukang</option><option>Kenek</option><option>Mandor</option></select><select className="flex-1 p-2 border rounded bg-slate-50" value={inputWageUnit} onChange={(e) => setInputWageUnit(e.target.value as any)}><option value="Harian">Per Hari</option><option value="Mingguan">Per Minggu</option><option value="Bulanan">Per Bulan</option></select></div><div className="flex gap-2"><div className="flex-1"><label className="text-xs text-slate-500">Upah Asli ({inputWageUnit})</label><input type="number" className="w-full p-2 border rounded" value={inputRealRate} onChange={e=>setInputRealRate(Number(e.target.value))}/></div><div className="flex-1"><label className="text-xs text-slate-500">Upah RAB ({inputWageUnit})</label><input type="number" className="w-full p-2 border rounded" value={inputMandorRate} onChange={e=>setInputMandorRate(Number(e.target.value))}/></div></div><button onClick={handleSaveWorker} className="w-full bg-blue-600 text-white p-2 rounded font-bold">{selectedWorkerId ? 'Simpan Perubahan' : 'Simpan'}</button></>)}
+              {modalType === 'stockMovement' && selectedMaterial && (<><h4 className="font-bold text-slate-700">{selectedMaterial.name}</h4><p className="text-xs text-slate-500 mb-2">Stok Saat Ini: {selectedMaterial.stock} {selectedMaterial.unit}</p><div className="flex gap-2 mb-2"><button onClick={() => setStockType('in')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='in' ? 'bg-green-100 border-green-300 text-green-700' : 'border-slate-200'}`}>Masuk (+)</button><button onClick={() => setStockType('out')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='out' ? 'bg-red-100 border-red-300 text-red-700' : 'border-slate-200'}`}>Keluar (-)</button></div><input type="number" className="w-full p-2 border rounded font-bold text-lg" placeholder="Jumlah" value={stockQty} onChange={e => setStockQty(Number(e.target.value))}/><input type="date" className="w-full p-2 border rounded" value={stockDate} onChange={e => setStockDate(e.target.value)}/><input className="w-full p-2 border rounded" placeholder="Keterangan (Wajib)" value={stockNotes} onChange={e => setStockNotes(e.target.value)}/><button onClick={handleStockMovement} disabled={!stockNotes || stockQty <= 0} className={`w-full text-white p-2 rounded font-bold ${!stockNotes || stockQty <= 0 ? 'bg-slate-300' : 'bg-blue-600'}`}>Simpan Riwayat</button></>)}
+              {modalType === 'stockHistory' && selectedMaterial && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedMaterial.name}</h4><div className="space-y-3">{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between"><span className="font-bold text-slate-700">{log.date}</span><span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>{log.type === 'in' ? '+' : '-'}{log.quantity}</span></div><div className="text-slate-500 text-xs mt-1 flex justify-between"><span>{log.notes}</span><span className="italic">{log.actor}</span></div></div>))}{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat.</p>}</div></div>)}
               {modalType === 'payWorker' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} /><button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-2 rounded font-bold">Bayar</button></>}
               {modalType === 'attendance' && activeProject && <div><input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} /><div className="max-h-64 overflow-y-auto space-y-2 mb-4">{activeProject.workers.map(w => (<div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center"><span>{w.name}</span><select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}><option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option></select></div>))}</div><button onClick={() => { const newLogs: any[] = []; Object.keys(attendanceData).forEach(wId => newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' })); updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs] }); setShowModal(false); }} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan Absensi</button></div>}
               {modalType === 'newMaterial' && <><input className="w-full p-2 border rounded" placeholder="Material" value={inputName} onChange={e=>setInputName(e.target.value)}/><button onClick={()=>createItem('materials', {id:Date.now(), name:inputName, unit:'Unit', stock:0, minStock:5})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
@@ -828,17 +643,8 @@ const App = () => {
         )}
         
         <div className="flex items-center gap-2">
-          {canAccessManagement() && view === 'project-list' && (
-             <button onClick={() => setView('user-management')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200">
-               <Settings size={18} />
-             </button>
-          )}
-          {view === 'user-management' && (
-            <button onClick={() => setView('project-list')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200">
-              <LayoutDashboard size={18} />
-            </button>
-          )}
-
+          {canAccessManagement() && view === 'project-list' && <button onClick={() => setView('user-management')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200"><Settings size={18} /></button>}
+          {view === 'user-management' && <button onClick={() => setView('project-list')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200"><LayoutDashboard size={18} /></button>}
           {view === 'project-list' && canEditProject() && <button onClick={() => openModal('newProject')} className="bg-blue-600 text-white p-2 rounded-full shadow"><Plus size={20}/></button>}
           <button onClick={handleLogout} className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100"><LogOut size={18} /></button>
         </div>
@@ -847,21 +653,9 @@ const App = () => {
       {/* USER MANAGEMENT VIEW */}
       {view === 'user-management' && canAccessManagement() && (
         <main className="p-4 max-w-md mx-auto space-y-4">
-          <div className="bg-blue-600 text-white p-6 rounded-xl shadow-lg mb-6">
-            <h2 className="font-bold text-lg flex items-center gap-2"><ShieldCheck/> Kelola Akses</h2>
-            <p className="text-sm text-blue-100 mt-1">Hanya Super Admin yang bisa melihat halaman ini.</p>
-          </div>
-          <button onClick={() => openModal('addUser')} className="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 p-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-blue-50">
-            <UserPlus size={20}/> Tambah User Baru
-          </button>
-          <div className="space-y-2">
-            {appUsers.map((u) => (
-              <div key={u.email} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
-                <div><p className="font-bold text-slate-800">{u.name}</p><p className="text-xs text-slate-500">{u.email}</p><span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block bg-slate-100 text-slate-700`}>{u.role.toUpperCase().replace('_', ' ')}</span></div>
-                {u.email !== user?.email && <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={18}/></button>}
-              </div>
-            ))}
-          </div>
+          <div className="bg-blue-600 text-white p-6 rounded-xl shadow-lg mb-6"><h2 className="font-bold text-lg flex items-center gap-2"><ShieldCheck/> Kelola Akses</h2><p className="text-sm text-blue-100 mt-1">Hanya Super Admin yang bisa melihat halaman ini.</p></div>
+          <button onClick={() => openModal('addUser')} className="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 p-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-blue-50"><UserPlus size={20}/> Tambah User Baru</button>
+          <div className="space-y-2">{appUsers.map((u) => (<div key={u.email} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center"><div><p className="font-bold text-slate-800">{u.name}</p><p className="text-xs text-slate-500">{u.email}</p><span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block bg-slate-100 text-slate-700`}>{u.role.toUpperCase().replace('_', ' ')}</span></div>{u.email !== user?.email && <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={18}/></button>}</div>))}</div>
         </main>
       )}
 
@@ -869,98 +663,24 @@ const App = () => {
       {view === 'project-list' && (
         <main className="p-4 max-w-md mx-auto space-y-4">
            {projects.length === 0 && <div className="text-center py-10 border border-dashed rounded-xl text-slate-400"><p>Belum ada proyek.</p><button onClick={loadDemoData} disabled={isSyncing} className="bg-green-600 text-white px-4 py-2 mt-4 rounded-lg font-bold text-sm hover:bg-green-700 shadow-lg flex items-center gap-2 mx-auto">{isSyncing ? <Loader2 className="animate-spin"/> : <RefreshCw size={16}/>} Muat Demo</button></div>}
-           {projects.map(p => (
-             <div key={p.id} onClick={() => { setActiveProjectId(p.id); setView('project-detail'); setActiveTab('dashboard'); }} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-shadow">
-                 <div className="flex justify-between mb-2"><h3 className="font-bold text-lg">{p.name}</h3><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{p.status}</span></div>
-                 <p className="text-sm text-slate-500 mb-3">{p.client}</p>
-                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2"><div className="bg-blue-600 h-full" style={{ width: `${getStats(p).prog}%` }}></div></div>
-                 <div className="flex justify-between text-xs text-slate-400 mt-2"><span>Progres: {getStats(p).prog.toFixed(0)}%</span>{canEditProject() && <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db, 'app_data', appId, 'projects', p.id))}} className="hover:text-red-500"><Trash2 size={14}/></button>}</div>
-             </div>
-           ))}
+           {projects.map(p => (<div key={p.id} onClick={() => { setActiveProjectId(p.id); setView('project-detail'); setActiveTab('dashboard'); }} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-shadow"><div className="flex justify-between mb-2"><h3 className="font-bold text-lg">{p.name}</h3><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{p.status}</span></div><p className="text-sm text-slate-500 mb-3">{p.client}</p><div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2"><div className="bg-blue-600 h-full" style={{ width: `${getStats(p).prog}%` }}></div></div><div className="flex justify-between text-xs text-slate-400 mt-2"><span>Progres: {getStats(p).prog.toFixed(0)}%</span>{canEditProject() && <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db, 'app_data', appId, 'projects', p.id))}} className="hover:text-red-500"><Trash2 size={14}/></button>}</div></div>))}
         </main>
       )}
 
-      {/* REPORT VIEW (GROUP BY CATEGORY) */}
+      {/* REPORT VIEW */}
       {view === 'report-view' && activeProject && canSeeMoney() && (
         <div className="min-h-screen bg-white">
           <header className="bg-slate-800 text-white px-4 py-4 flex items-center gap-3 sticky top-0 shadow-md z-20 print:hidden"><button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1 rounded"><ArrowLeft/></button><div><h2 className="font-bold uppercase tracking-wider text-sm">Laporan Detail</h2><p className="text-xs text-slate-300">{activeProject.name}</p></div></header>
-          
           <main className="p-4 max-w-3xl mx-auto print:max-w-none print:p-0">
-            <div className="hidden print:block mb-4 text-center">
-              <h1 className="text-2xl font-bold uppercase">{activeProject.name}</h1>
-              <p className="text-sm text-slate-500">Laporan Keuangan Proyek</p>
-            </div>
-
-            {/* Summary Box */}
+            <div className="hidden print:block mb-4 text-center"><h1 className="text-2xl font-bold uppercase">{activeProject.name}</h1><p className="text-sm text-slate-500">Laporan Keuangan Proyek</p></div>
             <section className="mb-6 grid grid-cols-2 gap-4 text-sm border-b pb-6 print:border-none print:pb-2">
                <div className="p-3 bg-green-50 rounded border border-green-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pemasukan</p><p className="font-bold text-green-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).inc)}</p></div>
                <div className="p-3 bg-red-50 rounded border border-red-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pengeluaran</p><p className="font-bold text-red-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).exp)}</p></div>
                <div className="p-3 bg-blue-50 rounded col-span-2 flex justify-between items-center border border-blue-100 print:bg-transparent print:border-black"><span className="text-slate-500 font-bold">SISA SALDO</span><span className="font-bold text-blue-600 text-xl print:text-black">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</span></div>
             </section>
-            
-            {/* Detailed Lists Grouped by Category */}
             <section className="mb-6">
-              
-              {/* PEMASUKAN */}
-              <div className="mb-6">
-                <h4 className="text-green-700 font-bold border-b border-green-200 pb-1 mb-2 print:text-black print:border-black">PEMASUKAN</h4>
-                <div className="space-y-1">
-                  {getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'income')).map((group) => (
-                    <div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none">
-                      <div onClick={() => toggleReportGroup(group.id)} className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold">
-                        <span className="text-sm font-medium">{group.date} • {group.category}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-green-600 print:text-black">{formatRupiah(group.totalAmount)}</span>
-                          <span className="print:hidden">{expandedReportIds[group.id] ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</span>
-                        </div>
-                      </div>
-                      <div className={`${expandedReportIds[group.id] ? 'block' : 'hidden'} print:block bg-white`}>
-                        <table className="w-full text-xs text-left">
-                          <tbody className="divide-y divide-slate-100">
-                            {group.items.map(t => (
-                              <tr key={t.id}>
-                                <td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td>
-                                <td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* PENGELUARAN */}
-              <div>
-                <h4 className="text-red-700 font-bold border-b border-red-200 pb-1 mb-2 print:text-black print:border-black">PENGELUARAN</h4>
-                <div className="space-y-1">
-                  {getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'expense')).map((group) => (
-                    <div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none">
-                      <div onClick={() => toggleReportGroup(group.id)} className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold">
-                        <span className="text-sm font-medium">{group.date} • {group.category}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-red-600 print:text-black">{formatRupiah(group.totalAmount)}</span>
-                          <span className="print:hidden">{expandedReportIds[group.id] ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</span>
-                        </div>
-                      </div>
-                      <div className={`${expandedReportIds[group.id] ? 'block' : 'hidden'} print:block bg-white`}>
-                        <table className="w-full text-xs text-left">
-                          <tbody className="divide-y divide-slate-100">
-                            {group.items.map(t => (
-                              <tr key={t.id}>
-                                <td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td>
-                                <td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+              <div className="mb-6"><h4 className="text-green-700 font-bold border-b border-green-200 pb-1 mb-2 print:text-black print:border-black">PEMASUKAN</h4><div className="space-y-1">{getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'income')).map((group) => (<div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none"><div onClick={() => toggleReportGroup(group.id)} className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold"><span className="text-sm font-medium">{group.date} • {group.category}</span><div className="flex items-center gap-2"><span className="text-sm font-bold text-green-600 print:text-black">{formatRupiah(group.totalAmount)}</span><span className="print:hidden">{expandedReportIds[group.id] ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</span></div></div><div className={`${expandedReportIds[group.id] ? 'block' : 'hidden'} print:block bg-white`}><table className="w-full text-xs text-left"><tbody className="divide-y divide-slate-100">{group.items.map(t => (<tr key={t.id}><td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td><td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td></tr>))}</tbody></table></div></div>))}</div></div>
+              <div><h4 className="text-red-700 font-bold border-b border-red-200 pb-1 mb-2 print:text-black print:border-black">PENGELUARAN</h4><div className="space-y-1">{getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'expense')).map((group) => (<div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none"><div onClick={() => toggleReportGroup(group.id)} className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold"><span className="text-sm font-medium">{group.date} • {group.category}</span><div className="flex items-center gap-2"><span className="text-sm font-bold text-red-600 print:text-black">{formatRupiah(group.totalAmount)}</span><span className="print:hidden">{expandedReportIds[group.id] ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</span></div></div><div className={`${expandedReportIds[group.id] ? 'block' : 'hidden'} print:block bg-white`}><table className="w-full text-xs text-left"><tbody className="divide-y divide-slate-100">{group.items.map(t => (<tr key={t.id}><td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td><td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td></tr>))}</tbody></table></div></div>))}</div></div>
             </section>
             <button onClick={() => window.print()} className="w-full bg-slate-800 text-white p-3 rounded font-bold mb-10 flex justify-center gap-2 print:hidden"><Printer size={18}/> Cetak Laporan</button>
           </main>
@@ -973,28 +693,15 @@ const App = () => {
           {activeTab === 'dashboard' && (
             <div className="space-y-4">
                <div className="flex justify-between items-center"><h2 className="text-lg font-bold text-slate-800 truncate flex-1">{activeProject.name}</h2>{userRole === 'kontraktor' && <button onClick={() => openModal('editProject')} className="text-blue-600 p-2 rounded hover:bg-blue-50"><Settings size={20}/></button>}</div>
-               
-               {canSeeMoney() && (
-                 <div className="bg-blue-600 text-white p-5 rounded-xl shadow-lg">
-                   <p className="text-blue-200 text-xs mb-1">Saldo Kas Proyek</p>
-                   <h2 className="text-3xl font-bold">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</h2>
-                 </div>
-               )}
-
+               {canSeeMoney() && (<div className="bg-blue-600 text-white p-5 rounded-xl shadow-lg"><p className="text-blue-200 text-xs mb-1">Saldo Kas Proyek</p><h2 className="text-3xl font-bold">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</h2></div>)}
                <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
-               
-               {canSeeMoney() && (
-                 <button onClick={() => setView('report-view')} className="w-full bg-white border-2 border-blue-600 text-blue-600 p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-50 transition-colors"><FileText size={20}/> Lihat Laporan Detail</button>
-               )}
+               {canSeeMoney() && <button onClick={() => setView('report-view')} className="w-full bg-white border-2 border-blue-600 text-blue-600 p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-50 transition-colors"><FileText size={20}/> Lihat Laporan Detail</button>}
             </div>
           )}
 
           {activeTab === 'finance' && canAccessFinance() && (
             <div className="space-y-4">
-              <div className="bg-white p-4 rounded-xl border shadow-sm">
-                <div className="flex gap-2 mb-3 bg-slate-100 p-1 rounded-lg"><button onClick={() => setTxType('expense')} className={`flex-1 py-1 text-xs font-bold rounded ${txType === 'expense' ? 'bg-white shadow text-red-600' : 'text-slate-500'}`}>Pengeluaran</button><button onClick={() => setTxType('income')} className={`flex-1 py-1 text-xs font-bold rounded ${txType === 'income' ? 'bg-white shadow text-green-600' : 'text-slate-500'}`}>Pemasukan</button></div>
-                <form onSubmit={handleTransaction} className="space-y-3"><select name="cat" className="w-full p-2 border rounded text-sm bg-white">{txType === 'expense' ? <><option>Material</option><option>Upah Tukang</option><option>Operasional</option></> : <option>Termin/DP</option>}</select><input required name="desc" placeholder="Keterangan" className="w-full p-2 border rounded text-sm"/><input required name="amount" type="number" placeholder="Nominal" className="w-full p-2 border rounded text-sm"/><button className={`w-full text-white p-2 rounded font-bold text-sm ${txType === 'expense' ? 'bg-red-600' : 'bg-green-600'}`}>Simpan</button></form>
-              </div>
+              <div className="bg-white p-4 rounded-xl border shadow-sm"><div className="flex gap-2 mb-3 bg-slate-100 p-1 rounded-lg"><button onClick={() => setTxType('expense')} className={`flex-1 py-1 text-xs font-bold rounded ${txType === 'expense' ? 'bg-white shadow text-red-600' : 'text-slate-500'}`}>Pengeluaran</button><button onClick={() => setTxType('income')} className={`flex-1 py-1 text-xs font-bold rounded ${txType === 'income' ? 'bg-white shadow text-green-600' : 'text-slate-500'}`}>Pemasukan</button></div><form onSubmit={handleTransaction} className="space-y-3"><select name="cat" className="w-full p-2 border rounded text-sm bg-white">{txType === 'expense' ? <><option>Material</option><option>Upah Tukang</option><option>Operasional</option></> : <option>Termin/DP</option>}</select><input required name="desc" placeholder="Keterangan" className="w-full p-2 border rounded text-sm"/><input required name="amount" type="number" placeholder="Nominal" className="w-full p-2 border rounded text-sm"/><button className={`w-full text-white p-2 rounded font-bold text-sm ${txType === 'expense' ? 'bg-red-600' : 'bg-green-600'}`}>Simpan</button></form></div>
               <div className="space-y-2">{getGroupedTransactions(activeProject.transactions).map(group => (<TransactionGroup key={group.id} group={group} isExpanded={expandedGroups[group.id]} onToggle={() => toggleGroup(group.id)} />))}</div>
             </div>
           )}
@@ -1002,110 +709,16 @@ const App = () => {
           {activeTab === 'workers' && canAccessWorkers() && (
             <div className="space-y-4">
                <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-3 rounded-xl shadow font-bold flex justify-center gap-2"><Calendar size={20} /> Isi Absensi</button>
-               
-               {/* MODUL REKAP ABSENSI BARU: RANGE DATE PICKER */}
-               <div className="bg-white p-4 rounded-xl border shadow-sm mt-4">
-                 <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><FileText size={16}/> Rekap & Filter</h3>
-                 
-                 {/* DATE RANGE FILTER UI */}
-                 <div className="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                   <div className="flex-1">
-                     <label className="text-[10px] text-slate-400 block mb-1">Dari</label>
-                     <input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" />
-                   </div>
-                   <div className="flex items-center text-slate-400">-</div>
-                   <div className="flex-1">
-                     <label className="text-[10px] text-slate-400 block mb-1">Sampai</label>
-                     <input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" />
-                   </div>
-                 </div>
-                 
-                 <div className="overflow-x-auto">
-                   <table className="w-full text-xs">
-                     <thead>
-                       <tr className="border-b bg-slate-50 text-slate-500">
-                         <th className="p-2 text-left">Nama</th>
-                         <th className="p-2 text-center">Hadir</th>
-                         <th className="p-2 text-center">Lembur</th>
-                         {canSeeMoney() && <th className="p-2 text-right">Est. Upah</th>}
-                       </tr>
-                     </thead>
-                     <tbody>
-                       {getFilteredAttendance().map((stat: any, idx) => (
-                         <tr key={idx} className="border-b last:border-0 hover:bg-slate-50">
-                           <td className="p-2 font-medium">
-                             {stat.name} 
-                             <span className="text-[9px] text-slate-400 block">{stat.role} • {stat.unit}</span>
-                           </td>
-                           <td className="p-2 text-center font-bold text-green-600">{stat.hadir}</td>
-                           <td className="p-2 text-center font-bold text-blue-600">{stat.lembur}</td>
-                           {canSeeMoney() && <td className="p-2 text-right font-bold">{formatRupiah(stat.totalCost)}</td>}
-                         </tr>
-                       ))}
-                       {getFilteredAttendance().length === 0 && <tr><td colSpan={canSeeMoney() ? 4 : 3} className="p-4 text-center text-slate-400">Tidak ada data di periode ini.</td></tr>}
-                     </tbody>
-                   </table>
-                 </div>
-               </div>
-
+               <div className="bg-white p-4 rounded-xl border shadow-sm mt-4"><h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><FileText size={16}/> Rekap & Filter</h3><div className="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100"><div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1">Dari</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" /></div><div className="flex items-center text-slate-400">-</div><div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1">Sampai</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" /></div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="border-b bg-slate-50 text-slate-500"><th className="p-2 text-left">Nama</th><th className="p-2 text-center">Hadir</th><th className="p-2 text-center">Lembur</th>{canSeeMoney() && <th className="p-2 text-right">Est. Upah</th>}</tr></thead><tbody>{getFilteredAttendance().map((stat: any, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-slate-50"><td className="p-2 font-medium">{stat.name} <span className="text-[9px] text-slate-400 block">{stat.role} • {stat.unit}</span></td><td className="p-2 text-center font-bold text-green-600">{stat.hadir}</td><td className="p-2 text-center font-bold text-blue-600">{stat.lembur}</td>{canSeeMoney() && <td className="p-2 text-right font-bold">{formatRupiah(stat.totalCost)}</td>}</tr>))}{getFilteredAttendance().length === 0 && <tr><td colSpan={canSeeMoney() ? 4 : 3} className="p-4 text-center text-slate-400">Tidak ada data di periode ini.</td></tr>}</tbody></table></div></div>
                <div className="flex justify-between items-center mt-4 mb-2"><h3 className="font-bold text-slate-700">Daftar Tim</h3><button onClick={() => openModal('newWorker')} className="text-xs bg-slate-200 px-2 py-1 rounded font-bold">+ Baru</button></div>
-               {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div>
-               
-               {/* EDIT & DELETE BUTTONS FOR WORKER */}
-               <div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3">
-                 {canSeeMoney() && <div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>}
-                 <div className="flex gap-2">
-                    {canSeeMoney() && f.balance > 0 && <button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>}
-                    {canAccessWorkers() && (
-                      <>
-                        <button onClick={() => handleEditWorker(w)} className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200"><Edit size={14}/></button>
-                        <button onClick={() => handleDeleteWorker(w)} className="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200"><Trash2 size={14}/></button>
-                      </>
-                    )}
-                 </div>
-               </div>
-               </div>)})}
+               {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div><div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3">{canSeeMoney() && <div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>}<div className="flex gap-2">{canSeeMoney() && f.balance > 0 && <button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>}{canAccessWorkers() && (<><button onClick={() => handleEditWorker(w)} className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200"><Edit size={14}/></button><button onClick={() => handleDeleteWorker(w)} className="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200"><Trash2 size={14}/></button></>)}</div></div></div>)})}
             </div>
           )}
           
-          {/* TAB LOGISTICS - NOW WITH HISTORY & CARDS */}
           {activeTab === 'logistics' && (
              <div className="space-y-4">
-               <div className="flex justify-between items-center">
-                 <h3 className="font-bold text-slate-700">Stok Material</h3>
-                 <button onClick={() => openModal('newMaterial')} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-700 shadow-sm">+ Material</button>
-               </div>
-               
-               <div className="grid grid-cols-1 gap-3">
-                 {(activeProject.materials || []).map(m => (
-                   <div key={m.id} className="bg-white p-4 rounded-xl border shadow-sm relative overflow-hidden">
-                     {/* Low Stock Indicator */}
-                     {m.stock <= m.minStock && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-2 py-1 rounded-bl-lg font-bold flex items-center gap-1"><AlertTriangle size={10}/> STOK MENIPIS</div>}
-                     
-                     <div className="flex justify-between items-start mb-3">
-                       <div>
-                         <div className="font-bold text-slate-800 text-lg">{m.name}</div>
-                         <div className="text-xs text-slate-500">Min. Stok: {m.minStock} {m.unit}</div>
-                       </div>
-                       <div className="text-right">
-                         <div className={`text-2xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div>
-                         <div className="text-xs text-slate-400">{m.unit}</div>
-                       </div>
-                     </div>
-
-                     <div className="flex gap-2 border-t pt-3">
-                       <button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-1 border border-slate-200">
-                         <Edit size={14} /> Update Stok
-                       </button>
-                       <button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded hover:bg-slate-100 border border-slate-200">
-                         <History size={16}/>
-                       </button>
-                     </div>
-                   </div>
-                 ))}
-                 
-                 {(activeProject.materials || []).length === 0 && <div className="text-center p-8 text-slate-400 border-2 border-dashed rounded-xl">Belum ada material.</div>}
-               </div>
+               <div className="flex justify-between items-center"><h3 className="font-bold text-slate-700">Stok Material</h3><button onClick={() => openModal('newMaterial')} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-700 shadow-sm">+ Material</button></div>
+               <div className="grid grid-cols-1 gap-3">{(activeProject.materials || []).map(m => (<div key={m.id} className="bg-white p-4 rounded-xl border shadow-sm relative overflow-hidden">{m.stock <= m.minStock && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-2 py-1 rounded-bl-lg font-bold flex items-center gap-1"><AlertTriangle size={10}/> STOK MENIPIS</div>}<div className="flex justify-between items-start mb-3"><div><div className="font-bold text-slate-800 text-lg">{m.name}</div><div className="text-xs text-slate-500">Min. Stok: {m.minStock} {m.unit}</div></div><div className="text-right"><div className={`text-2xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div><div className="text-xs text-slate-400">{m.unit}</div></div></div><div className="flex gap-2 border-t pt-3"><button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-1 border border-slate-200"><Edit size={14} /> Update Stok</button><button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded hover:bg-slate-100 border border-slate-200"><History size={16}/></button></div></div>))}{(activeProject.materials || []).length === 0 && <div className="text-center p-8 text-slate-400 border-2 border-dashed rounded-xl">Belum ada material.</div>}</div>
              </div>
           )}
 
@@ -1113,15 +726,7 @@ const App = () => {
              <div className="space-y-4">
                 <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
                 <button onClick={() => openModal('newTask')} className="text-sm font-bold text-blue-600">+ Tambah Pekerjaan</button>
-                {(activeProject.tasks || []).map(t => (
-                  <div key={t.id} className="bg-white p-3 rounded-xl border shadow-sm">
-                    <div className="flex justify-between text-sm mb-2"><div><p className="font-bold">{t.name}</p><p className="text-xs text-slate-500">Bobot: {t.weight}%</p></div><div className="text-right"><span className="font-bold text-blue-600 text-lg">{t.progress}%</span><p className="text-[10px] text-slate-400">Last: {t.lastUpdated ? new Date(t.lastUpdated).toLocaleDateString() : '-'}</p></div></div>
-                    <div className="flex gap-2">
-                      <button onClick={() => { setSelectedTask(t); setProgressInput(t.progress); setProgressDate(new Date().toISOString().split('T')[0]); openModal('updateProgress'); }} className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-2 border border-slate-200"><Edit size={14} /> Update Progres</button>
-                      <button onClick={() => { setSelectedTask(t); openModal('taskHistory'); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded hover:bg-slate-100 border border-slate-200"><History size={16}/></button>
-                    </div>
-                  </div>
-                ))}
+                {(activeProject.tasks || []).map(t => (<div key={t.id} className="bg-white p-3 rounded-xl border shadow-sm"><div className="flex justify-between text-sm mb-2"><div><p className="font-bold">{t.name}</p><p className="text-xs text-slate-500">Bobot: {t.weight}%</p></div><div className="text-right"><span className="font-bold text-blue-600 text-lg">{t.progress}%</span><p className="text-[10px] text-slate-400">Last: {t.lastUpdated ? new Date(t.lastUpdated).toLocaleDateString() : '-'}</p></div></div><div className="flex gap-2"><button onClick={() => { setSelectedTask(t); setProgressInput(t.progress); setProgressDate(new Date().toISOString().split('T')[0]); openModal('updateProgress'); }} className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-2 border border-slate-200"><Edit size={14} /> Update Progres</button><button onClick={() => { setSelectedTask(t); openModal('taskHistory'); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded hover:bg-slate-100 border border-slate-200"><History size={16}/></button></div></div>))}
              </div>
           )}
         </main>
