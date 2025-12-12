@@ -14,7 +14,7 @@ import type { User } from 'firebase/auth';
 
 import { 
   getFirestore, collection, doc, addDoc, updateDoc, 
-  deleteDoc, onSnapshot, query, setDoc, getDoc, where
+  deleteDoc, onSnapshot, query, setDoc, getDoc
 } from 'firebase/firestore';
 
 // --- KONFIGURASI FIREBASE ---
@@ -424,7 +424,7 @@ const App = () => {
     try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); }
   };
 
-  // --- TAMPILAN LOGIN ---
+  // --- TAMPILAN LOGIN (JIKA BELUM LOGIN) ---
   if (!user && authStatus !== 'loading') {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
