@@ -87,9 +87,7 @@ type GroupedTransaction = {
 
 // --- HELPER COMPONENTS ---
 
-// SCurve Chart Component (FIXED SCALING)
 const SCurveChart = ({ stats, project, compact = false }: { stats: any, project: Project, compact?: boolean }) => {
-  // Helper untuk generate label tanggal di sumbu X
   const getAxisDates = () => {
     if (!project.startDate || !project.endDate) return [];
     const start = new Date(project.startDate);
@@ -97,7 +95,6 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
     
-    // Kita ambil 5 titik tanggal: 0%, 25%, 50%, 75%, 100%
     const points = [0, 0.25, 0.5, 0.75, 1];
     return points.map(p => {
       const d = new Date(start.getTime() + (diffDays * p * 24 * 60 * 60 * 1000));
@@ -114,30 +111,15 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
          <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> 
          <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
          
-         {/* FIX: Menambahkan viewBox dan preserveAspectRatio agar grafik melar full width */}
          <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Grid Lines Horizontal */}
             <line x1="0" y1="25" x2="100" y2="25" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="75" x2="100" y2="75" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
-
-            {/* Diagonal Target Line (Plan) */}
             <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2" />
-            
-            {/* Real Progress Line (S-Curve) */}
-            <polyline 
-              fill="none" 
-              stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} 
-              strokeWidth="2" 
-              points={stats.curvePoints} 
-              vectorEffect="non-scaling-stroke" 
-            />
-            
-            {/* Current Point Dot */}
+            <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="2" points={stats.curvePoints} vectorEffect="non-scaling-stroke" />
             <circle cx={stats.timeProgress} cy={100 - stats.prog} r="1.5" fill="white" stroke="black" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
          </svg>
 
-         {/* X-Axis Date Labels */}
          <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">
             {dateLabels.map((date, idx) => (
               <span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>
@@ -392,29 +374,6 @@ const App = () => {
     });
 
     return Object.values(workerStats);
-  };
-
-  const generateSCurvePoints = (p: Project) => {
-    if (!p.taskLogs || p.taskLogs.length === 0) return "0,100"; 
-    const start = new Date(p.startDate).getTime(); const end = new Date(p.endDate).getTime(); const totalDuration = end - start;
-    if (totalDuration <= 0) return "0,100";
-    const uniqueDates = Array.from(new Set(p.taskLogs.map(l => l.date))).sort();
-    if (!uniqueDates.includes(p.startDate.split('T')[0])) uniqueDates.unshift(p.startDate.split('T')[0]);
-    const today = new Date().toISOString().split('T')[0];
-    if (!uniqueDates.includes(today)) uniqueDates.push(today);
-    const points: string[] = [];
-    const taskProgressState: {[taskId: number]: number} = {};
-    p.tasks.forEach(t => taskProgressState[t.id] = 0);
-    uniqueDates.forEach(dateStr => {
-      const dateVal = new Date(dateStr).getTime();
-      const logsUntilNow = p.taskLogs.filter(l => new Date(l.date).getTime() <= dateVal);
-      logsUntilNow.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(log => { taskProgressState[log.taskId] = log.newProgress; });
-      let totalProg = 0;
-      p.tasks.forEach(t => { const currentProg = taskProgressState[t.id] || 0; totalProg += (currentProg * t.weight / 100); });
-      let x = ((dateVal - start) / totalDuration) * 100; x = Math.max(0, Math.min(100, x));
-      let y = 100 - totalProg; points.push(`${x},${y}`);
-    });
-    return points.join(" ");
   };
 
   const getStats = (p: Project) => {
