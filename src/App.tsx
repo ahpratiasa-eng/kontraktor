@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Minus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
-  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus
+  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
+  History, ArrowUpCircle, ArrowDownCircle, AlertTriangle
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -45,14 +46,24 @@ type AppUser = {
 type Transaction = { id: number; date: string; category: string; description: string; amount: number; type: 'expense' | 'income'; workerId?: number; };
 type Material = { id: number; name: string; unit: string; stock: number; minStock: number; };
 
-// Update Worker Type untuk support Satuan Upah
+// Tipe Baru untuk Log Material
+type MaterialLog = {
+  id: number;
+  materialId: number;
+  date: string;
+  type: 'in' | 'out'; // Masuk atau Keluar
+  quantity: number;
+  notes: string; // Keterangan (misal: Beli di TB Abadi / Dipakai Cor Lantai 1)
+  actor: string; // Siapa yang input
+};
+
 type Worker = { 
   id: number; 
   name: string; 
   role: 'Tukang' | 'Kenek' | 'Mandor'; 
   realRate: number; 
   mandorRate: number; 
-  wageUnit: 'Harian' | 'Mingguan' | 'Bulanan'; // Field Baru
+  wageUnit: 'Harian' | 'Mingguan' | 'Bulanan'; 
 };
 
 type Task = { id: number; name: string; weight: number; progress: number; lastUpdated: string; };
@@ -62,8 +73,13 @@ type TaskLog = { id: number; date: string; taskId: number; previousProgress: num
 type Project = { 
   id: string; name: string; client: string; location: string; status: string; budgetLimit: number; 
   startDate: string; endDate: string; 
-  transactions: Transaction[]; materials: Material[]; workers: Worker[]; tasks: Task[]; 
-  attendanceLogs: AttendanceLog[]; taskLogs: TaskLog[];
+  transactions: Transaction[]; 
+  materials: Material[]; 
+  materialLogs: MaterialLog[]; // Field Baru
+  workers: Worker[]; 
+  tasks: Task[]; 
+  attendanceLogs: AttendanceLog[]; 
+  taskLogs: TaskLog[];
 };
 
 type GroupedTransaction = {
@@ -96,11 +112,18 @@ const App = () => {
   const [inputEndDate, setInputEndDate] = useState('');
   const [inputWeight, setInputWeight] = useState(0);
   
-  // New Worker Inputs
+  // Worker Inputs
   const [inputRealRate, setInputRealRate] = useState(150000);
   const [inputMandorRate, setInputMandorRate] = useState(170000);
   const [inputWorkerRole, setInputWorkerRole] = useState<'Tukang' | 'Kenek' | 'Mandor'>('Tukang');
   const [inputWageUnit, setInputWageUnit] = useState<'Harian' | 'Mingguan' | 'Bulanan'>('Harian');
+
+  // Stock Inputs
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const [stockType, setStockType] = useState<'in' | 'out'>('in');
+  const [stockQty, setStockQty] = useState(0);
+  const [stockDate, setStockDate] = useState(new Date().toISOString().split('T')[0]);
+  const [stockNotes, setStockNotes] = useState('');
 
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
@@ -109,15 +132,16 @@ const App = () => {
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
   
-  // ATTENDANCE & REKAP STATES
+  // ATTENDANCE & REKAP
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({});
+  const [rekapFilter, setRekapFilter] = useState<'day' | 'week' | 'month'>('month');
+  const [rekapDate, setRekapDate] = useState(new Date().toISOString().split('T')[0]); 
   
-  // FILTER RANGE BARU
+  // FILTER RANGE
   const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // UI STATES
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
   const [expandedReportIds, setExpandedReportIds] = useState<{[id: string]: boolean}>({});
 
@@ -212,6 +236,7 @@ const App = () => {
           tasks: Array.isArray(data.tasks) ? data.tasks : [], 
           workers: Array.isArray(data.workers) ? data.workers : [], 
           materials: Array.isArray(data.materials) ? data.materials : [], 
+          materialLogs: Array.isArray(data.materialLogs) ? data.materialLogs : [], // Init Logs
           taskLogs: Array.isArray(data.taskLogs) ? data.taskLogs : [],
           endDate: data.endDate || new Date(new Date(data.startDate).setDate(new Date(data.startDate).getDate() + 30)).toISOString()
         } as Project;
@@ -249,11 +274,9 @@ const App = () => {
     return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  // --- LOGIC REKAP ABSENSI (RANGE & COST CALC) ---
   const getFilteredAttendance = () => {
     if (!activeProject || !activeProject.attendanceLogs) return [];
     
-    // Filter berdasarkan Range Tanggal
     const start = new Date(filterStartDate); start.setHours(0,0,0,0);
     const end = new Date(filterEndDate); end.setHours(23,59,59,999);
 
@@ -271,13 +294,11 @@ const App = () => {
     filteredLogs.forEach(log => {
       if (workerStats[log.workerId]) {
         const worker = activeProject.workers.find(w => w.id === log.workerId);
-        
-        // LOGIKA KONVERSI UPAH KE HARIAN (UNTUK ESTIMASI BIAYA)
         let dailyRate = 0;
         if (worker) {
           if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7;
           else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30;
-          else dailyRate = worker.mandorRate; // Default Harian
+          else dailyRate = worker.mandorRate; 
         }
 
         if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += dailyRate; }
@@ -325,7 +346,6 @@ const App = () => {
     let timeProgress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
     if (totalDuration <= 0) timeProgress = 0;
     
-    // Estimasi Leak/Cost perlu memperhitungkan unit upah
     let mandorCost = 0; let realCost = 0;
     (p.workers || []).forEach(w => { 
       const logs = p.attendanceLogs || []; 
@@ -355,12 +375,9 @@ const App = () => {
   const calculateWorkerFinancials = (p: Project, workerId: number) => {
     const worker = p.workers.find(w => w.id === workerId); if (!worker) return { totalDue: 0, totalPaid: 0, balance: 0 };
     const days = calculateTotalDays(p.attendanceLogs, workerId); 
-    
-    // Hitung hutang berdasarkan unit
     let dailyRate = worker.mandorRate;
     if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7;
     if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30;
-
     const totalDue = days * dailyRate;
     const totalPaid = (p.transactions || []).filter(t => t.workerId === workerId && t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
     return { totalDue, totalPaid, balance: totalDue - totalPaid };
@@ -405,6 +422,43 @@ const App = () => {
     updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false);
   };
 
+  // LOGIC UPDATE STOK
+  const handleStockMovement = () => {
+    if (!activeProject || !selectedMaterial || stockQty <= 0) return;
+    
+    // 1. Update Stok di Array Material
+    const updatedMaterials = activeProject.materials.map(m => {
+      if (m.id === selectedMaterial.id) {
+        return {
+          ...m,
+          stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty
+        };
+      }
+      return m;
+    });
+
+    // 2. Catat Log
+    const newLog: MaterialLog = {
+      id: Date.now(),
+      materialId: selectedMaterial.id,
+      date: stockDate,
+      type: stockType,
+      quantity: stockQty,
+      notes: stockNotes || '-',
+      actor: user?.displayName || 'User'
+    };
+
+    updateProject({ 
+      materials: updatedMaterials, 
+      materialLogs: [newLog, ...(activeProject.materialLogs || [])] 
+    });
+    
+    setShowModal(false);
+    // Reset form
+    setStockQty(0);
+    setStockNotes('');
+  };
+
   const openModal = (type: any) => {
     setModalType(type); setInputName(''); setInputWeight(0); 
     if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); }
@@ -418,6 +472,8 @@ const App = () => {
       setInputWorkerRole('Tukang'); 
       setInputWageUnit('Harian'); 
     }
+    // Set default stock date to today
+    setStockDate(new Date().toISOString().split('T')[0]);
     setShowModal(true);
   };
 
@@ -442,7 +498,6 @@ const App = () => {
     </div>
   );
 
-  // COMPONENT UNTUK TAB KEUANGAN
   const TransactionGroup = ({ group, isExpanded, onToggle }: any) => (
     <div className="bg-white rounded-xl border shadow-sm mb-2 overflow-hidden transition-all">
       <div onClick={onToggle} className="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-50">
@@ -472,7 +527,14 @@ const App = () => {
         {id:80, date:d(6), category:'Upah Tukang', description:'Gaji Pak Mamat', amount:2500000, type:'expense', workerId:1},
         {id:81, date:d(6), category:'Upah Tukang', description:'Gaji Kang Ujang', amount:2000000, type:'expense', workerId:2},
       ],
-      materials: [],
+      materials: [
+        {id:1, name:'Semen Tiga Roda', unit:'Sak', stock:50, minStock:20}, 
+        {id:2, name:'Bata Merah', unit:'Pcs', stock:5000, minStock:1000}
+      ],
+      materialLogs: [
+        {id:1, materialId:1, date:d(0), type:'in', quantity:100, notes:'Beli Awal', actor:'Admin'},
+        {id:2, materialId:1, date:d(2), type:'out', quantity:50, notes:'Cor Pondasi', actor:'Admin'}
+      ],
       workers: [
         {id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000, wageUnit:'Harian'}, 
         {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000, wageUnit:'Harian'},
@@ -565,6 +627,49 @@ const App = () => {
                   </div>
                   <button onClick={()=>createItem('workers', {id:Date.now(), name:inputName, role:inputWorkerRole, wageUnit:inputWageUnit, realRate:inputRealRate, mandorRate:inputMandorRate})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button>
                 </>
+              )}
+
+              {/* MODAL STOCK MOVEMENT */}
+              {modalType === 'stockMovement' && selectedMaterial && (
+                <>
+                  <h4 className="font-bold text-slate-700">{selectedMaterial.name}</h4>
+                  <p className="text-xs text-slate-500 mb-2">Stok Saat Ini: {selectedMaterial.stock} {selectedMaterial.unit}</p>
+                  
+                  <div className="flex gap-2 mb-2">
+                    <button onClick={() => setStockType('in')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='in' ? 'bg-green-100 border-green-300 text-green-700' : 'border-slate-200'}`}>Masuk (+)</button>
+                    <button onClick={() => setStockType('out')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='out' ? 'bg-red-100 border-red-300 text-red-700' : 'border-slate-200'}`}>Keluar (-)</button>
+                  </div>
+
+                  <input type="number" className="w-full p-2 border rounded font-bold text-lg" placeholder="Jumlah" value={stockQty} onChange={e => setStockQty(Number(e.target.value))}/>
+                  <input type="date" className="w-full p-2 border rounded" value={stockDate} onChange={e => setStockDate(e.target.value)}/>
+                  <input className="w-full p-2 border rounded" placeholder="Keterangan (Wajib)" value={stockNotes} onChange={e => setStockNotes(e.target.value)}/>
+                  
+                  <button onClick={handleStockMovement} disabled={!stockNotes || stockQty <= 0} className={`w-full text-white p-2 rounded font-bold ${!stockNotes || stockQty <= 0 ? 'bg-slate-300' : 'bg-blue-600'}`}>Simpan Riwayat</button>
+                </>
+              )}
+
+              {/* MODAL HISTORY LOGS */}
+              {modalType === 'stockHistory' && selectedMaterial && (
+                <div className="max-h-96 overflow-y-auto">
+                  <h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedMaterial.name}</h4>
+                  <div className="space-y-3">
+                    {(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (
+                      <div key={log.id} className="text-sm border-b pb-2">
+                        <div className="flex justify-between">
+                          <span className="font-bold text-slate-700">{log.date}</span>
+                          <span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>
+                            {log.type === 'in' ? '+' : '-'}{log.quantity}
+                          </span>
+                        </div>
+                        <div className="text-slate-500 text-xs mt-1 flex justify-between">
+                          <span>{log.notes}</span>
+                          <span className="italic">{log.actor}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat.</p>}
+                  </div>
+                </div>
               )}
 
               {modalType === 'payWorker' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} /><button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-2 rounded font-bold">Bayar</button></>}
@@ -815,9 +920,47 @@ const App = () => {
             </div>
           )}
           
+          {/* TAB LOGISTICS - NOW WITH HISTORY & CARDS */}
           {activeTab === 'logistics' && (
-             <div className="space-y-3"><button onClick={() => openModal('newMaterial')} className="w-full py-2 border border-dashed rounded text-sm font-bold text-slate-500">+ Tambah Material</button>{(activeProject.materials || []).map(m => (<div key={m.id} className="bg-white p-3 rounded border flex justify-between items-center"><div><div className="font-bold text-sm">{m.name}</div><div className="text-xs text-slate-500">Stok: {m.stock} {m.unit}</div></div><div className="flex gap-2"><button onClick={() => updateProject({materials: activeProject.materials.map(x=>x.id===m.id?{...x,stock:x.stock-1}:x)})} className="w-8 h-8 bg-red-100 text-red-600 rounded flex items-center justify-center"><Minus size={14}/></button><button onClick={() => updateProject({materials: activeProject.materials.map(x=>x.id===m.id?{...x,stock:x.stock+1}:x)})} className="w-8 h-8 bg-green-100 text-green-600 rounded flex items-center justify-center"><Plus size={14}/></button></div></div>))}</div>
+             <div className="space-y-4">
+               <div className="flex justify-between items-center">
+                 <h3 className="font-bold text-slate-700">Stok Material</h3>
+                 <button onClick={() => openModal('newMaterial')} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-700 shadow-sm">+ Material</button>
+               </div>
+               
+               <div className="grid grid-cols-1 gap-3">
+                 {(activeProject.materials || []).map(m => (
+                   <div key={m.id} className="bg-white p-4 rounded-xl border shadow-sm relative overflow-hidden">
+                     {/* Low Stock Indicator */}
+                     {m.stock <= m.minStock && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-2 py-1 rounded-bl-lg font-bold flex items-center gap-1"><AlertTriangle size={10}/> STOK MENIPIS</div>}
+                     
+                     <div className="flex justify-between items-start mb-3">
+                       <div>
+                         <div className="font-bold text-slate-800 text-lg">{m.name}</div>
+                         <div className="text-xs text-slate-500">Min. Stok: {m.minStock} {m.unit}</div>
+                       </div>
+                       <div className="text-right">
+                         <div className={`text-2xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div>
+                         <div className="text-xs text-slate-400">{m.unit}</div>
+                       </div>
+                     </div>
+
+                     <div className="flex gap-2 border-t pt-3">
+                       <button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-1 border border-slate-200">
+                         <Edit size={14} /> Update Stok
+                       </button>
+                       <button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded hover:bg-slate-100 border border-slate-200">
+                         <History size={16}/>
+                       </button>
+                     </div>
+                   </div>
+                 ))}
+                 
+                 {(activeProject.materials || []).length === 0 && <div className="text-center p-8 text-slate-400 border-2 border-dashed rounded-xl">Belum ada material.</div>}
+               </div>
+             </div>
           )}
+
           {activeTab === 'progress' && (
              <div className="space-y-4">
                 <SCurveChart stats={getStats(activeProject)} compact={true} />
