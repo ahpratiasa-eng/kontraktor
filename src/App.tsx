@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-// HANYA IMPORT YANG BENAR-BENAR DIPAKAI
 import { 
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Minus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
-  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp
+  CheckCircle, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
-// IMPORT DIPISAH UNTUK MENGHINDARI ERROR TIPE
+// IMPORT LOGIN GOOGLE
 import { 
-  getAuth, signInAnonymously, onAuthStateChanged
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 
@@ -31,6 +30,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider(); // Provider Google
 const db = getFirestore(app);
 const appId = 'kontraktor-pro-live'; 
 
@@ -83,16 +83,37 @@ const App = () => {
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({});
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({});
 
+  // --- LOGIC LOGIN/LOGOUT ---
   useEffect(() => {
-    const initAuth = async () => {
-      try { await signInAnonymously(auth); } catch (error) { setAuthStatus('error'); }
-    };
-    initAuth();
-    return onAuthStateChanged(auth, (u) => { if(u) { setUser(u); setAuthStatus('connected'); } });
+    // Hanya listen auth state, tidak auto login anonim lagi
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthStatus('connected');
+    });
+    return () => unsubscribe();
   }, []);
 
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login gagal", error);
+      alert("Login Gagal. Cek koneksi atau popup blocker.");
+    }
+  };
+
+  const handleLogout = async () => {
+    if(confirm("Yakin ingin keluar?")) {
+      await signOut(auth);
+      setProjects([]); // Bersihkan data di memori
+    }
+  };
+
+  // --- FIRESTORE SYNC ---
   useEffect(() => {
     if (!user) return;
+    // Query data user-specific (Optional: tambahkan where('userId', '==', user.uid) jika ingin data private per user)
+    // Untuk sekarang kita biarkan global agar mudah dites
     const q = query(collection(db, 'app_data', appId, 'projects'));
     return onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map(d => {
@@ -123,7 +144,7 @@ const App = () => {
     if (!user || !activeProjectId) return;
     setIsSyncing(true);
     try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } 
-    catch(e) { alert("Gagal simpan"); }
+    catch(e) { alert("Gagal simpan ke database"); }
     setIsSyncing(false);
   };
 
@@ -314,6 +335,30 @@ const App = () => {
     try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); }
   };
 
+  // --- TAMPILAN LOGIN (JIKA BELUM LOGIN) ---
+  if (!user && authStatus !== 'loading') {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
+          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building2 className="text-blue-600" size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Kontraktor Pro</h1>
+          <p className="text-slate-500 mb-8 text-sm">Kelola proyek, keuangan, dan tim dengan mudah.</p>
+          
+          <button 
+            onClick={handleLogin}
+            className="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-all"
+          >
+            <LogIn size={20} />
+            Masuk dengan Google
+          </button>
+          <p className="mt-6 text-xs text-slate-400">Pastikan popup blocker nonaktif</p>
+        </div>
+      </div>
+    );
+  }
+
   if (authStatus === 'loading') return <div className="h-screen flex flex-col items-center justify-center text-slate-500"><Loader2 className="animate-spin mb-2"/>Loading System...</div>;
 
   return (
@@ -338,15 +383,29 @@ const App = () => {
       )}
 
       <header className="bg-white px-4 py-3 sticky top-0 z-10 shadow-sm flex justify-between items-center">
-        {view === 'project-list' ? <div className="flex items-center gap-2 font-bold text-slate-800"><Building2 className="text-blue-600"/> Kontraktor App</div> : <button onClick={() => setView('project-list')} className="text-slate-500 flex items-center gap-1 text-sm"><ArrowLeft size={18}/> Kembali</button>}
-        {view === 'project-list' && <button onClick={() => openModal('newProject')} className="bg-blue-600 text-white p-2 rounded-full shadow"><Plus size={20}/></button>}
+        {view === 'project-list' ? (
+          <div className="flex items-center gap-2 font-bold text-slate-800">
+             <Building2 className="text-blue-600"/> 
+             <div className="flex flex-col">
+               <span>Kontraktor App</span>
+               {user && <span className="text-[10px] text-slate-400 font-normal">Hi, {user.displayName?.split(' ')[0]}</span>}
+             </div>
+          </div>
+        ) : (
+          <button onClick={() => setView('project-list')} className="text-slate-500 flex items-center gap-1 text-sm"><ArrowLeft size={18}/> Kembali</button>
+        )}
+        
+        <div className="flex items-center gap-2">
+          {view === 'project-list' && <button onClick={() => openModal('newProject')} className="bg-blue-600 text-white p-2 rounded-full shadow"><Plus size={20}/></button>}
+          <button onClick={handleLogout} className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100"><LogOut size={18} /></button>
+        </div>
       </header>
 
       {view === 'project-list' && (
         <main className="p-4 max-w-md mx-auto space-y-4">
            {projects.length === 0 && <div className="text-center py-10 border border-dashed rounded-xl text-slate-400"><p>Belum ada proyek.</p><button onClick={loadDemoData} disabled={isSyncing} className="bg-green-600 text-white px-4 py-2 mt-4 rounded-lg font-bold text-sm hover:bg-green-700 shadow-lg flex items-center gap-2 mx-auto">{isSyncing ? <Loader2 className="animate-spin"/> : <RefreshCw size={16}/>} Muat Demo 1 Milyar</button></div>}
            {projects.map(p => (
-             <div key={p.id} onClick={() => { setActiveProjectId(p.id); setView('project-detail'); setActiveTab('dashboard'); }} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-pointer">
+             <div key={p.id} onClick={() => { setActiveProjectId(p.id); setView('project-detail'); setActiveTab('dashboard'); }} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-shadow">
                  <div className="flex justify-between mb-2"><h3 className="font-bold text-lg">{p.name}</h3><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{p.status}</span></div>
                  <p className="text-sm text-slate-500 mb-3">{p.client}</p>
                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2"><div className="bg-blue-600 h-full" style={{ width: `${getStats(p).prog}%` }}></div></div>
