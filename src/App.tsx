@@ -4,7 +4,7 @@ import {
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle
+  History, AlertTriangle, Camera, MapPin, ExternalLink, Image as ImageIcon
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -67,6 +67,17 @@ type Worker = {
 
 type Task = { id: number; name: string; weight: number; progress: number; lastUpdated: string; };
 type AttendanceLog = { id: number; date: string; workerId: number; status: 'Hadir' | 'Setengah' | 'Lembur' | 'Absen'; note: string; };
+
+// Tipe Baru untuk Bukti Kehadiran (Foto & Lokasi)
+type AttendanceEvidence = {
+  id: number;
+  date: string;
+  photoUrl: string; // Base64 string (untuk demo tanpa storage bucket)
+  location: string; // "lat,lng"
+  uploader: string;
+  timestamp: string;
+};
+
 type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
 
 type Project = { 
@@ -78,6 +89,7 @@ type Project = {
   workers: Worker[]; 
   tasks: Task[]; 
   attendanceLogs: AttendanceLog[]; 
+  attendanceEvidences: AttendanceEvidence[]; // Field Baru
   taskLogs: TaskLog[];
 };
 
@@ -94,23 +106,18 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
     const end = new Date(project.endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    
     const points = [0, 0.25, 0.5, 0.75, 1];
     return points.map(p => {
       const d = new Date(start.getTime() + (diffDays * p * 24 * 60 * 60 * 1000));
       return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
     });
   };
-
   const dateLabels = getAxisDates();
-
   return (
     <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4'}`}>
       {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Visualisasi Proyek</h3>}
       <div className={`relative border-l border-b border-slate-300 mx-2 ${compact ? 'h-32 mt-2' : 'h-48 mt-4'} bg-slate-50`}>
-         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> 
-         <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
-         
+         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
          <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
             <line x1="0" y1="25" x2="100" y2="25" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
@@ -119,16 +126,8 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
             <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="2" points={stats.curvePoints} vectorEffect="non-scaling-stroke" />
             <circle cx={stats.timeProgress} cy={100 - stats.prog} r="1.5" fill="white" stroke="black" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
          </svg>
-
-         <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">
-            {dateLabels.map((date, idx) => (
-              <span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>
-                {date}
-              </span>
-            ))}
-         </div>
+         <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">{dateLabels.map((date, idx) => (<span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>{date}</span>))}</div>
       </div>
-      
       <div className={`grid grid-cols-2 gap-2 text-xs ${compact ? 'mt-6' : 'mt-8'}`}>
          <div className="p-1.5 bg-slate-100 rounded text-center"><span className="block text-slate-500 text-[10px]">Waktu Berjalan</span><span className="font-bold">{stats.timeProgress.toFixed(0)}%</span></div>
          <div className={`p-1.5 rounded text-center ${stats.prog >= stats.timeProgress ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}><span className="block opacity-80 text-[10px]">Fisik Realisasi</span><span className="font-bold">{stats.prog.toFixed(0)}%</span></div>
@@ -205,6 +204,11 @@ const App = () => {
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({});
   const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // NEW: Evidence States
+  const [evidencePhoto, setEvidencePhoto] = useState<string>('');
+  const [evidenceLocation, setEvidenceLocation] = useState<string>('');
+  const [isGettingLoc, setIsGettingLoc] = useState(false);
 
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
   const [expandedReportIds, setExpandedReportIds] = useState<{[id: string]: boolean}>({});
@@ -223,29 +227,14 @@ const App = () => {
         try {
           const userDocRef = doc(db, 'app_users', u.email!);
           const userDocSnap = await getDoc(userDocRef);
-
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data() as AppUser;
-            setUser(u);
-            setUserRole(userData.role); 
-            setAuthStatus('connected');
-            setLoginError('');
+            setUser(u); setUserRole(userData.role); setAuthStatus('connected'); setLoginError('');
           } else {
-            await signOut(auth);
-            setUser(null);
-            setUserRole(null);
-            setAuthStatus('connected');
-            setLoginError(`Email ${u.email} tidak terdaftar.`);
+            await signOut(auth); setUser(null); setUserRole(null); setAuthStatus('connected'); setLoginError(`Email ${u.email} tidak terdaftar.`);
           }
-        } catch (error) {
-          console.error("Error verifying user:", error);
-          setAuthStatus('error');
-        }
-      } else {
-        setUser(null);
-        setUserRole(null);
-        setAuthStatus('connected');
-      }
+        } catch (error) { console.error("Error verifying user:", error); setAuthStatus('error'); }
+      } else { setUser(null); setUserRole(null); setAuthStatus('connected'); }
     });
     return () => unsubscribe();
   }, []);
@@ -253,39 +242,17 @@ const App = () => {
   useEffect(() => {
     if (userRole === 'super_admin') {
       const q = query(collection(db, 'app_users'));
-      const unsub = onSnapshot(q, (snapshot) => {
-        const users = snapshot.docs.map(d => d.data() as AppUser);
-        setAppUsers(users);
-      });
+      const unsub = onSnapshot(q, (snapshot) => { setAppUsers(snapshot.docs.map(d => d.data() as AppUser)); });
       return () => unsub();
     }
   }, [userRole]);
 
-  const handleLogin = async () => {
-    setLoginError('');
-    try { await signInWithPopup(auth, googleProvider); } 
-    catch (error) { setLoginError("Terjadi kesalahan saat mencoba login."); }
-  };
-
-  const handleLogout = async () => {
-    if(confirm("Yakin ingin keluar?")) { await signOut(auth); setProjects([]); setView('project-list'); }
-  };
+  const handleLogin = async () => { setLoginError(''); try { await signInWithPopup(auth, googleProvider); } catch (error) { setLoginError("Terjadi kesalahan saat mencoba login."); } };
+  const handleLogout = async () => { if(confirm("Yakin ingin keluar?")) { await signOut(auth); setProjects([]); setView('project-list'); } };
 
   // --- USER MANAGEMENT ---
-  const handleAddUser = async () => {
-    if (!inputEmail || !inputName) return;
-    try {
-      await setDoc(doc(db, 'app_users', inputEmail), { email: inputEmail, name: inputName, role: inputRole });
-      alert("User berhasil ditambahkan!"); setShowModal(false); setInputEmail(''); setInputName('');
-    } catch (e) { alert("Gagal menambah user."); }
-  };
-
-  const handleDeleteUser = async (emailToDelete: string) => {
-    if (emailToDelete === user?.email) return alert("Tidak bisa hapus diri sendiri!");
-    if (confirm(`Hapus akses ${emailToDelete}?`)) {
-      try { await deleteDoc(doc(db, 'app_users', emailToDelete)); } catch (e) { alert("Gagal."); }
-    }
-  };
+  const handleAddUser = async () => { if (!inputEmail || !inputName) return; try { await setDoc(doc(db, 'app_users', inputEmail), { email: inputEmail, name: inputName, role: inputRole }); alert("User berhasil ditambahkan!"); setShowModal(false); setInputEmail(''); setInputName(''); } catch (e) { alert("Gagal menambah user."); } };
+  const handleDeleteUser = async (emailToDelete: string) => { if (emailToDelete === user?.email) return alert("Tidak bisa hapus diri sendiri!"); if (confirm(`Hapus akses ${emailToDelete}?`)) { try { await deleteDoc(doc(db, 'app_users', emailToDelete)); } catch (e) { alert("Gagal."); } } };
 
   // --- DATA SYNC ---
   useEffect(() => {
@@ -297,6 +264,7 @@ const App = () => {
         return { 
           id: d.id, ...data, 
           attendanceLogs: Array.isArray(data.attendanceLogs) ? data.attendanceLogs : [], 
+          attendanceEvidences: Array.isArray(data.attendanceEvidences) ? data.attendanceEvidences : [], // New Field
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
           tasks: Array.isArray(data.tasks) ? data.tasks : [], 
           workers: Array.isArray(data.workers) ? data.workers : [], 
@@ -308,72 +276,95 @@ const App = () => {
       });
       list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
       setProjects(list);
-    }, (error) => {
-      if (error.code === 'permission-denied') { alert("Akses Ditolak."); signOut(auth); }
-    });
+    }, (error) => { if (error.code === 'permission-denied') { alert("Akses Ditolak."); signOut(auth); } });
   }, [user]);
 
   const activeProject = projects.find(p => p.id === activeProjectId);
-  const formatRupiah = (num: number) => {
-    if (!canSeeMoney()) return 'Rp ***'; 
-    if (typeof num !== 'number' || isNaN(num)) return 'Rp 0';
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
-  };
-  
-  const updateProject = async (data: Partial<Project>) => {
-    if (!user || !activeProjectId) return;
-    setIsSyncing(true);
-    try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } 
-    catch(e) { alert("Gagal simpan ke database"); }
-    setIsSyncing(false);
+  const formatRupiah = (num: number) => { if (!canSeeMoney()) return 'Rp ***'; if (typeof num !== 'number' || isNaN(num)) return 'Rp 0'; return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num); };
+  const updateProject = async (data: Partial<Project>) => { if (!user || !activeProjectId) return; setIsSyncing(true); try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } catch(e) { alert("Gagal simpan ke database"); } setIsSyncing(false); };
+  const getGroupedTransactions = (transactions: Transaction[]): GroupedTransaction[] => { const groups: {[key: string]: GroupedTransaction} = {}; transactions.forEach(t => { const key = `${t.date}-${t.category}-${t.type}`; if (!groups[key]) groups[key] = { id: key, date: t.date, category: t.category, type: t.type, totalAmount: 0, items: [] }; groups[key].totalAmount += t.amount; groups[key].items.push(t); }); return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); };
+
+  // --- EVIDENCE HELPERS ---
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) return alert("Browser tidak support GPS");
+    setIsGettingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`);
+        setIsGettingLoc(false);
+      },
+      (err) => {
+        alert("Gagal ambil lokasi. Pastikan GPS aktif.");
+        setIsGettingLoc(false);
+      }
+    );
   };
 
-  const getGroupedTransactions = (transactions: Transaction[]): GroupedTransaction[] => {
-    const groups: {[key: string]: GroupedTransaction} = {};
-    transactions.forEach(t => {
-      const key = `${t.date}-${t.category}-${t.type}`;
-      if (!groups[key]) groups[key] = { id: key, date: t.date, category: t.category, type: t.type, totalAmount: 0, items: [] };
-      groups[key].totalAmount += t.amount;
-      groups[key].items.push(t);
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500000) return alert("Ukuran foto terlalu besar (Max 500KB). Gunakan resolusi rendah.");
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEvidencePhoto(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveAttendanceWithEvidence = () => {
+    if(!activeProject) return;
+    const newLogs: any[] = [];
+    Object.keys(attendanceData).forEach(wId => {
+      newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' });
     });
-    return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Save Evidence if exists
+    let newEvidences = activeProject.attendanceEvidences || [];
+    if (evidencePhoto || evidenceLocation) {
+      newEvidences = [{
+        id: Date.now(),
+        date: attendanceDate,
+        photoUrl: evidencePhoto,
+        location: evidenceLocation,
+        uploader: user?.displayName || 'Unknown',
+        timestamp: new Date().toISOString()
+      }, ...newEvidences];
+    }
+
+    updateProject({ 
+      attendanceLogs: [...activeProject.attendanceLogs, ...newLogs],
+      attendanceEvidences: newEvidences
+    });
+    setShowModal(false);
   };
 
   const getFilteredAttendance = () => {
     if (!activeProject || !activeProject.attendanceLogs) return [];
-    
     const start = new Date(filterStartDate); start.setHours(0,0,0,0);
     const end = new Date(filterEndDate); end.setHours(23,59,59,999);
-
-    const filteredLogs = activeProject.attendanceLogs.filter(l => {
-      const d = new Date(l.date);
-      return d >= start && d <= end;
-    });
-
+    const filteredLogs = activeProject.attendanceLogs.filter(l => { const d = new Date(l.date); return d >= start && d <= end; });
     const workerStats: {[key: number]: {name: string, role: string, unit: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {};
-    
-    activeProject.workers.forEach(w => {
-      workerStats[w.id] = { name: w.name, role: w.role, unit: w.wageUnit || 'Harian', hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 };
-    });
-
+    activeProject.workers.forEach(w => { workerStats[w.id] = { name: w.name, role: w.role, unit: w.wageUnit || 'Harian', hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 }; });
     filteredLogs.forEach(log => {
       if (workerStats[log.workerId]) {
         const worker = activeProject.workers.find(w => w.id === log.workerId);
         let dailyRate = 0;
-        if (worker) {
-          if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7;
-          else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30;
-          else dailyRate = worker.mandorRate; 
-        }
-
+        if (worker) { if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; else dailyRate = worker.mandorRate; }
         if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += dailyRate; }
         else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (dailyRate * 1.5); }
         else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (dailyRate * 0.5); }
         else if (log.status === 'Absen') { workerStats[log.workerId].absen++; }
       }
     });
-
     return Object.values(workerStats);
+  };
+
+  const getFilteredEvidence = () => {
+    if (!activeProject || !activeProject.attendanceEvidences) return [];
+    const start = new Date(filterStartDate); start.setHours(0,0,0,0);
+    const end = new Date(filterEndDate); end.setHours(23,59,59,999);
+    return activeProject.attendanceEvidences.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
   };
 
   const getStats = (p: Project) => {
@@ -391,46 +382,27 @@ const App = () => {
     let mandorCost = 0; let realCost = 0;
     (p.workers || []).forEach(w => { 
       const logs = p.attendanceLogs || []; 
-      const days = logs.filter(l => l.workerId === w.id && ['Hadir','Lembur','Setengah'].includes(l.status)).reduce((acc, curr) => {
-        if(curr.status === 'Hadir') return acc + 1;
-        if(curr.status === 'Lembur') return acc + 1.5;
-        if(curr.status === 'Setengah') return acc + 0.5;
-        return acc;
-      }, 0);
-      
-      let divider = 1;
-      if(w.wageUnit === 'Mingguan') divider = 7;
-      if(w.wageUnit === 'Bulanan') divider = 30;
-
-      mandorCost += days * (w.mandorRate / divider); 
-      realCost += days * (w.realRate / divider); 
+      const days = logs.filter(l => l.workerId === w.id && ['Hadir','Lembur','Setengah'].includes(l.status)).reduce((acc, curr) => { if(curr.status === 'Hadir') return acc + 1; if(curr.status === 'Lembur') return acc + 1.5; if(curr.status === 'Setengah') return acc + 0.5; return acc; }, 0);
+      let divider = 1; if(w.wageUnit === 'Mingguan') divider = 7; if(w.wageUnit === 'Bulanan') divider = 30;
+      mandorCost += days * (w.mandorRate / divider); realCost += days * (w.realRate / divider); 
     });
 
     const uniqueDates = Array.from(new Set((p.taskLogs || []).map(l => l.date))).sort();
     if (!uniqueDates.includes(p.startDate.split('T')[0])) uniqueDates.unshift(p.startDate.split('T')[0]);
     const today = new Date().toISOString().split('T')[0];
     if (!uniqueDates.includes(today)) uniqueDates.push(today);
-    
     const points: string[] = [];
     const taskProgressState: {[taskId: number]: number} = {};
     p.tasks.forEach(t => taskProgressState[t.id] = 0);
-    
     uniqueDates.forEach(dateStr => {
       const dateVal = new Date(dateStr).getTime();
       const logsUntilNow = (p.taskLogs || []).filter(l => new Date(l.date).getTime() <= dateVal);
       logsUntilNow.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(log => { taskProgressState[log.taskId] = log.newProgress; });
-      
       let totalProg = 0;
-      p.tasks.forEach(t => { 
-        const currentProg = taskProgressState[t.id] || 0; 
-        totalProg += (currentProg * t.weight / 100); 
-      });
-      
+      p.tasks.forEach(t => { const currentProg = taskProgressState[t.id] || 0; totalProg += (currentProg * t.weight / 100); });
       let x = ((dateVal - start) / totalDuration) * 100; x = Math.max(0, Math.min(100, x));
-      let y = 100 - totalProg; 
-      points.push(`${x},${y}`);
+      let y = 100 - totalProg; points.push(`${x},${y}`);
     });
-
     return { inc, exp, prog, leak: mandorCost - realCost, timeProgress, curvePoints: points.join(" ") };
   };
 
@@ -450,132 +422,21 @@ const App = () => {
     return { totalDue, totalPaid, balance: totalDue - totalPaid };
   };
 
-  // --- HANDLERS ---
-  const toggleGroup = (groupId: string) => {
-    setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
-  };
+  const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
+  const toggleReportGroup = (groupId: string) => { setExpandedReportIds(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
+  const handleTransaction = (e: React.FormEvent) => { e.preventDefault(); if (!activeProject) return; const form = e.target as HTMLFormElement; const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; const amount = Number((form.elements.namedItem('amount') as HTMLInputElement).value); const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; if (!desc || isNaN(amount) || amount <= 0) { alert("Data tidak valid"); return; } updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount, type: txType }, ...(activeProject.transactions || [])] }); form.reset(); };
+  const handleUpdateProgress = () => { if (!activeProject || !selectedTask) return; const updatedTasks = activeProject.tasks.map(t => t.id === selectedTask.id ? { ...t, progress: progressInput, lastUpdated: progressDate } : t); const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedTask.id, previousProgress: selectedTask.progress, newProgress: progressInput, note: progressNote }; updateProject({ tasks: updatedTasks, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); setShowModal(false); };
+  const handleEditProject = () => { if (!activeProject) return; updateProject({ name: inputName, client: inputClient, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false); };
+  const handlePayWorker = () => { if (!activeProject || !selectedWorkerId || paymentAmount <= 0) return; const worker = activeProject.workers.find(w => w.id === selectedWorkerId); const newTx: Transaction = { id: Date.now(), date: new Date().toISOString().split('T')[0], category: 'Upah Tukang', description: `Gaji ${worker?.name || 'Tukang'}`, amount: paymentAmount, type: 'expense', workerId: selectedWorkerId }; updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false); };
+  
+  const handleSaveWorker = () => { if(!activeProject) return; if (selectedWorkerId) { const updatedWorkers = activeProject.workers.map(w => { if(w.id === selectedWorkerId) { return { ...w, name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate }; } return w; }); updateProject({ workers: updatedWorkers }); } else { const newWorker: Worker = { id: Date.now(), name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate }; updateProject({ workers: [...(activeProject.workers || []), newWorker] }); } setShowModal(false); };
+  const handleEditWorker = (w: Worker) => { setSelectedWorkerId(w.id); setInputName(w.name); setInputWorkerRole(w.role); setInputWageUnit(w.wageUnit); setInputRealRate(w.realRate); setInputMandorRate(w.mandorRate); setModalType('newWorker'); setShowModal(true); };
+  const handleDeleteWorker = (w: Worker) => { if(!activeProject) return; if(confirm(`Yakin hapus ${w.name}?`)) { const updatedWorkers = activeProject.workers.filter(worker => worker.id !== w.id); updateProject({ workers: updatedWorkers }); } };
+  const handleStockMovement = () => { if (!activeProject || !selectedMaterial || stockQty <= 0) return; const updatedMaterials = activeProject.materials.map(m => { if (m.id === selectedMaterial.id) return { ...m, stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty }; return m; }); const newLog: MaterialLog = { id: Date.now(), materialId: selectedMaterial.id, date: stockDate, type: stockType, quantity: stockQty, notes: stockNotes || '-', actor: user?.displayName || 'User' }; updateProject({ materials: updatedMaterials, materialLogs: [newLog, ...(activeProject.materialLogs || [])] }); setShowModal(false); setStockQty(0); setStockNotes(''); };
 
-  const toggleReportGroup = (groupId: string) => {
-    setExpandedReportIds(prev => ({ ...prev, [groupId]: !prev[groupId] }));
-  };
-
-  const handleTransaction = (e: React.FormEvent) => {
-    e.preventDefault(); if (!activeProject) return;
-    const form = e.target as HTMLFormElement;
-    const desc = (form.elements.namedItem('desc') as HTMLInputElement).value;
-    const amount = Number((form.elements.namedItem('amount') as HTMLInputElement).value);
-    const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value;
-    if (!desc || isNaN(amount) || amount <= 0) { alert("Data tidak valid"); return; }
-    updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount, type: txType }, ...(activeProject.transactions || [])] });
-    form.reset();
-  };
-
-  const handleUpdateProgress = () => {
-    if (!activeProject || !selectedTask) return;
-    const updatedTasks = activeProject.tasks.map(t => t.id === selectedTask.id ? { ...t, progress: progressInput, lastUpdated: progressDate } : t);
-    const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedTask.id, previousProgress: selectedTask.progress, newProgress: progressInput, note: progressNote };
-    updateProject({ tasks: updatedTasks, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); setShowModal(false);
-  };
-
-  const handleEditProject = () => {
-    if (!activeProject) return;
-    updateProject({ name: inputName, client: inputClient, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false);
-  };
-
-  const handlePayWorker = () => {
-    if (!activeProject || !selectedWorkerId || paymentAmount <= 0) return;
-    const worker = activeProject.workers.find(w => w.id === selectedWorkerId);
-    const newTx: Transaction = { id: Date.now(), date: new Date().toISOString().split('T')[0], category: 'Upah Tukang', description: `Gaji ${worker?.name || 'Tukang'}`, amount: paymentAmount, type: 'expense', workerId: selectedWorkerId };
-    updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false);
-  };
-
-  // --- WORKER MANAGEMENT ---
-  const handleSaveWorker = () => {
-    if(!activeProject) return;
-    if (selectedWorkerId) {
-      const updatedWorkers = activeProject.workers.map(w => {
-        if(w.id === selectedWorkerId) {
-          return { ...w, name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate };
-        }
-        return w;
-      });
-      updateProject({ workers: updatedWorkers });
-    } else {
-      const newWorker: Worker = { id: Date.now(), name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate };
-      updateProject({ workers: [...(activeProject.workers || []), newWorker] });
-    }
-    setShowModal(false);
-  };
-
-  const handleEditWorker = (w: Worker) => {
-    setSelectedWorkerId(w.id);
-    setInputName(w.name);
-    setInputWorkerRole(w.role);
-    setInputWageUnit(w.wageUnit);
-    setInputRealRate(w.realRate);
-    setInputMandorRate(w.mandorRate);
-    setModalType('newWorker');
-    setShowModal(true);
-  };
-
-  const handleDeleteWorker = (w: Worker) => {
-    if(!activeProject) return;
-    if(confirm(`Yakin hapus ${w.name}?`)) {
-      const updatedWorkers = activeProject.workers.filter(worker => worker.id !== w.id);
-      updateProject({ workers: updatedWorkers });
-    }
-  };
-
-  const handleStockMovement = () => {
-    if (!activeProject || !selectedMaterial || stockQty <= 0) return;
-    const updatedMaterials = activeProject.materials.map(m => {
-      if (m.id === selectedMaterial.id) return { ...m, stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty };
-      return m;
-    });
-    const newLog: MaterialLog = { id: Date.now(), materialId: selectedMaterial.id, date: stockDate, type: stockType, quantity: stockQty, notes: stockNotes || '-', actor: user?.displayName || 'User' };
-    updateProject({ materials: updatedMaterials, materialLogs: [newLog, ...(activeProject.materialLogs || [])] });
-    setShowModal(false); setStockQty(0); setStockNotes('');
-  };
-
-  const openModal = (type: any) => {
-    setModalType(type); setInputName(''); setInputWeight(0); 
-    if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory'].includes(type) && !activeProject) return;
-    if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); }
-    if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); }
-    if (type === 'newProject') { setInputDuration(30); } 
-    if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); }
-    if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); }
-    setStockDate(new Date().toISOString().split('T')[0]);
-    setShowModal(true);
-  };
-
+  const openModal = (type: any) => { setModalType(type); setInputName(''); setInputWeight(0); if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory'].includes(type) && !activeProject) return; if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); } if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); setEvidencePhoto(''); setEvidenceLocation(''); } if (type === 'newProject') { setInputDuration(30); } if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); } if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); } setStockDate(new Date().toISOString().split('T')[0]); setShowModal(true); };
   const createItem = (field: string, newItem: any) => { if(!activeProject) return; updateProject({ [field]: [...(activeProject as any)[field], newItem] }); setShowModal(false); }
-
-  const loadDemoData = async () => {
-    if (!user) return; setIsSyncing(true);
-    const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6);
-    const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; };
-
-    const demo: Omit<Project, 'id'> = {
-      name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 1000000000, 
-      startDate: start.toISOString(), endDate: end.toISOString(),
-      transactions: [
-        {id:1, date:d(0), category:'Termin', description:'DP 30%', amount:300000000, type:'income'},
-        {id:5, date:d(0), category:'Material', description:'Besi Beton & Semen', amount:150000000, type:'expense'},
-        {id:6, date:d(1), category:'Material', description:'Bata Merah 50rb Pcs', amount:45000000, type:'expense'},
-        {id:7, date:d(3), category:'Material', description:'Granit Lantai', amount:120000000, type:'expense'},
-        {id:80, date:d(6), category:'Upah Tukang', description:'Gaji Pak Mamat', amount:2500000, type:'expense', workerId:1},
-        {id:81, date:d(6), category:'Upah Tukang', description:'Gaji Kang Ujang', amount:2000000, type:'expense', workerId:2},
-      ],
-      materials: [{id:1, name:'Semen Tiga Roda', unit:'Sak', stock:50, minStock:20}, {id:2, name:'Bata Merah', unit:'Pcs', stock:5000, minStock:1000}],
-      materialLogs: [{id:1, materialId:1, date:d(0), type:'in', quantity:100, notes:'Beli Awal', actor:'Admin'}, {id:2, materialId:1, date:d(2), type:'out', quantity:50, notes:'Cor Pondasi', actor:'Admin'}],
-      workers: [{id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000, wageUnit:'Harian'}, {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000, wageUnit:'Harian'}],
-      tasks: [{id:1, name:'Persiapan & Gali', weight:5, progress:100, lastUpdated: d(1)}, {id:2, name:'Struktur Beton', weight:25, progress:100, lastUpdated: d(3)}, {id:3, name:'Dinding & Plester', weight:20, progress:100, lastUpdated: d(4)}],
-      taskLogs: [{id:1, date:d(0.5), taskId:1, previousProgress:0, newProgress:50, note:'Gali'}, {id:2, date:d(1), taskId:1, previousProgress:50, newProgress:100, note:'Selesai Gali'}, {id:3, date:d(1.5), taskId:2, previousProgress:0, newProgress:30, note:'Sloof'}, {id:4, date:d(2), taskId:2, previousProgress:30, newProgress:60, note:'Lantai 2'}, {id:5, date:d(3), taskId:2, previousProgress:60, newProgress:100, note:'Atap Dak'}, {id:6, date:d(3.5), taskId:3, previousProgress:0, newProgress:50, note:'Bata'}],
-      attendanceLogs: Array.from({length: 10}).map((_, i) => ({id: i, date: d(6), workerId: i+1, status: 'Hadir' as const, note: 'Closingan'}))
-    };
-    try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); }
-  };
+  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; const demo: Omit<Project, 'id'> = { name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 1000000000, startDate: start.toISOString(), endDate: end.toISOString(), transactions: [{id:1, date:d(0), category:'Termin', description:'DP 30%', amount:300000000, type:'income'},{id:5, date:d(0), category:'Material', description:'Besi Beton & Semen', amount:150000000, type:'expense'},{id:6, date:d(1), category:'Material', description:'Bata Merah 50rb Pcs', amount:45000000, type:'expense'},{id:7, date:d(3), category:'Material', description:'Granit Lantai', amount:120000000, type:'expense'},{id:80, date:d(6), category:'Upah Tukang', description:'Gaji Pak Mamat', amount:2500000, type:'expense', workerId:1}, {id:81, date:d(6), category:'Upah Tukang', description:'Gaji Kang Ujang', amount:2000000, type:'expense', workerId:2},], materials: [{id:1, name:'Semen Tiga Roda', unit:'Sak', stock:50, minStock:20}, {id:2, name:'Bata Merah', unit:'Pcs', stock:5000, minStock:1000}], materialLogs: [{id:1, materialId:1, date:d(0), type:'in', quantity:100, notes:'Beli Awal', actor:'Admin'}, {id:2, materialId:1, date:d(2), type:'out', quantity:50, notes:'Cor Pondasi', actor:'Admin'}], workers: [{id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000, wageUnit:'Harian'}, {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000, wageUnit:'Harian'}], tasks: [{id:1, name:'Persiapan & Gali', weight:5, progress:100, lastUpdated: d(1)}, {id:2, name:'Struktur Beton', weight:25, progress:100, lastUpdated: d(3)}, {id:3, name:'Dinding & Plester', weight:20, progress:100, lastUpdated: d(4)}], taskLogs: [{id:1, date:d(0.5), taskId:1, previousProgress:0, newProgress:50, note:'Gali'}, {id:2, date:d(1), taskId:1, previousProgress:50, newProgress:100, note:'Selesai Gali'}, {id:3, date:d(1.5), taskId:2, previousProgress:0, newProgress:30, note:'Sloof'}, {id:4, date:d(2), taskId:2, previousProgress:30, newProgress:60, note:'Lantai 2'}, {id:5, date:d(3), taskId:2, previousProgress:60, newProgress:100, note:'Atap Dak'}, {id:6, date:d(3.5), taskId:3, previousProgress:0, newProgress:50, note:'Bata'}], attendanceLogs: Array.from({length: 10}).map((_, i) => ({id: i, date: d(6), workerId: i+1, status: 'Hadir' as const, note: 'Closingan'})), attendanceEvidences: [] }; try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); } };
 
   if (!user && authStatus !== 'loading') {
     return (
@@ -611,7 +472,7 @@ const App = () => {
               {modalType === 'stockMovement' && selectedMaterial && (<><h4 className="font-bold text-slate-700">{selectedMaterial.name}</h4><p className="text-xs text-slate-500 mb-2">Stok Saat Ini: {selectedMaterial.stock} {selectedMaterial.unit}</p><div className="flex gap-2 mb-2"><button onClick={() => setStockType('in')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='in' ? 'bg-green-100 border-green-300 text-green-700' : 'border-slate-200'}`}>Masuk (+)</button><button onClick={() => setStockType('out')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='out' ? 'bg-red-100 border-red-300 text-red-700' : 'border-slate-200'}`}>Keluar (-)</button></div><input type="number" className="w-full p-2 border rounded font-bold text-lg" placeholder="Jumlah" value={stockQty} onChange={e => setStockQty(Number(e.target.value))}/><input type="date" className="w-full p-2 border rounded" value={stockDate} onChange={e => setStockDate(e.target.value)}/><input className="w-full p-2 border rounded" placeholder="Keterangan (Wajib)" value={stockNotes} onChange={e => setStockNotes(e.target.value)}/><button onClick={handleStockMovement} disabled={!stockNotes || stockQty <= 0} className={`w-full text-white p-2 rounded font-bold ${!stockNotes || stockQty <= 0 ? 'bg-slate-300' : 'bg-blue-600'}`}>Simpan Riwayat</button></>)}
               {modalType === 'stockHistory' && selectedMaterial && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedMaterial.name}</h4><div className="space-y-3">{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between"><span className="font-bold text-slate-700">{log.date}</span><span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>{log.type === 'in' ? '+' : '-'}{log.quantity}</span></div><div className="text-slate-500 text-xs mt-1 flex justify-between"><span>{log.notes}</span><span className="italic">{log.actor}</span></div></div>))}{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat.</p>}</div></div>)}
               {modalType === 'payWorker' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} /><button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-2 rounded font-bold">Bayar</button></>}
-              {modalType === 'attendance' && activeProject && <div><input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} /><div className="max-h-64 overflow-y-auto space-y-2 mb-4">{activeProject.workers.map(w => (<div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center"><span>{w.name}</span><select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}><option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option></select></div>))}</div><button onClick={() => { const newLogs: any[] = []; Object.keys(attendanceData).forEach(wId => newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' })); updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs] }); setShowModal(false); }} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan Absensi</button></div>}
+              {modalType === 'attendance' && activeProject && <div><input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} /><div className="bg-slate-50 p-3 rounded mb-3"><h4 className="font-bold text-sm mb-2 text-slate-700 flex items-center gap-2"><Camera size={14}/> Bukti Lapangan</h4><div className="flex gap-2 mb-2"><label className="flex-1 bg-white border border-dashed border-slate-300 rounded p-2 text-center cursor-pointer hover:bg-slate-50"><input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} /><span className="text-xs text-slate-500">{evidencePhoto ? 'Ganti Foto' : 'Ambil Foto'}</span></label><button onClick={handleGetLocation} className="flex-1 bg-white border border-dashed border-slate-300 rounded p-2 text-xs text-slate-500 flex items-center justify-center gap-1 hover:bg-slate-50">{isGettingLoc ? <Loader2 className="animate-spin" size={14}/> : <MapPin size={14}/>} {evidenceLocation ? 'Update Lokasi' : 'Tag Lokasi'}</button></div>{evidencePhoto && <div className="mb-2"><img src={evidencePhoto} alt="Preview" className="h-20 rounded border"/></div>}{evidenceLocation && <div className="text-[10px] text-green-600 flex items-center gap-1"><CheckCircle size={10}/> Lokasi terkunci: {evidenceLocation}</div>}</div><div className="max-h-64 overflow-y-auto space-y-2 mb-4">{activeProject.workers.map(w => (<div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center"><span>{w.name}</span><select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}><option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option></select></div>))}</div><button onClick={saveAttendanceWithEvidence} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan Absensi</button></div>}
               {modalType === 'newMaterial' && <><input className="w-full p-2 border rounded" placeholder="Material" value={inputName} onChange={e=>setInputName(e.target.value)}/><button onClick={()=>createItem('materials', {id:Date.now(), name:inputName, unit:'Unit', stock:0, minStock:5})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
             </div>
           </div>
@@ -700,6 +561,29 @@ const App = () => {
             <div className="space-y-4">
                <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-3 rounded-xl shadow font-bold flex justify-center gap-2"><Calendar size={20} /> Isi Absensi</button>
                <div className="bg-white p-4 rounded-xl border shadow-sm mt-4"><h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><FileText size={16}/> Rekap & Filter</h3><div className="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100"><div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1">Dari</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" /></div><div className="flex items-center text-slate-400">-</div><div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1">Sampai</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" /></div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="border-b bg-slate-50 text-slate-500"><th className="p-2 text-left">Nama</th><th className="p-2 text-center">Hadir</th><th className="p-2 text-center">Lembur</th>{canSeeMoney() && <th className="p-2 text-right">Est. Upah</th>}</tr></thead><tbody>{getFilteredAttendance().map((stat: any, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-slate-50"><td className="p-2 font-medium">{stat.name} <span className="text-[9px] text-slate-400 block">{stat.role} • {stat.unit}</span></td><td className="p-2 text-center font-bold text-green-600">{stat.hadir}</td><td className="p-2 text-center font-bold text-blue-600">{stat.lembur}</td>{canSeeMoney() && <td className="p-2 text-right font-bold">{formatRupiah(stat.totalCost)}</td>}</tr>))}{getFilteredAttendance().length === 0 && <tr><td colSpan={canSeeMoney() ? 4 : 3} className="p-4 text-center text-slate-400">Tidak ada data di periode ini.</td></tr>}</tbody></table></div></div>
+               
+               {/* GALERI BUKTI ABSENSI */}
+               <div className="bg-white p-4 rounded-xl border shadow-sm mt-4">
+                 <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><ImageIcon size={16}/> Galeri Bukti</h3>
+                 <div className="grid grid-cols-2 gap-2">
+                   {getFilteredEvidence().map(ev => (
+                     <div key={ev.id} className="relative rounded-lg overflow-hidden border">
+                       <img src={ev.photoUrl} alt="Bukti" className="w-full h-32 object-cover" />
+                       <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[10px] text-white">
+                         <div className="truncate">{ev.date}</div>
+                         <div className="truncate opacity-70">{ev.uploader}</div>
+                         {ev.location && (
+                           <a href={`https://www.google.com/maps/search/?api=1&query=${ev.location}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-200 mt-1 hover:text-blue-100">
+                             <ExternalLink size={8}/> Buka Peta
+                           </a>
+                         )}
+                       </div>
+                     </div>
+                   ))}
+                   {getFilteredEvidence().length === 0 && <div className="col-span-2 text-center text-xs text-slate-400 py-4">Tidak ada foto di tanggal ini.</div>}
+                 </div>
+               </div>
+
                <div className="flex justify-between items-center mt-4 mb-2"><h3 className="font-bold text-slate-700">Daftar Tim</h3><button onClick={() => openModal('newWorker')} className="text-xs bg-slate-200 px-2 py-1 rounded font-bold">+ Baru</button></div>
                {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div><div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3">{canSeeMoney() && <div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>}<div className="flex gap-2">{canSeeMoney() && f.balance > 0 && <button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>}{canAccessWorkers() && (<><button onClick={() => handleEditWorker(w)} className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200"><Edit size={14}/></button><button onClick={() => handleDeleteWorker(w)} className="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200"><Trash2 size={14}/></button></>)}</div></div></div>)})}
             </div>
