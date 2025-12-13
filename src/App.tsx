@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Trash2, ArrowLeft, Building2, 
-  Loader2, RefreshCw, X, Calendar, FileText, 
+  Loader2, RefreshCw, X, Calendar, FileText, Printer, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
   History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
@@ -98,7 +98,7 @@ type Project = {
   materialLogs: MaterialLog[]; 
   workers: Worker[]; 
   rabItems: RABItem[]; 
-  tasks: Task[]; // Kept for compatibility, though we use rabItems now
+  tasks: Task[]; 
   attendanceLogs: AttendanceLog[]; 
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
@@ -117,29 +117,57 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
     const end = new Date(project.endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    
+    // Generate 5 points for X-axis
     const points = [0, 0.25, 0.5, 0.75, 1];
     return points.map(p => {
       const d = new Date(start.getTime() + (diffDays * p * 24 * 60 * 60 * 1000));
       return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
     });
   };
+
   const dateLabels = getAxisDates();
+
   return (
     <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4'}`}>
       {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Kurva S (Bobot Biaya)</h3>}
       <div className={`relative border-l border-b border-slate-300 mx-2 ${compact ? 'h-32 mt-2' : 'h-48 mt-4'} bg-slate-50`}>
-         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
+         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> 
+         <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
+         
          <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {/* Grid Lines */}
             <line x1="0" y1="25" x2="100" y2="25" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="75" x2="100" y2="75" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2" />
+            
+            {/* Target Line (Linear Plan) */}
             <line x1="0" y1="100" x2="100" y2="0" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
-            <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="2" points={stats.curvePoints} vectorEffect="non-scaling-stroke" />
+            
+            {/* Real Progress Line (S-Curve) */}
+            <polyline 
+              fill="none" 
+              stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} 
+              strokeWidth="2" 
+              points={stats.curvePoints} 
+              vectorEffect="non-scaling-stroke" 
+            />
+            
+            {/* Current Point Dot */}
             <circle cx={stats.timeProgress} cy={100 - stats.prog} r="1.5" fill="white" stroke="black" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
          </svg>
-         <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">{dateLabels.map((date, idx) => (<span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>{date}</span>))}</div>
+
+         {/* X-Axis Date Labels */}
+         <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">
+            {dateLabels.map((date, idx) => (
+              <span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>
+                {date}
+              </span>
+            ))}
+         </div>
       </div>
+      
       <div className={`grid grid-cols-2 gap-2 text-xs ${compact ? 'mt-6' : 'mt-8'}`}>
          <div className="p-1.5 bg-slate-100 rounded text-center"><span className="block text-slate-500 text-[10px]">Plan (Waktu)</span><span className="font-bold">{stats.timeProgress.toFixed(1)}%</span></div>
          <div className={`p-1.5 rounded text-center ${stats.prog >= stats.timeProgress ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}><span className="block opacity-80 text-[10px]">Real (Bobot)</span><span className="font-bold">{stats.prog.toFixed(1)}%</span></div>
@@ -189,7 +217,6 @@ const App = () => {
   const [inputBudget, setInputBudget] = useState(0);
   const [inputStartDate, setInputStartDate] = useState('');
   const [inputEndDate, setInputEndDate] = useState('');
-  // inputWeight removed as we use RAB calculated weight now
   
   // RAB & CCO Inputs
   const [rabCategory, setRabCategory] = useState('');
@@ -216,7 +243,6 @@ const App = () => {
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
@@ -233,7 +259,7 @@ const App = () => {
   const [isGettingLoc, setIsGettingLoc] = useState(false);
 
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
-  // expandedReportIds removed as it was unused
+  // reportGroups state removed as it was unused
 
   // --- PERMISSION CHECKERS ---
   const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
