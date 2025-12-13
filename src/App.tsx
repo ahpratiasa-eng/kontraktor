@@ -4,7 +4,7 @@ import {
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle, Printer, RotateCcw
+  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle, Printer
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -262,7 +262,6 @@ const App = () => {
   // Transaction Inputs (Fixed)
   const [amount, setAmount] = useState(0);
   
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
