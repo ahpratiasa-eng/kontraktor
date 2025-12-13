@@ -4,7 +4,7 @@ import {
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle, Camera, MapPin, ExternalLink, Image as ImageIcon
+  History, AlertTriangle, Camera, MapPin, ExternalLink, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -68,12 +68,11 @@ type Worker = {
 type Task = { id: number; name: string; weight: number; progress: number; lastUpdated: string; };
 type AttendanceLog = { id: number; date: string; workerId: number; status: 'Hadir' | 'Setengah' | 'Lembur' | 'Absen'; note: string; };
 
-// Tipe Baru untuk Bukti Kehadiran (Foto & Lokasi)
 type AttendanceEvidence = {
   id: number;
   date: string;
-  photoUrl: string; // Base64 string (untuk demo tanpa storage bucket)
-  location: string; // "lat,lng"
+  photoUrl: string;
+  location: string;
   uploader: string;
   timestamp: string;
 };
@@ -89,7 +88,7 @@ type Project = {
   workers: Worker[]; 
   tasks: Task[]; 
   attendanceLogs: AttendanceLog[]; 
-  attendanceEvidences: AttendanceEvidence[]; // Field Baru
+  attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
 };
 
@@ -205,7 +204,7 @@ const App = () => {
   const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
   
-  // NEW: Evidence States
+  // EVIDENCE
   const [evidencePhoto, setEvidencePhoto] = useState<string>('');
   const [evidenceLocation, setEvidenceLocation] = useState<string>('');
   const [isGettingLoc, setIsGettingLoc] = useState(false);
@@ -264,7 +263,7 @@ const App = () => {
         return { 
           id: d.id, ...data, 
           attendanceLogs: Array.isArray(data.attendanceLogs) ? data.attendanceLogs : [], 
-          attendanceEvidences: Array.isArray(data.attendanceEvidences) ? data.attendanceEvidences : [], // New Field
+          attendanceEvidences: Array.isArray(data.attendanceEvidences) ? data.attendanceEvidences : [], 
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
           tasks: Array.isArray(data.tasks) ? data.tasks : [], 
           workers: Array.isArray(data.workers) ? data.workers : [], 
@@ -293,7 +292,7 @@ const App = () => {
         setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`);
         setIsGettingLoc(false);
       },
-      (err) => {
+      () => {
         alert("Gagal ambil lokasi. Pastikan GPS aktif.");
         setIsGettingLoc(false);
       }
@@ -319,7 +318,6 @@ const App = () => {
       newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' });
     });
 
-    // Save Evidence if exists
     let newEvidences = activeProject.attendanceEvidences || [];
     if (evidencePhoto || evidenceLocation) {
       newEvidences = [{
