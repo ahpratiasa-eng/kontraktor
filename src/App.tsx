@@ -215,7 +215,6 @@ const App = () => {
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
@@ -232,8 +231,7 @@ const App = () => {
   const [isGettingLoc, setIsGettingLoc] = useState(false);
 
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
-  const [expandedReportIds, setExpandedReportIds] = useState<{[id: string]: boolean}>({});
-
+  
   // --- PERMISSION CHECKERS ---
   const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
   const canAccessWorkers = () => ['super_admin', 'kontraktor', 'pengawas'].includes(userRole || '');
@@ -552,8 +550,6 @@ const App = () => {
 
   const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
   
-  const toggleReportGroup = (groupId: string) => { setExpandedReportIds(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
-
   const handleTransaction = (e: React.FormEvent) => { e.preventDefault(); if (!activeProject) return; const form = e.target as HTMLFormElement; const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; const amount = Number((form.elements.namedItem('amount') as HTMLInputElement).value); const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; if (!desc || isNaN(amount) || amount <= 0) { alert("Data tidak valid"); return; } updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount, type: txType }, ...(activeProject.transactions || [])] }); form.reset(); };
   
   // UPDATE PROGRESS BASED ON RAB ITEM
