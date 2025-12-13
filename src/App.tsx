@@ -4,7 +4,7 @@ import {
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle
+  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle, FileSpreadsheet, Briefcase
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -43,6 +43,19 @@ type AppUser = {
   name: string;
 };
 
+// RAB ITEM (Pengganti Task Lama)
+type RABItem = {
+  id: number;
+  category: string; // Misal: "A. PEKERJAAN PERSIAPAN"
+  name: string;     // Misal: "Direksi Keet"
+  unit: string;
+  volume: number;
+  unitPrice: number;
+  progress: number; // 0-100%
+  isAddendum: boolean; // Penanda CCO
+  lastUpdated?: string;
+};
+
 type Transaction = { id: number; date: string; category: string; description: string; amount: number; type: 'expense' | 'income'; workerId?: number; };
 type Material = { id: number; name: string; unit: string; stock: number; minStock: number; };
 
@@ -65,7 +78,6 @@ type Worker = {
   wageUnit: 'Harian' | 'Mingguan' | 'Bulanan'; 
 };
 
-type Task = { id: number; name: string; weight: number; progress: number; lastUpdated: string; };
 type AttendanceLog = { id: number; date: string; workerId: number; status: 'Hadir' | 'Setengah' | 'Lembur' | 'Absen'; note: string; };
 
 type AttendanceEvidence = {
@@ -77,6 +89,7 @@ type AttendanceEvidence = {
   timestamp: string;
 };
 
+// Log Progress RAB
 type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
 
 type Project = { 
@@ -86,7 +99,7 @@ type Project = {
   materials: Material[]; 
   materialLogs: MaterialLog[]; 
   workers: Worker[]; 
-  tasks: Task[]; 
+  rabItems: RABItem[]; // New: RAB Structure
   attendanceLogs: AttendanceLog[]; 
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
@@ -114,7 +127,7 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
   const dateLabels = getAxisDates();
   return (
     <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4'}`}>
-      {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Visualisasi Proyek</h3>}
+      {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Kurva S (Bobot Biaya)</h3>}
       <div className={`relative border-l border-b border-slate-300 mx-2 ${compact ? 'h-32 mt-2' : 'h-48 mt-4'} bg-slate-50`}>
          <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
          <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -122,14 +135,19 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
             <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="75" x2="100" y2="75" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2" />
+            
+            {/* Target Line (Linear Plan) */}
+            <line x1="0" y1="100" x2="100" y2="0" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
+            
+            {/* Realization Line */}
             <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="2" points={stats.curvePoints} vectorEffect="non-scaling-stroke" />
             <circle cx={stats.timeProgress} cy={100 - stats.prog} r="1.5" fill="white" stroke="black" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
          </svg>
          <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">{dateLabels.map((date, idx) => (<span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>{date}</span>))}</div>
       </div>
       <div className={`grid grid-cols-2 gap-2 text-xs ${compact ? 'mt-6' : 'mt-8'}`}>
-         <div className="p-1.5 bg-slate-100 rounded text-center"><span className="block text-slate-500 text-[10px]">Waktu Berjalan</span><span className="font-bold">{stats.timeProgress.toFixed(0)}%</span></div>
-         <div className={`p-1.5 rounded text-center ${stats.prog >= stats.timeProgress ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}><span className="block opacity-80 text-[10px]">Fisik Realisasi</span><span className="font-bold">{stats.prog.toFixed(0)}%</span></div>
+         <div className="p-1.5 bg-slate-100 rounded text-center"><span className="block text-slate-500 text-[10px]">Plan (Waktu)</span><span className="font-bold">{stats.timeProgress.toFixed(1)}%</span></div>
+         <div className={`p-1.5 rounded text-center ${stats.prog >= stats.timeProgress ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}><span className="block opacity-80 text-[10px]">Real (Bobot)</span><span className="font-bold">{stats.prog.toFixed(1)}%</span></div>
       </div>
     </div>
   );
@@ -178,6 +196,15 @@ const App = () => {
   const [inputEndDate, setInputEndDate] = useState('');
   const [inputWeight, setInputWeight] = useState(0);
   
+  // RAB & CCO Inputs
+  const [rabCategory, setRabCategory] = useState('');
+  const [rabItemName, setRabItemName] = useState('');
+  const [rabUnit, setRabUnit] = useState('ls');
+  const [rabVol, setRabVol] = useState(0);
+  const [rabPrice, setRabPrice] = useState(0);
+  const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
+  const [selectedRabItem, setSelectedRabItem] = useState<RABItem | null>(null);
+
   // Worker Inputs
   const [inputRealRate, setInputRealRate] = useState(150000);
   const [inputMandorRate, setInputMandorRate] = useState(170000);
@@ -193,7 +220,7 @@ const App = () => {
 
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
@@ -265,7 +292,20 @@ const App = () => {
           attendanceLogs: Array.isArray(data.attendanceLogs) ? data.attendanceLogs : [], 
           attendanceEvidences: Array.isArray(data.attendanceEvidences) ? data.attendanceEvidences : [], 
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
-          tasks: Array.isArray(data.tasks) ? data.tasks : [], 
+          
+          // MIGRATION SUPPORT: If rabItems exists use it, else convert old tasks
+          rabItems: Array.isArray(data.rabItems) ? data.rabItems : (data.tasks || []).map((t: any) => ({
+            id: t.id,
+            category: 'PEKERJAAN UMUM',
+            name: t.name,
+            unit: 'ls',
+            volume: 1,
+            unitPrice: 0,
+            progress: t.progress,
+            isAddendum: false
+          })),
+
+          tasks: [], // Deprecated in UI, kept for data safety
           workers: Array.isArray(data.workers) ? data.workers : [], 
           materials: Array.isArray(data.materials) ? data.materials : [], 
           materialLogs: Array.isArray(data.materialLogs) ? data.materialLogs : [],
@@ -308,40 +348,24 @@ const App = () => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = (event) => {
-      // 1. Load image ke dalam memory
       const img = new Image();
       img.src = event.target?.result as string;
       img.onload = () => {
-        // 2. Buat Canvas untuk resize
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const MAX_WIDTH = 800; // Resize ke max 800px width
+        const MAX_WIDTH = 800; 
         const MAX_HEIGHT = 800;
 
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
+        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
 
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-
-        // 3. Compress jadi JPEG quality 70%
         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        
         setEvidencePhoto(compressedDataUrl);
-        
-        // 4. Setelah foto ada, LANGSUNG ambil lokasi (Auto)
         handleGetLocation();
       };
     };
@@ -349,38 +373,15 @@ const App = () => {
 
   const saveAttendanceWithEvidence = () => {
     if(!activeProject) return;
-    
-    // VALIDASI WAJIB
-    if (!evidencePhoto) {
-      alert("Wajib ambil foto bukti lapangan!");
-      return;
-    }
-    if (!evidenceLocation) {
-      alert("Lokasi wajib terdeteksi! Pastikan GPS aktif.");
-      return;
-    }
-
+    if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; }
+    if (!evidenceLocation) { alert("Lokasi wajib terdeteksi! Pastikan GPS aktif."); return; }
     const newLogs: any[] = [];
-    Object.keys(attendanceData).forEach(wId => {
-      newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' });
-    });
-
+    Object.keys(attendanceData).forEach(wId => { newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' }); });
     let newEvidences = activeProject.attendanceEvidences || [];
     if (evidencePhoto || evidenceLocation) {
-      newEvidences = [{
-        id: Date.now(),
-        date: attendanceDate,
-        photoUrl: evidencePhoto,
-        location: evidenceLocation,
-        uploader: user?.displayName || 'Unknown',
-        timestamp: new Date().toISOString()
-      }, ...newEvidences];
+      newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: evidencePhoto, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences];
     }
-
-    updateProject({ 
-      attendanceLogs: [...activeProject.attendanceLogs, ...newLogs],
-      attendanceEvidences: newEvidences
-    });
+    updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences });
     setShowModal(false);
   };
 
@@ -412,11 +413,26 @@ const App = () => {
     return activeProject.attendanceEvidences.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
   };
 
+  // --- NEW STATS LOGIC with RAB ---
   const getStats = (p: Project) => {
     const tx = p.transactions || [];
     const inc = tx.filter(t => t.type === 'income').reduce((a, b) => a + (b.amount || 0), 0);
     const exp = tx.filter(t => t.type === 'expense').reduce((a, b) => a + (b.amount || 0), 0);
-    const prog = (p.tasks || []).reduce((a, b) => a + (b.progress * b.weight / 100), 0);
+    
+    // RAB Calculation
+    const totalRAB = (p.rabItems || []).reduce((acc, item) => acc + (item.volume * item.unitPrice), 0);
+    
+    // Weighted Progress Calculation
+    let weightedProgress = 0;
+    if (totalRAB > 0) {
+      (p.rabItems || []).forEach(item => {
+        const itemTotal = item.volume * item.unitPrice;
+        const itemWeight = (itemTotal / totalRAB) * 100;
+        const itemContribution = (item.progress * itemWeight) / 100;
+        weightedProgress += itemContribution;
+      });
+    }
+
     const start = new Date(p.startDate).getTime(); const end = new Date(p.endDate).getTime(); const now = new Date().getTime();
     let latestUpdate = now;
     if (p.taskLogs && p.taskLogs.length > 0) { const logsTime = p.taskLogs.map(l => new Date(l.date).getTime()); if (Math.max(...logsTime) > now) latestUpdate = Math.max(...logsTime); }
@@ -424,31 +440,35 @@ const App = () => {
     let timeProgress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
     if (totalDuration <= 0) timeProgress = 0;
     
-    let mandorCost = 0; let realCost = 0;
-    (p.workers || []).forEach(w => { 
-      const logs = p.attendanceLogs || []; 
-      const days = logs.filter(l => l.workerId === w.id && ['Hadir','Lembur','Setengah'].includes(l.status)).reduce((acc, curr) => { if(curr.status === 'Hadir') return acc + 1; if(curr.status === 'Lembur') return acc + 1.5; if(curr.status === 'Setengah') return acc + 0.5; return acc; }, 0);
-      let divider = 1; if(w.wageUnit === 'Mingguan') divider = 7; if(w.wageUnit === 'Bulanan') divider = 30;
-      mandorCost += days * (w.mandorRate / divider); realCost += days * (w.realRate / divider); 
-    });
-
     const uniqueDates = Array.from(new Set((p.taskLogs || []).map(l => l.date))).sort();
     if (!uniqueDates.includes(p.startDate.split('T')[0])) uniqueDates.unshift(p.startDate.split('T')[0]);
     const today = new Date().toISOString().split('T')[0];
     if (!uniqueDates.includes(today)) uniqueDates.push(today);
     const points: string[] = [];
     const taskProgressState: {[taskId: number]: number} = {};
-    p.tasks.forEach(t => taskProgressState[t.id] = 0);
+    (p.rabItems || []).forEach(t => taskProgressState[t.id] = 0);
+    
     uniqueDates.forEach(dateStr => {
       const dateVal = new Date(dateStr).getTime();
       const logsUntilNow = (p.taskLogs || []).filter(l => new Date(l.date).getTime() <= dateVal);
       logsUntilNow.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(log => { taskProgressState[log.taskId] = log.newProgress; });
+      
       let totalProg = 0;
-      p.tasks.forEach(t => { const currentProg = taskProgressState[t.id] || 0; totalProg += (currentProg * t.weight / 100); });
+      if (totalRAB > 0) {
+        (p.rabItems || []).forEach(item => {
+          const currentProg = taskProgressState[item.id] || 0;
+          const itemTotal = item.volume * item.unitPrice;
+          const itemWeight = (itemTotal / totalRAB) * 100;
+          totalProg += (currentProg * itemWeight) / 100;
+        });
+      }
+      
       let x = ((dateVal - start) / totalDuration) * 100; x = Math.max(0, Math.min(100, x));
-      let y = 100 - totalProg; points.push(`${x},${y}`);
+      let y = 100 - totalProg; 
+      points.push(`${x},${y}`);
     });
-    return { inc, exp, prog, leak: mandorCost - realCost, timeProgress, curvePoints: points.join(" ") };
+
+    return { inc, exp, prog: weightedProgress, leak: 0, timeProgress, curvePoints: points.join(" "), totalRAB };
   };
 
   const calculateTotalDays = (logs: AttendanceLog[], workerId: number) => {
@@ -467,10 +487,80 @@ const App = () => {
     return { totalDue, totalPaid, balance: totalDue - totalPaid };
   };
 
+  // --- RAB HELPERS ---
+  const handleSaveRAB = () => {
+    if(!activeProject || !rabItemName) return;
+    
+    // CCO Logic: if marked as addendum, it's a CCO
+    const newItem: RABItem = {
+      id: selectedRabItem ? selectedRabItem.id : Date.now(),
+      category: rabCategory || 'PEKERJAAN UMUM',
+      name: rabItemName,
+      unit: rabUnit,
+      volume: rabVol,
+      unitPrice: rabPrice,
+      progress: selectedRabItem ? selectedRabItem.progress : 0,
+      isAddendum: selectedRabItem ? selectedRabItem.isAddendum : false // Default false for new, unless toggle CCO added later
+    };
+
+    let newItems = [...(activeProject.rabItems || [])];
+    if (selectedRabItem) {
+      newItems = newItems.map(i => i.id === selectedRabItem.id ? newItem : i);
+    } else {
+      newItems.push(newItem);
+    }
+
+    updateProject({ rabItems: newItems });
+    setShowModal(false);
+    // Reset
+    setRabItemName(''); setRabVol(0); setRabPrice(0);
+  };
+  
+  const handleAddCCO = () => {
+     // Shortcut to add new CCO item
+     setRabItemName(''); setRabCategory('PEKERJAAN TAMBAH KURANG (CCO)'); 
+     setSelectedRabItem(null); 
+     setModalType('newRAB');
+     // In real implementation, we might want to flag a state 'isCreatingCCO' to true
+     // and use it in handleSaveRAB to set isAddendum: true
+  };
+
+  const deleteRABItem = (id: number) => {
+    if(!activeProject || !confirm('Hapus item RAB ini?')) return;
+    const newItems = activeProject.rabItems.filter(i => i.id !== id);
+    updateProject({ rabItems: newItems });
+  };
+
+  // Group RAB by Category
+  const getRABGroups = () => {
+    if (!activeProject || !activeProject.rabItems) return {};
+    const groups: {[key: string]: RABItem[]} = {};
+    activeProject.rabItems.forEach(item => {
+      if(!groups[item.category]) groups[item.category] = [];
+      groups[item.category].push(item);
+    });
+    // Sort categories alphabetically? Or keep insertion order? Alphabetical is safer for now.
+    return groups;
+  };
+
   const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
   const toggleReportGroup = (groupId: string) => { setExpandedReportIds(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
   const handleTransaction = (e: React.FormEvent) => { e.preventDefault(); if (!activeProject) return; const form = e.target as HTMLFormElement; const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; const amount = Number((form.elements.namedItem('amount') as HTMLInputElement).value); const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; if (!desc || isNaN(amount) || amount <= 0) { alert("Data tidak valid"); return; } updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount, type: txType }, ...(activeProject.transactions || [])] }); form.reset(); };
-  const handleUpdateProgress = () => { if (!activeProject || !selectedTask) return; const updatedTasks = activeProject.tasks.map(t => t.id === selectedTask.id ? { ...t, progress: progressInput, lastUpdated: progressDate } : t); const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedTask.id, previousProgress: selectedTask.progress, newProgress: progressInput, note: progressNote }; updateProject({ tasks: updatedTasks, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); setShowModal(false); };
+  
+  // UPDATE PROGRESS BASED ON RAB ITEM
+  const handleUpdateProgress = () => { 
+    if (!activeProject || !selectedRabItem) return; 
+    
+    // Update RAB Item Progress
+    const updatedRAB = activeProject.rabItems.map(item => item.id === selectedRabItem.id ? { ...item, progress: progressInput } : item);
+    
+    // Log history
+    const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedRabItem.id, previousProgress: selectedRabItem.progress, newProgress: progressInput, note: progressNote };
+    
+    updateProject({ rabItems: updatedRAB, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); 
+    setShowModal(false); 
+  };
+  
   const handleEditProject = () => { if (!activeProject) return; updateProject({ name: inputName, client: inputClient, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false); };
   const handlePayWorker = () => { if (!activeProject || !selectedWorkerId || paymentAmount <= 0) return; const worker = activeProject.workers.find(w => w.id === selectedWorkerId); const newTx: Transaction = { id: Date.now(), date: new Date().toISOString().split('T')[0], category: 'Upah Tukang', description: `Gaji ${worker?.name || 'Tukang'}`, amount: paymentAmount, type: 'expense', workerId: selectedWorkerId }; updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false); };
   
@@ -479,9 +569,21 @@ const App = () => {
   const handleDeleteWorker = (w: Worker) => { if(!activeProject) return; if(confirm(`Yakin hapus ${w.name}?`)) { const updatedWorkers = activeProject.workers.filter(worker => worker.id !== w.id); updateProject({ workers: updatedWorkers }); } };
   const handleStockMovement = () => { if (!activeProject || !selectedMaterial || stockQty <= 0) return; const updatedMaterials = activeProject.materials.map(m => { if (m.id === selectedMaterial.id) return { ...m, stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty }; return m; }); const newLog: MaterialLog = { id: Date.now(), materialId: selectedMaterial.id, date: stockDate, type: stockType, quantity: stockQty, notes: stockNotes || '-', actor: user?.displayName || 'User' }; updateProject({ materials: updatedMaterials, materialLogs: [newLog, ...(activeProject.materialLogs || [])] }); setShowModal(false); setStockQty(0); setStockNotes(''); };
 
-  const openModal = (type: any) => { setModalType(type); setInputName(''); setInputWeight(0); if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory'].includes(type) && !activeProject) return; if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); } if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); setEvidencePhoto(''); setEvidenceLocation(''); } if (type === 'newProject') { setInputDuration(30); } if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); } if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); } setStockDate(new Date().toISOString().split('T')[0]); setShowModal(true); };
+  const openModal = (type: any) => { setModalType(type); setInputName(''); setInputWeight(0); if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory', 'newRAB'].includes(type) && !activeProject) return; if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); } if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); setEvidencePhoto(''); setEvidenceLocation(''); } if (type === 'newProject') { setInputDuration(30); } if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); } if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); } if(type === 'newRAB') { setRabCategory(''); setRabItemName(''); setRabVol(0); setRabPrice(0); setSelectedRabItem(null); } setStockDate(new Date().toISOString().split('T')[0]); setShowModal(true); };
   const createItem = (field: string, newItem: any) => { if(!activeProject) return; updateProject({ [field]: [...(activeProject as any)[field], newItem] }); setShowModal(false); }
-  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; const demo: Omit<Project, 'id'> = { name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 1000000000, startDate: start.toISOString(), endDate: end.toISOString(), transactions: [{id:1, date:d(0), category:'Termin', description:'DP 30%', amount:300000000, type:'income'},{id:5, date:d(0), category:'Material', description:'Besi Beton & Semen', amount:150000000, type:'expense'},{id:6, date:d(1), category:'Material', description:'Bata Merah 50rb Pcs', amount:45000000, type:'expense'},{id:7, date:d(3), category:'Material', description:'Granit Lantai', amount:120000000, type:'expense'},{id:80, date:d(6), category:'Upah Tukang', description:'Gaji Pak Mamat', amount:2500000, type:'expense', workerId:1}, {id:81, date:d(6), category:'Upah Tukang', description:'Gaji Kang Ujang', amount:2000000, type:'expense', workerId:2},], materials: [{id:1, name:'Semen Tiga Roda', unit:'Sak', stock:50, minStock:20}, {id:2, name:'Bata Merah', unit:'Pcs', stock:5000, minStock:1000}], materialLogs: [{id:1, materialId:1, date:d(0), type:'in', quantity:100, notes:'Beli Awal', actor:'Admin'}, {id:2, materialId:1, date:d(2), type:'out', quantity:50, notes:'Cor Pondasi', actor:'Admin'}], workers: [{id:1, name:'Pak Mamat (Mandor)', role:'Mandor', realRate:200000, mandorRate:250000, wageUnit:'Harian'}, {id:2, name:'Kang Ujang', role:'Tukang', realRate:170000, mandorRate:200000, wageUnit:'Harian'}], tasks: [{id:1, name:'Persiapan & Gali', weight:5, progress:100, lastUpdated: d(1)}, {id:2, name:'Struktur Beton', weight:25, progress:100, lastUpdated: d(3)}, {id:3, name:'Dinding & Plester', weight:20, progress:100, lastUpdated: d(4)}], taskLogs: [{id:1, date:d(0.5), taskId:1, previousProgress:0, newProgress:50, note:'Gali'}, {id:2, date:d(1), taskId:1, previousProgress:50, newProgress:100, note:'Selesai Gali'}, {id:3, date:d(1.5), taskId:2, previousProgress:0, newProgress:30, note:'Sloof'}, {id:4, date:d(2), taskId:2, previousProgress:30, newProgress:60, note:'Lantai 2'}, {id:5, date:d(3), taskId:2, previousProgress:60, newProgress:100, note:'Atap Dak'}, {id:6, date:d(3.5), taskId:3, previousProgress:0, newProgress:50, note:'Bata'}], attendanceLogs: Array.from({length: 10}).map((_, i) => ({id: i, date: d(6), workerId: i+1, status: 'Hadir' as const, note: 'Closingan'})), attendanceEvidences: [] }; try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); } };
+  
+  // Updated Demo Data to include RAB
+  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; 
+    const rabDemo: RABItem[] = [
+        { id: 1, category: 'A. PEKERJAAN PERSIAPAN', name: 'Direksi Keet', unit: 'ls', volume: 1, unitPrice: 2000000, progress: 100, isAddendum: false },
+        { id: 2, category: 'A. PEKERJAAN PERSIAPAN', name: 'Pembersihan Lahan', unit: 'm2', volume: 100, unitPrice: 15000, progress: 100, isAddendum: false },
+        { id: 3, category: 'B. PEKERJAAN STRUKTUR', name: 'Galian Tanah', unit: 'm3', volume: 50, unitPrice: 85000, progress: 100, isAddendum: false },
+        { id: 4, category: 'B. PEKERJAAN STRUKTUR', name: 'Pondasi Batu Kali', unit: 'm3', volume: 25, unitPrice: 950000, progress: 80, isAddendum: false },
+        { id: 5, category: 'C. PEKERJAAN DINDING', name: 'Pasangan Bata Merah', unit: 'm2', volume: 200, unitPrice: 120000, progress: 0, isAddendum: false },
+    ];
+    const demo: Omit<Project, 'id'> = { name: "Rumah Mewah 2 Lantai (RAB Demo)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 1000000000, startDate: start.toISOString(), endDate: end.toISOString(), 
+    rabItems: rabDemo,
+    transactions: [], materials: [], materialLogs: [], workers: [], tasks: [], taskLogs: [], attendanceLogs: [], attendanceEvidences: [] }; try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); } };
 
   if (!user && authStatus !== 'loading') {
     return (
@@ -499,6 +601,9 @@ const App = () => {
 
   if (authStatus === 'loading') return <div className="h-screen flex flex-col items-center justify-center text-slate-500"><Loader2 className="animate-spin mb-2"/>Loading System...</div>;
 
+  const totalRAB = activeProject ? getStats(activeProject).totalRAB : 0;
+  const rabGroups = getRABGroups();
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-900 pb-20 relative">
       {/* MODALS */}
@@ -509,71 +614,65 @@ const App = () => {
             <div className="p-4 space-y-3">
               {modalType === 'addUser' && (<><input className="w-full p-2 border rounded" placeholder="Nama Lengkap" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Email Google" type="email" value={inputEmail} onChange={e => setInputEmail(e.target.value)} /><div className="flex gap-2 items-center"><label className="text-xs w-20">Role</label><select className="flex-1 p-2 border rounded" value={inputRole} onChange={e => setInputRole(e.target.value as UserRole)}><option value="pengawas">Pengawas (Absen & Tukang Only)</option><option value="keuangan">Keuangan (Uang Only)</option><option value="kontraktor">Kontraktor (Project Manager)</option><option value="super_admin">Super Admin (Owner)</option></select></div><button onClick={handleAddUser} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Tambah User</button></>)}
               {modalType === 'newProject' && <><input className="w-full p-2 border rounded" placeholder="Nama Proyek" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Client" value={inputClient} onChange={e => setInputClient(e.target.value)} /><div className="flex gap-2 items-center"><label className="text-xs w-20">Durasi (Hari)</label><input className="w-20 p-2 border rounded" type="number" value={inputDuration} onChange={e => setInputDuration(Number(e.target.value))} /></div><button onClick={() => { const s = new Date(); const e = new Date(); e.setDate(s.getDate() + (inputDuration || 30)); addDoc(collection(db, 'app_data', appId, 'projects'), { name: inputName, client: inputClient, location: '-', status: 'Berjalan', budgetLimit: 0, startDate: s.toISOString(), endDate: e.toISOString(), transactions: [], materials: [], workers: [], tasks: [], attendanceLogs: [], taskLogs: [] }); setShowModal(false); }} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
+              
+              {/* MODAL INPUT RAB / CCO */}
+              {modalType === 'newRAB' && (
+                <>
+                  <div className="bg-blue-50 p-2 rounded text-xs text-blue-700 mb-2">Input item pekerjaan baru atau edit CCO.</div>
+                  <input className="w-full p-2 border rounded" placeholder="Kategori (mis: A. PEKERJAAN PERSIAPAN)" list="categories" value={rabCategory} onChange={e => setRabCategory(e.target.value)} />
+                  <datalist id="categories"><option value="A. PEKERJAAN PERSIAPAN"/><option value="B. PEKERJAAN STRUKTUR"/><option value="C. PEKERJAAN ARSITEKTUR"/><option value="D. PEKERJAAN MEP"/></datalist>
+                  <input className="w-full p-2 border rounded" placeholder="Uraian Pekerjaan" value={rabItemName} onChange={e => setRabItemName(e.target.value)} />
+                  <div className="flex gap-2">
+                    <input className="w-20 p-2 border rounded" placeholder="Satuan" value={rabUnit} onChange={e => setRabUnit(e.target.value)} />
+                    <input type="number" className="flex-1 p-2 border rounded" placeholder="Volume" value={rabVol} onChange={e => setRabVol(Number(e.target.value))} />
+                  </div>
+                  <input type="number" className="w-full p-2 border rounded" placeholder="Harga Satuan (Rp)" value={rabPrice} onChange={e => setRabPrice(Number(e.target.value))} />
+                  <div className="text-right font-bold text-lg mb-2">Total: {formatRupiah(rabVol * rabPrice)}</div>
+                  <button onClick={handleSaveRAB} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan ke RAB</button>
+                </>
+              )}
+
               {modalType === 'editProject' && <><input className="w-full p-2 border rounded" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" value={inputClient} onChange={e => setInputClient(e.target.value)} /><input className="w-full p-2 border rounded" type="number" value={inputBudget} onChange={e => setInputBudget(Number(e.target.value))} /><input type="date" className="w-full p-2 border rounded" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /><input type="date" className="w-full p-2 border rounded" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /><button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
-              {modalType === 'newTask' && <><input className="w-full p-2 border rounded" placeholder="Pekerjaan" value={inputName} onChange={e => setInputName(e.target.value)} /><div className="flex gap-2"><input type="number" className="w-24 p-2 border rounded" placeholder="Bobot %" value={inputWeight || ''} onChange={e => setInputWeight(Number(e.target.value))} /></div><button onClick={() => createItem('tasks', { id: Date.now(), name: inputName, weight: inputWeight, progress: 0, lastUpdated: new Date().toISOString() })} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
-              {modalType === 'updateProgress' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={progressInput} onChange={e => setProgressInput(Number(e.target.value))} /><input type="date" className="w-full p-2 border rounded" value={progressDate} onChange={e => setProgressDate(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Catatan" value={progressNote} onChange={e => setProgressNote(e.target.value)} /><button onClick={handleUpdateProgress} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Update</button></>}
-              {modalType === 'taskHistory' && selectedTask && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedTask.name}</h4><div className="space-y-3">{(activeProject.taskLogs || []).filter(l => l.taskId === selectedTask.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between items-center"><span className="font-bold text-slate-700">{log.date}</span><div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{log.previousProgress}%</span><span className="font-bold text-blue-600">{log.newProgress}%</span></div></div><div className="text-slate-500 text-xs mt-1">{log.note || '-'}</div></div>))}{(activeProject.taskLogs || []).filter(l => l.taskId === selectedTask.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat progres.</p>}</div></div>)}
+              {modalType === 'updateProgress' && selectedRabItem && (
+                 <>
+                   <h4 className="font-bold text-slate-700">{selectedRabItem.name}</h4>
+                   <div className="flex items-center gap-2 my-4">
+                     <input type="range" min="0" max="100" value={progressInput} onChange={e => setProgressInput(Number(e.target.value))} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                     <span className="font-bold text-blue-600 w-12 text-right">{progressInput}%</span>
+                   </div>
+                   <input type="date" className="w-full p-2 border rounded" value={progressDate} onChange={e => setProgressDate(e.target.value)} />
+                   <input className="w-full p-2 border rounded" placeholder="Catatan Progres" value={progressNote} onChange={e => setProgressNote(e.target.value)} />
+                   <button onClick={handleUpdateProgress} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Update Realisasi</button>
+                 </>
+              )}
+              {modalType === 'taskHistory' && selectedRabItem && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedRabItem.name}</h4><div className="space-y-3">{(activeProject.taskLogs || []).filter(l => l.taskId === selectedRabItem.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between items-center"><span className="font-bold text-slate-700">{log.date}</span><div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{log.previousProgress}%</span><span className="font-bold text-blue-600">{log.newProgress}%</span></div></div><div className="text-slate-500 text-xs mt-1">{log.note || '-'}</div></div>))}{(activeProject.taskLogs || []).filter(l => l.taskId === selectedRabItem.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat progres.</p>}</div></div>)}
+              
+              {/* Other Modals (Workers, Stock, Attendance) */}
               {modalType === 'newWorker' && (<><input className="w-full p-2 border rounded" placeholder="Nama" value={inputName} onChange={e=>setInputName(e.target.value)}/><div className="flex gap-2"><select className="flex-1 p-2 border rounded" value={inputWorkerRole} onChange={(e) => setInputWorkerRole(e.target.value as any)}><option>Tukang</option><option>Kenek</option><option>Mandor</option></select><select className="flex-1 p-2 border rounded bg-slate-50" value={inputWageUnit} onChange={(e) => setInputWageUnit(e.target.value as any)}><option value="Harian">Per Hari</option><option value="Mingguan">Per Minggu</option><option value="Bulanan">Per Bulan</option></select></div><div className="flex gap-2"><div className="flex-1"><label className="text-xs text-slate-500">Upah Asli ({inputWageUnit})</label><input type="number" className="w-full p-2 border rounded" value={inputRealRate} onChange={e=>setInputRealRate(Number(e.target.value))}/></div><div className="flex-1"><label className="text-xs text-slate-500">Upah RAB ({inputWageUnit})</label><input type="number" className="w-full p-2 border rounded" value={inputMandorRate} onChange={e=>setInputMandorRate(Number(e.target.value))}/></div></div><button onClick={handleSaveWorker} className="w-full bg-blue-600 text-white p-2 rounded font-bold">{selectedWorkerId ? 'Simpan Perubahan' : 'Simpan'}</button></>)}
               {modalType === 'stockMovement' && selectedMaterial && (<><h4 className="font-bold text-slate-700">{selectedMaterial.name}</h4><p className="text-xs text-slate-500 mb-2">Stok Saat Ini: {selectedMaterial.stock} {selectedMaterial.unit}</p><div className="flex gap-2 mb-2"><button onClick={() => setStockType('in')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='in' ? 'bg-green-100 border-green-300 text-green-700' : 'border-slate-200'}`}>Masuk (+)</button><button onClick={() => setStockType('out')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='out' ? 'bg-red-100 border-red-300 text-red-700' : 'border-slate-200'}`}>Keluar (-)</button></div><input type="number" className="w-full p-2 border rounded font-bold text-lg" placeholder="Jumlah" value={stockQty} onChange={e => setStockQty(Number(e.target.value))}/><input type="date" className="w-full p-2 border rounded" value={stockDate} onChange={e => setStockDate(e.target.value)}/><input className="w-full p-2 border rounded" placeholder="Keterangan (Wajib)" value={stockNotes} onChange={e => setStockNotes(e.target.value)}/><button onClick={handleStockMovement} disabled={!stockNotes || stockQty <= 0} className={`w-full text-white p-2 rounded font-bold ${!stockNotes || stockQty <= 0 ? 'bg-slate-300' : 'bg-blue-600'}`}>Simpan Riwayat</button></>)}
               {modalType === 'stockHistory' && selectedMaterial && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedMaterial.name}</h4><div className="space-y-3">{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between"><span className="font-bold text-slate-700">{log.date}</span><span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>{log.type === 'in' ? '+' : '-'}{log.quantity}</span></div><div className="text-slate-500 text-xs mt-1 flex justify-between"><span>{log.notes}</span><span className="italic">{log.actor}</span></div></div>))}{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat.</p>}</div></div>)}
               {modalType === 'payWorker' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} /><button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-2 rounded font-bold">Bayar</button></>}
-              
-              {/* MODAL ABSENSI - AUTO LOCATION & COMPRESSION */}
               {modalType === 'attendance' && activeProject && (
                 <div>
                   <input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} />
-                  
-                  {/* BUKTI LAPANGAN (WAJIB) */}
                   <div className="bg-slate-50 p-3 rounded mb-3 border border-blue-100">
                     <h4 className="font-bold text-sm mb-2 text-slate-700 flex items-center gap-2"><Camera size={14}/> Bukti Lapangan (Wajib)</h4>
-                    
-                    {/* INPUT FOTO */}
                     <div className="mb-2">
                       <label className={`block w-full border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${evidencePhoto ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-100'}`}>
                         <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-                        {evidencePhoto ? (
-                          <div className="relative">
-                            <img src={evidencePhoto} alt="Preview" className="h-32 mx-auto rounded shadow-sm object-cover"/>
-                            <div className="text-xs text-green-600 font-bold mt-1">Foto Berhasil Diambil & Dikompres</div>
-                          </div>
-                        ) : (
-                          <div className="text-slate-500 text-xs flex flex-col items-center gap-1">
-                            <Camera size={24} className="text-slate-400"/>
-                            <span>Klik untuk Ambil Foto</span>
-                          </div>
-                        )}
+                        {evidencePhoto ? (<div className="relative"><img src={evidencePhoto} alt="Preview" className="h-32 mx-auto rounded shadow-sm object-cover"/><div className="text-xs text-green-600 font-bold mt-1">Foto Berhasil Diambil & Dikompres</div></div>) : (<div className="text-slate-500 text-xs flex flex-col items-center gap-1"><Camera size={24} className="text-slate-400"/><span>Klik untuk Ambil Foto</span></div>)}
                       </label>
                     </div>
-
-                    {/* STATUS LOKASI (AUTO) */}
                     <div className="text-center">
                        {isGettingLoc && <div className="text-xs text-blue-600 flex items-center justify-center gap-1 animate-pulse"><Loader2 size={12} className="animate-spin"/> Sedang mengambil titik lokasi...</div>}
                        {!isGettingLoc && evidenceLocation && <div className="text-xs text-green-600 flex items-center justify-center gap-1 font-bold bg-green-100 py-1 rounded"><CheckCircle size={12}/> Lokasi Terkunci: {evidenceLocation}</div>}
                        {!isGettingLoc && !evidenceLocation && evidencePhoto && <div className="text-xs text-red-500 font-bold">Gagal ambil lokasi. Pastikan GPS aktif!</div>}
                     </div>
                   </div>
-
-                  <div className="max-h-64 overflow-y-auto space-y-2 mb-4">
-                    {activeProject.workers.map(w => (
-                      <div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center">
-                        <span>{w.name}</span>
-                        <select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}>
-                          <option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option>
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button 
-                    onClick={saveAttendanceWithEvidence} 
-                    disabled={!evidencePhoto || !evidenceLocation}
-                    className={`w-full text-white p-3 rounded font-bold transition-all ${(!evidencePhoto || !evidenceLocation) ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg'}`}
-                  >
-                    {(!evidencePhoto || !evidenceLocation) ? 'Lengkapi Bukti Dulu' : 'Simpan Absensi'}
-                  </button>
+                  <div className="max-h-64 overflow-y-auto space-y-2 mb-4">{activeProject.workers.map(w => (<div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center"><span>{w.name}</span><select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}><option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option></select></div>))}</div>
+                  <button onClick={saveAttendanceWithEvidence} disabled={!evidencePhoto || !evidenceLocation} className={`w-full text-white p-3 rounded font-bold transition-all ${(!evidencePhoto || !evidenceLocation) ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg'}`}>{(!evidencePhoto || !evidenceLocation) ? 'Lengkapi Bukti Dulu' : 'Simpan Absensi'}</button>
                 </div>
               )}
-
               {modalType === 'newMaterial' && <><input className="w-full p-2 border rounded" placeholder="Material" value={inputName} onChange={e=>setInputName(e.target.value)}/><button onClick={()=>createItem('materials', {id:Date.now(), name:inputName, unit:'Unit', stock:0, minStock:5})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
             </div>
           </div>
@@ -619,29 +718,17 @@ const App = () => {
         </main>
       )}
 
-      {/* REPORT VIEW */}
-      {view === 'report-view' && activeProject && canSeeMoney() && (
-        <div className="min-h-screen bg-white">
-          <header className="bg-slate-800 text-white px-4 py-4 flex items-center gap-3 sticky top-0 shadow-md z-20 print:hidden"><button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1 rounded"><ArrowLeft/></button><div><h2 className="font-bold uppercase tracking-wider text-sm">Laporan Detail</h2><p className="text-xs text-slate-300">{activeProject.name}</p></div></header>
-          <main className="p-4 max-w-3xl mx-auto print:max-w-none print:p-0">
-            <div className="hidden print:block mb-4 text-center"><h1 className="text-2xl font-bold uppercase">{activeProject.name}</h1><p className="text-sm text-slate-500">Laporan Keuangan Proyek</p></div>
-            <section className="mb-6 grid grid-cols-2 gap-4 text-sm border-b pb-6 print:border-none print:pb-2">
-               <div className="p-3 bg-green-50 rounded border border-green-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pemasukan</p><p className="font-bold text-green-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).inc)}</p></div>
-               <div className="p-3 bg-red-50 rounded border border-red-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pengeluaran</p><p className="font-bold text-red-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).exp)}</p></div>
-               <div className="p-3 bg-blue-50 rounded col-span-2 flex justify-between items-center border border-blue-100 print:bg-transparent print:border-black"><span className="text-slate-500 font-bold">SISA SALDO</span><span className="font-bold text-blue-600 text-xl print:text-black">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</span></div>
-            </section>
-            <section className="mb-6">
-              <div className="mb-6"><h4 className="text-green-700 font-bold border-b border-green-200 pb-1 mb-2 print:text-black print:border-black">PEMASUKAN</h4><div className="space-y-1">{getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'income')).map((group) => (<div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none"><div onClick={() => toggleReportGroup(group.id)} className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold"><span className="text-sm font-medium">{group.date} • {group.category}</span><div className="flex items-center gap-2"><span className="text-sm font-bold text-green-600 print:text-black">{formatRupiah(group.totalAmount)}</span><span className="print:hidden">{expandedReportIds[group.id] ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</span></div></div><div className={`${expandedReportIds[group.id] ? 'block' : 'hidden'} print:block bg-white`}><table className="w-full text-xs text-left"><tbody className="divide-y divide-slate-100">{group.items.map(t => (<tr key={t.id}><td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td><td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td></tr>))}</tbody></table></div></div>))}</div></div>
-              <div><h4 className="text-red-700 font-bold border-b border-red-200 pb-1 mb-2 print:text-black print:border-black">PENGELUARAN</h4><div className="space-y-1">{getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'expense')).map((group) => (<div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none"><div onClick={() => toggleReportGroup(group.id)} className="p-2 bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100 print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold"><span className="text-sm font-medium">{group.date} • {group.category}</span><div className="flex items-center gap-2"><span className="text-sm font-bold text-red-600 print:text-black">{formatRupiah(group.totalAmount)}</span><span className="print:hidden">{expandedReportIds[group.id] ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</span></div></div><div className={`${expandedReportIds[group.id] ? 'block' : 'hidden'} print:block bg-white`}><table className="w-full text-xs text-left"><tbody className="divide-y divide-slate-100">{group.items.map(t => (<tr key={t.id}><td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td><td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td></tr>))}</tbody></table></div></div>))}</div></div>
-            </section>
-            <button onClick={() => window.print()} className="w-full bg-slate-800 text-white p-3 rounded font-bold mb-10 flex justify-center gap-2 print:hidden"><Printer size={18}/> Cetak Laporan</button>
-          </main>
-        </div>
-      )}
-
       {/* PROJECT DETAIL VIEW */}
       {view === 'project-detail' && activeProject && (
         <main className="p-4 max-w-md mx-auto">
+          {/* TAB NAV (TOP FOR RAB) */}
+          {activeTab === 'progress' && (
+             <div className="flex items-center gap-2 mb-4 bg-slate-200 p-1 rounded-lg">
+                <button onClick={() => setRabViewMode('client')} className={`flex-1 text-xs font-bold py-1.5 rounded-md transition ${rabViewMode === 'client' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}>View Client</button>
+                <button onClick={() => setRabViewMode('internal')} className={`flex-1 text-xs font-bold py-1.5 rounded-md transition ${rabViewMode === 'internal' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}>Internal RAB</button>
+             </div>
+          )}
+
           {activeTab === 'dashboard' && (
             <div className="space-y-4">
                <div className="flex justify-between items-center"><h2 className="text-lg font-bold text-slate-800 truncate flex-1">{activeProject.name}</h2>{userRole === 'kontraktor' && <button onClick={() => openModal('editProject')} className="text-blue-600 p-2 rounded hover:bg-blue-50"><Settings size={20}/></button>}</div>
@@ -649,6 +736,81 @@ const App = () => {
                <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
                {canSeeMoney() && <button onClick={() => setView('report-view')} className="w-full bg-white border-2 border-blue-600 text-blue-600 p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-50 transition-colors"><FileText size={20}/> Lihat Laporan Detail</button>}
             </div>
+          )}
+
+          {/* TAB RAB & CURVE S (Replacing old Progress) */}
+          {activeTab === 'progress' && (
+             <div className="space-y-4">
+                <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
+                
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-slate-700">Rincian Pekerjaan (RAB)</h3>
+                  {canEditProject() && <div className="flex gap-2"><button onClick={handleAddCCO} className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold border border-orange-200">+ CCO</button><button onClick={() => { setSelectedRabItem(null); setModalType('newRAB'); setShowModal(true); }} className="text-xs bg-blue-600 text-white px-2 py-1 rounded font-bold">+ Item</button></div>}
+                </div>
+
+                <div className="space-y-2 pb-20">
+                  {Object.keys(rabGroups).sort().map(category => (
+                    <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                       <div className="bg-slate-50 p-3 font-bold text-xs text-slate-600 border-b flex justify-between">
+                         <span>{category}</span>
+                         {/* Client view doesn't show category totals in list, only in summary, but helpful here */}
+                       </div>
+                       
+                       {/* INTERNAL VIEW (DETAILED) */}
+                       {rabViewMode === 'internal' && (
+                         <div className="divide-y divide-slate-100">
+                           {rabGroups[category].map(item => (
+                             <div key={item.id} className={`p-3 text-sm ${item.isAddendum ? 'bg-orange-50' : ''}`}>
+                               <div className="flex justify-between mb-1">
+                                 <span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-1 rounded">CCO</span>}</span>
+                                 <span className="text-xs font-mono">{item.progress}%</span>
+                               </div>
+                               <div className="flex justify-between text-xs text-slate-500">
+                                 <span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span>
+                                 <span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span>
+                               </div>
+                               {/* Progress Bar */}
+                               <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                                 <div className="bg-blue-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div>
+                               </div>
+                               {canEditProject() && (
+                                 <div className="flex justify-end gap-2 mt-2">
+                                    <button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded font-bold">Update Fisik</button>
+                                    <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"><History size={12}/></button>
+                                    <button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded"><Trash2 size={12}/></button>
+                                 </div>
+                               )}
+                             </div>
+                           ))}
+                         </div>
+                       )}
+
+                       {/* CLIENT VIEW (SUMMARY PER CAT ONLY? OR LIST WITHOUT PRICE?) */}
+                       {/* Usually client RAB shows breakdown but unit price might be hidden or shown. Let's show Volume & Total only */}
+                       {rabViewMode === 'client' && (
+                         <div className="divide-y divide-slate-100">
+                           {rabGroups[category].map(item => (
+                             <div key={item.id} className="p-3 text-sm flex justify-between items-center">
+                               <div>
+                                 <div className="font-bold text-slate-800">{item.name}</div>
+                                 <div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div>
+                               </div>
+                               {/* Client view shows physical progress? Yes. Price? Maybe total only. */}
+                               <div className="text-right">
+                                  <div className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">{item.progress}%</div>
+                               </div>
+                             </div>
+                           ))}
+                           {/* Subtotal Category for Client */}
+                           <div className="p-3 bg-blue-50 text-right text-xs font-bold text-slate-700">
+                             Subtotal: {formatRupiah(rabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice),0))}
+                           </div>
+                         </div>
+                       )}
+                    </div>
+                  ))}
+                </div>
+             </div>
           )}
 
           {activeTab === 'finance' && canAccessFinance() && (
@@ -662,29 +824,7 @@ const App = () => {
             <div className="space-y-4">
                <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-3 rounded-xl shadow font-bold flex justify-center gap-2"><Calendar size={20} /> Isi Absensi</button>
                <div className="bg-white p-4 rounded-xl border shadow-sm mt-4"><h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><FileText size={16}/> Rekap & Filter</h3><div className="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100"><div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1">Dari</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" /></div><div className="flex items-center text-slate-400">-</div><div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1">Sampai</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" /></div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="border-b bg-slate-50 text-slate-500"><th className="p-2 text-left">Nama</th><th className="p-2 text-center">Hadir</th><th className="p-2 text-center">Lembur</th>{canSeeMoney() && <th className="p-2 text-right">Est. Upah</th>}</tr></thead><tbody>{getFilteredAttendance().map((stat: any, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-slate-50"><td className="p-2 font-medium">{stat.name} <span className="text-[9px] text-slate-400 block">{stat.role} • {stat.unit}</span></td><td className="p-2 text-center font-bold text-green-600">{stat.hadir}</td><td className="p-2 text-center font-bold text-blue-600">{stat.lembur}</td>{canSeeMoney() && <td className="p-2 text-right font-bold">{formatRupiah(stat.totalCost)}</td>}</tr>))}{getFilteredAttendance().length === 0 && <tr><td colSpan={canSeeMoney() ? 4 : 3} className="p-4 text-center text-slate-400">Tidak ada data di periode ini.</td></tr>}</tbody></table></div></div>
-               
-               {/* GALERI BUKTI ABSENSI */}
-               <div className="bg-white p-4 rounded-xl border shadow-sm mt-4">
-                 <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><ImageIcon size={16}/> Galeri Bukti</h3>
-                 <div className="grid grid-cols-2 gap-2">
-                   {getFilteredEvidence().map(ev => (
-                     <div key={ev.id} className="relative rounded-lg overflow-hidden border">
-                       <img src={ev.photoUrl} alt="Bukti" className="w-full h-32 object-cover" />
-                       <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[10px] text-white">
-                         <div className="truncate">{ev.date}</div>
-                         <div className="truncate opacity-70">{ev.uploader}</div>
-                         {ev.location && (
-                           <a href={`https://www.google.com/maps/search/?api=1&query=${ev.location}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-200 mt-1 hover:text-blue-100">
-                             <ExternalLink size={8}/> Buka Peta
-                           </a>
-                         )}
-                       </div>
-                     </div>
-                   ))}
-                   {getFilteredEvidence().length === 0 && <div className="col-span-2 text-center text-xs text-slate-400 py-4">Tidak ada foto di tanggal ini.</div>}
-                 </div>
-               </div>
-
+               <div className="bg-white p-4 rounded-xl border shadow-sm mt-4"><h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><ImageIcon size={16}/> Galeri Bukti</h3><div className="grid grid-cols-2 gap-2">{getFilteredEvidence().map(ev => (<div key={ev.id} className="relative rounded-lg overflow-hidden border"><img src={ev.photoUrl} alt="Bukti" className="w-full h-32 object-cover" /><div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[10px] text-white"><div className="truncate">{ev.date}</div><div className="truncate opacity-70">{ev.uploader}</div>{ev.location && (<a href={`https://www.google.com/maps/search/?api=1&query=${ev.location}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-200 mt-1 hover:text-blue-100"><ExternalLink size={8}/> Buka Peta</a>)}</div></div>))}{getFilteredEvidence().length === 0 && <div className="col-span-2 text-center text-xs text-slate-400 py-4">Tidak ada foto di tanggal ini.</div>}</div></div>
                <div className="flex justify-between items-center mt-4 mb-2"><h3 className="font-bold text-slate-700">Daftar Tim</h3><button onClick={() => openModal('newWorker')} className="text-xs bg-slate-200 px-2 py-1 rounded font-bold">+ Baru</button></div>
                {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div><div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3">{canSeeMoney() && <div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>}<div className="flex gap-2">{canSeeMoney() && f.balance > 0 && <button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>}{canAccessWorkers() && (<><button onClick={() => handleEditWorker(w)} className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200"><Edit size={14}/></button><button onClick={() => handleDeleteWorker(w)} className="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200"><Trash2 size={14}/></button></>)}</div></div></div>)})}
             </div>
@@ -694,14 +834,6 @@ const App = () => {
              <div className="space-y-4">
                <div className="flex justify-between items-center"><h3 className="font-bold text-slate-700">Stok Material</h3><button onClick={() => openModal('newMaterial')} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-700 shadow-sm">+ Material</button></div>
                <div className="grid grid-cols-1 gap-3">{(activeProject.materials || []).map(m => (<div key={m.id} className="bg-white p-4 rounded-xl border shadow-sm relative overflow-hidden">{m.stock <= m.minStock && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-2 py-1 rounded-bl-lg font-bold flex items-center gap-1"><AlertTriangle size={10}/> STOK MENIPIS</div>}<div className="flex justify-between items-start mb-3"><div><div className="font-bold text-slate-800 text-lg">{m.name}</div><div className="text-xs text-slate-500">Min. Stok: {m.minStock} {m.unit}</div></div><div className="text-right"><div className={`text-2xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div><div className="text-xs text-slate-400">{m.unit}</div></div></div><div className="flex gap-2 border-t pt-3"><button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-1 border border-slate-200"><Edit size={14} /> Update Stok</button><button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded hover:bg-slate-100 border border-slate-200"><History size={16}/></button></div></div>))}{(activeProject.materials || []).length === 0 && <div className="text-center p-8 text-slate-400 border-2 border-dashed rounded-xl">Belum ada material.</div>}</div>
-             </div>
-          )}
-
-          {activeTab === 'progress' && (
-             <div className="space-y-4">
-                <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
-                <button onClick={() => openModal('newTask')} className="text-sm font-bold text-blue-600">+ Tambah Pekerjaan</button>
-                {(activeProject.tasks || []).map(t => (<div key={t.id} className="bg-white p-3 rounded-xl border shadow-sm"><div className="flex justify-between text-sm mb-2"><div><p className="font-bold">{t.name}</p><p className="text-xs text-slate-500">Bobot: {t.weight}%</p></div><div className="text-right"><span className="font-bold text-blue-600 text-lg">{t.progress}%</span><p className="text-[10px] text-slate-400">Last: {t.lastUpdated ? new Date(t.lastUpdated).toLocaleDateString() : '-'}</p></div></div><div className="flex gap-2"><button onClick={() => { setSelectedTask(t); setProgressInput(t.progress); setProgressDate(new Date().toISOString().split('T')[0]); openModal('updateProgress'); }} className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded hover:bg-slate-100 flex items-center justify-center gap-2 border border-slate-200"><Edit size={14} /> Update Progres</button><button onClick={() => { setSelectedTask(t); openModal('taskHistory'); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded hover:bg-slate-100 border border-slate-200"><History size={16}/></button></div></div>))}
              </div>
           )}
         </main>
@@ -724,3 +856,5 @@ const App = () => {
 };
 
 export default App;
+
+
