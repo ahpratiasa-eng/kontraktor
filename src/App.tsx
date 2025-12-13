@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Trash2, ArrowLeft, Building2, 
-  Loader2, RefreshCw, X, Calendar, FileText, Printer, 
+  Loader2, RefreshCw, X, Calendar, FileText, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
   History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
@@ -98,7 +98,7 @@ type Project = {
   materialLogs: MaterialLog[]; 
   workers: Worker[]; 
   rabItems: RABItem[]; 
-  tasks: Task[]; 
+  tasks: Task[]; // Kept for compatibility
   attendanceLogs: AttendanceLog[]; 
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
@@ -117,57 +117,29 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
     const end = new Date(project.endDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    
-    // Generate 5 points for X-axis
     const points = [0, 0.25, 0.5, 0.75, 1];
     return points.map(p => {
       const d = new Date(start.getTime() + (diffDays * p * 24 * 60 * 60 * 1000));
       return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
     });
   };
-
   const dateLabels = getAxisDates();
-
   return (
     <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4'}`}>
       {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Kurva S (Bobot Biaya)</h3>}
       <div className={`relative border-l border-b border-slate-300 mx-2 ${compact ? 'h-32 mt-2' : 'h-48 mt-4'} bg-slate-50`}>
-         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> 
-         <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
-         
+         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
          <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Grid Lines */}
             <line x1="0" y1="25" x2="100" y2="25" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="75" x2="100" y2="75" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2" />
-            
-            {/* Target Line (Linear Plan) */}
             <line x1="0" y1="100" x2="100" y2="0" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
-            
-            {/* Real Progress Line (S-Curve) */}
-            <polyline 
-              fill="none" 
-              stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} 
-              strokeWidth="2" 
-              points={stats.curvePoints} 
-              vectorEffect="non-scaling-stroke" 
-            />
-            
-            {/* Current Point Dot */}
+            <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="2" points={stats.curvePoints} vectorEffect="non-scaling-stroke" />
             <circle cx={stats.timeProgress} cy={100 - stats.prog} r="1.5" fill="white" stroke="black" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
          </svg>
-
-         {/* X-Axis Date Labels */}
-         <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">
-            {dateLabels.map((date, idx) => (
-              <span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>
-                {date}
-              </span>
-            ))}
-         </div>
+         <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">{dateLabels.map((date, idx) => (<span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>{date}</span>))}</div>
       </div>
-      
       <div className={`grid grid-cols-2 gap-2 text-xs ${compact ? 'mt-6' : 'mt-8'}`}>
          <div className="p-1.5 bg-slate-100 rounded text-center"><span className="block text-slate-500 text-[10px]">Plan (Waktu)</span><span className="font-bold">{stats.timeProgress.toFixed(1)}%</span></div>
          <div className={`p-1.5 rounded text-center ${stats.prog >= stats.timeProgress ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}><span className="block opacity-80 text-[10px]">Real (Bobot)</span><span className="font-bold">{stats.prog.toFixed(1)}%</span></div>
@@ -243,6 +215,7 @@ const App = () => {
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
@@ -259,7 +232,7 @@ const App = () => {
   const [isGettingLoc, setIsGettingLoc] = useState(false);
 
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
-  // reportGroups state removed as it was unused
+  // expandedReportIds removed
 
   // --- PERMISSION CHECKERS ---
   const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
@@ -568,8 +541,6 @@ const App = () => {
 
   const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
   
-  // toggleReportGroup was unused, removed.
-
   const handleTransaction = (e: React.FormEvent) => { e.preventDefault(); if (!activeProject) return; const form = e.target as HTMLFormElement; const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; const amount = Number((form.elements.namedItem('amount') as HTMLInputElement).value); const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; if (!desc || isNaN(amount) || amount <= 0) { alert("Data tidak valid"); return; } updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount, type: txType }, ...(activeProject.transactions || [])] }); form.reset(); };
   
   // UPDATE PROGRESS BASED ON RAB ITEM
@@ -589,7 +560,7 @@ const App = () => {
   const handleDeleteWorker = (w: Worker) => { if(!activeProject) return; if(confirm(`Yakin hapus ${w.name}?`)) { const updatedWorkers = activeProject.workers.filter(worker => worker.id !== w.id); updateProject({ workers: updatedWorkers }); } };
   const handleStockMovement = () => { if (!activeProject || !selectedMaterial || stockQty <= 0) return; const updatedMaterials = activeProject.materials.map(m => { if (m.id === selectedMaterial.id) return { ...m, stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty }; return m; }); const newLog: MaterialLog = { id: Date.now(), materialId: selectedMaterial.id, date: stockDate, type: stockType, quantity: stockQty, notes: stockNotes || '-', actor: user?.displayName || 'User' }; updateProject({ materials: updatedMaterials, materialLogs: [newLog, ...(activeProject.materialLogs || [])] }); setShowModal(false); setStockQty(0); setStockNotes(''); };
 
-  const openModal = (type: any) => { setModalType(type); setInputName(''); setInputWeight(0); if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory', 'newRAB'].includes(type) && !activeProject) return; if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); } if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); setEvidencePhoto(''); setEvidenceLocation(''); } if (type === 'newProject') { setInputDuration(30); } if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); } if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); } if(type === 'newRAB') { setRabCategory(''); setRabItemName(''); setRabVol(0); setRabPrice(0); setSelectedRabItem(null); } setStockDate(new Date().toISOString().split('T')[0]); setShowModal(true); };
+  const openModal = (type: any) => { setModalType(type); setInputName(''); if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory', 'newRAB'].includes(type) && !activeProject) return; if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); } if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); setEvidencePhoto(''); setEvidenceLocation(''); } if (type === 'newProject') { setInputDuration(30); } if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); } if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); } if(type === 'newRAB') { setRabCategory(''); setRabItemName(''); setRabVol(0); setRabPrice(0); setSelectedRabItem(null); } setStockDate(new Date().toISOString().split('T')[0]); setShowModal(true); };
   const createItem = (field: string, newItem: any) => { if(!activeProject) return; updateProject({ [field]: [...(activeProject as any)[field], newItem] }); setShowModal(false); }
   
   const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); 
@@ -734,6 +705,26 @@ const App = () => {
            {projects.length === 0 && <div className="text-center py-10 border border-dashed rounded-xl text-slate-400"><p>Belum ada proyek.</p><button onClick={loadDemoData} disabled={isSyncing} className="bg-green-600 text-white px-4 py-2 mt-4 rounded-lg font-bold text-sm hover:bg-green-700 shadow-lg flex items-center gap-2 mx-auto">{isSyncing ? <Loader2 className="animate-spin"/> : <RefreshCw size={16}/>} Muat Demo</button></div>}
            {projects.map(p => (<div key={p.id} onClick={() => { setActiveProjectId(p.id); setView('project-detail'); setActiveTab('dashboard'); }} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-shadow"><div className="flex justify-between mb-2"><h3 className="font-bold text-lg">{p.name}</h3><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{p.status}</span></div><p className="text-sm text-slate-500 mb-3">{p.client}</p><div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2"><div className="bg-blue-600 h-full" style={{ width: `${getStats(p).prog}%` }}></div></div><div className="flex justify-between text-xs text-slate-400 mt-2"><span>Progres: {getStats(p).prog.toFixed(0)}%</span>{canEditProject() && <button onClick={(e) => {e.stopPropagation(); deleteDoc(doc(db, 'app_data', appId, 'projects', p.id))}} className="hover:text-red-500"><Trash2 size={14}/></button>}</div></div>))}
         </main>
+      )}
+
+      {/* REPORT VIEW */}
+      {view === 'report-view' && activeProject && canSeeMoney() && (
+        <div className="min-h-screen bg-white">
+          <header className="bg-slate-800 text-white px-4 py-4 flex items-center gap-3 sticky top-0 shadow-md z-20 print:hidden"><button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1 rounded"><ArrowLeft/></button><div><h2 className="font-bold uppercase tracking-wider text-sm">Laporan Detail</h2><p className="text-xs text-slate-300">{activeProject.name}</p></div></header>
+          <main className="p-4 max-w-3xl mx-auto print:max-w-none print:p-0">
+            <div className="hidden print:block mb-4 text-center"><h1 className="text-2xl font-bold uppercase">{activeProject.name}</h1><p className="text-sm text-slate-500">Laporan Keuangan Proyek</p></div>
+            <section className="mb-6 grid grid-cols-2 gap-4 text-sm border-b pb-6 print:border-none print:pb-2">
+               <div className="p-3 bg-green-50 rounded border border-green-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pemasukan</p><p className="font-bold text-green-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).inc)}</p></div>
+               <div className="p-3 bg-red-50 rounded border border-red-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pengeluaran</p><p className="font-bold text-red-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).exp)}</p></div>
+               <div className="p-3 bg-blue-50 rounded col-span-2 flex justify-between items-center border border-blue-100 print:bg-transparent print:border-black"><span className="text-slate-500 font-bold">SISA SALDO</span><span className="font-bold text-blue-600 text-xl print:text-black">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</span></div>
+            </section>
+            <section className="mb-6">
+              <div className="mb-6"><h4 className="text-green-700 font-bold border-b border-green-200 pb-1 mb-2 print:text-black print:border-black">PEMASUKAN</h4><div className="space-y-1">{getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'income')).map((group) => (<div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none"><div className="p-2 bg-slate-50 flex justify-between items-center print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold"><span className="text-sm font-medium">{group.date} • {group.category}</span><div className="flex items-center gap-2"><span className="text-sm font-bold text-green-600 print:text-black">{formatRupiah(group.totalAmount)}</span></div></div><div className="print:block bg-white"><table className="w-full text-xs text-left"><tbody className="divide-y divide-slate-100">{group.items.map(t => (<tr key={t.id}><td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td><td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td></tr>))}</tbody></table></div></div>))}</div></div>
+              <div><h4 className="text-red-700 font-bold border-b border-red-200 pb-1 mb-2 print:text-black print:border-black">PENGELUARAN</h4><div className="space-y-1">{getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'expense')).map((group) => (<div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none"><div className="p-2 bg-slate-50 flex justify-between items-center print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold"><span className="text-sm font-medium">{group.date} • {group.category}</span><div className="flex items-center gap-2"><span className="text-sm font-bold text-red-600 print:text-black">{formatRupiah(group.totalAmount)}</span></div></div><div className="print:block bg-white"><table className="w-full text-xs text-left"><tbody className="divide-y divide-slate-100">{group.items.map(t => (<tr key={t.id}><td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td><td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td></tr>))}</tbody></table></div></div>))}</div></div>
+            </section>
+            <button onClick={() => window.print()} className="w-full bg-slate-800 text-white p-3 rounded font-bold mb-10 flex justify-center gap-2 print:hidden"><Printer size={18}/> Cetak Laporan</button>
+          </main>
+        </div>
       )}
 
       {/* PROJECT DETAIL VIEW */}
