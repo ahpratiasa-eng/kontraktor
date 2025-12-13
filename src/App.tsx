@@ -292,10 +292,12 @@ const App = () => {
         setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`);
         setIsGettingLoc(false);
       },
-      () => {
-        alert("Gagal ambil lokasi. Pastikan GPS aktif.");
+      (err) => {
+        console.error(err);
+        alert("Gagal ambil lokasi. Pastikan GPS aktif dan izinkan browser mengakses lokasi.");
         setIsGettingLoc(false);
-      }
+      },
+      { enableHighAccuracy: true }
     );
   };
 
@@ -307,12 +309,25 @@ const App = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setEvidencePhoto(reader.result as string);
+      // AUTO TRIGGER LOCATION
+      handleGetLocation();
     };
     reader.readAsDataURL(file);
   };
 
   const saveAttendanceWithEvidence = () => {
     if(!activeProject) return;
+    
+    // VALIDASI WAJIB
+    if (!evidencePhoto) {
+      alert("Wajib ambil foto bukti lapangan!");
+      return;
+    }
+    if (!evidenceLocation) {
+      alert("Lokasi wajib terdeteksi! Pastikan GPS aktif dan tunggu hingga lokasi terkunci.");
+      return;
+    }
+
     const newLogs: any[] = [];
     Object.keys(attendanceData).forEach(wId => {
       newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' });
@@ -470,7 +485,63 @@ const App = () => {
               {modalType === 'stockMovement' && selectedMaterial && (<><h4 className="font-bold text-slate-700">{selectedMaterial.name}</h4><p className="text-xs text-slate-500 mb-2">Stok Saat Ini: {selectedMaterial.stock} {selectedMaterial.unit}</p><div className="flex gap-2 mb-2"><button onClick={() => setStockType('in')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='in' ? 'bg-green-100 border-green-300 text-green-700' : 'border-slate-200'}`}>Masuk (+)</button><button onClick={() => setStockType('out')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='out' ? 'bg-red-100 border-red-300 text-red-700' : 'border-slate-200'}`}>Keluar (-)</button></div><input type="number" className="w-full p-2 border rounded font-bold text-lg" placeholder="Jumlah" value={stockQty} onChange={e => setStockQty(Number(e.target.value))}/><input type="date" className="w-full p-2 border rounded" value={stockDate} onChange={e => setStockDate(e.target.value)}/><input className="w-full p-2 border rounded" placeholder="Keterangan (Wajib)" value={stockNotes} onChange={e => setStockNotes(e.target.value)}/><button onClick={handleStockMovement} disabled={!stockNotes || stockQty <= 0} className={`w-full text-white p-2 rounded font-bold ${!stockNotes || stockQty <= 0 ? 'bg-slate-300' : 'bg-blue-600'}`}>Simpan Riwayat</button></>)}
               {modalType === 'stockHistory' && selectedMaterial && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedMaterial.name}</h4><div className="space-y-3">{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between"><span className="font-bold text-slate-700">{log.date}</span><span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>{log.type === 'in' ? '+' : '-'}{log.quantity}</span></div><div className="text-slate-500 text-xs mt-1 flex justify-between"><span>{log.notes}</span><span className="italic">{log.actor}</span></div></div>))}{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat.</p>}</div></div>)}
               {modalType === 'payWorker' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} /><button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-2 rounded font-bold">Bayar</button></>}
-              {modalType === 'attendance' && activeProject && <div><input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} /><div className="bg-slate-50 p-3 rounded mb-3"><h4 className="font-bold text-sm mb-2 text-slate-700 flex items-center gap-2"><Camera size={14}/> Bukti Lapangan</h4><div className="flex gap-2 mb-2"><label className="flex-1 bg-white border border-dashed border-slate-300 rounded p-2 text-center cursor-pointer hover:bg-slate-50"><input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} /><span className="text-xs text-slate-500">{evidencePhoto ? 'Ganti Foto' : 'Ambil Foto'}</span></label><button onClick={handleGetLocation} className="flex-1 bg-white border border-dashed border-slate-300 rounded p-2 text-xs text-slate-500 flex items-center justify-center gap-1 hover:bg-slate-50">{isGettingLoc ? <Loader2 className="animate-spin" size={14}/> : <MapPin size={14}/>} {evidenceLocation ? 'Update Lokasi' : 'Tag Lokasi'}</button></div>{evidencePhoto && <div className="mb-2"><img src={evidencePhoto} alt="Preview" className="h-20 rounded border"/></div>}{evidenceLocation && <div className="text-[10px] text-green-600 flex items-center gap-1"><CheckCircle size={10}/> Lokasi terkunci: {evidenceLocation}</div>}</div><div className="max-h-64 overflow-y-auto space-y-2 mb-4">{activeProject.workers.map(w => (<div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center"><span>{w.name}</span><select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}><option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option></select></div>))}</div><button onClick={saveAttendanceWithEvidence} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan Absensi</button></div>}
+              
+              {/* MODAL ABSENSI - AUTO LOCATION */}
+              {modalType === 'attendance' && activeProject && (
+                <div>
+                  <input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} />
+                  
+                  {/* BUKTI LAPANGAN (WAJIB) */}
+                  <div className="bg-slate-50 p-3 rounded mb-3 border border-blue-100">
+                    <h4 className="font-bold text-sm mb-2 text-slate-700 flex items-center gap-2"><Camera size={14}/> Bukti Lapangan (Wajib)</h4>
+                    
+                    {/* INPUT FOTO */}
+                    <div className="mb-2">
+                      <label className={`block w-full border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${evidencePhoto ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-100'}`}>
+                        <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                        {evidencePhoto ? (
+                          <div className="relative">
+                            <img src={evidencePhoto} alt="Preview" className="h-32 mx-auto rounded shadow-sm object-cover"/>
+                            <div className="text-xs text-green-600 font-bold mt-1">Foto Berhasil Diambil</div>
+                          </div>
+                        ) : (
+                          <div className="text-slate-500 text-xs flex flex-col items-center gap-1">
+                            <Camera size={24} className="text-slate-400"/>
+                            <span>Klik untuk Ambil Foto</span>
+                          </div>
+                        )}
+                      </label>
+                    </div>
+
+                    {/* STATUS LOKASI (AUTO) */}
+                    <div className="text-center">
+                       {isGettingLoc && <div className="text-xs text-blue-600 flex items-center justify-center gap-1 animate-pulse"><Loader2 size={12} className="animate-spin"/> Sedang mengambil titik lokasi...</div>}
+                       {!isGettingLoc && evidenceLocation && <div className="text-xs text-green-600 flex items-center justify-center gap-1 font-bold bg-green-100 py-1 rounded"><CheckCircle size={12}/> Lokasi Terkunci: {evidenceLocation}</div>}
+                       {!isGettingLoc && !evidenceLocation && evidencePhoto && <div className="text-xs text-red-500 font-bold">Gagal ambil lokasi. Pastikan GPS aktif!</div>}
+                    </div>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto space-y-2 mb-4">
+                    {activeProject.workers.map(w => (
+                      <div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center">
+                        <span>{w.name}</span>
+                        <select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}>
+                          <option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={saveAttendanceWithEvidence} 
+                    disabled={!evidencePhoto || !evidenceLocation}
+                    className={`w-full text-white p-3 rounded font-bold transition-all ${(!evidencePhoto || !evidenceLocation) ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg'}`}
+                  >
+                    {(!evidencePhoto || !evidenceLocation) ? 'Lengkapi Bukti Dulu' : 'Simpan Absensi'}
+                  </button>
+                </div>
+              )}
+
               {modalType === 'newMaterial' && <><input className="w-full p-2 border rounded" placeholder="Material" value={inputName} onChange={e=>setInputName(e.target.value)}/><button onClick={()=>createItem('materials', {id:Date.now(), name:inputName, unit:'Unit', stock:0, minStock:5})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
             </div>
           </div>
