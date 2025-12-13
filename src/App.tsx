@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Trash2, ArrowLeft, Building2, 
-  Loader2, RefreshCw, X, Calendar, FileText, Printer, 
+  Loader2, RefreshCw, X, Calendar, FileText, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle, FileSpreadsheet, Briefcase
+  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -43,17 +43,15 @@ type AppUser = {
   name: string;
 };
 
-// RAB ITEM (Pengganti Task Lama)
 type RABItem = {
   id: number;
-  category: string; // Misal: "A. PEKERJAAN PERSIAPAN"
-  name: string;     // Misal: "Direksi Keet"
+  category: string;
+  name: string;
   unit: string;
   volume: number;
   unitPrice: number;
-  progress: number; // 0-100%
-  isAddendum: boolean; // Penanda CCO
-  lastUpdated?: string;
+  progress: number;
+  isAddendum: boolean;
 };
 
 type Transaction = { id: number; date: string; category: string; description: string; amount: number; type: 'expense' | 'income'; workerId?: number; };
@@ -78,6 +76,7 @@ type Worker = {
   wageUnit: 'Harian' | 'Mingguan' | 'Bulanan'; 
 };
 
+type Task = { id: number; name: string; weight: number; progress: number; lastUpdated: string; };
 type AttendanceLog = { id: number; date: string; workerId: number; status: 'Hadir' | 'Setengah' | 'Lembur' | 'Absen'; note: string; };
 
 type AttendanceEvidence = {
@@ -89,7 +88,6 @@ type AttendanceEvidence = {
   timestamp: string;
 };
 
-// Log Progress RAB
 type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
 
 type Project = { 
@@ -99,7 +97,8 @@ type Project = {
   materials: Material[]; 
   materialLogs: MaterialLog[]; 
   workers: Worker[]; 
-  rabItems: RABItem[]; // New: RAB Structure
+  rabItems: RABItem[]; 
+  tasks: Task[]; // Kept for compatibility, though we use rabItems now
   attendanceLogs: AttendanceLog[]; 
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
@@ -135,11 +134,7 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
             <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="75" x2="100" y2="75" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
             <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2" />
-            
-            {/* Target Line (Linear Plan) */}
             <line x1="0" y1="100" x2="100" y2="0" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
-            
-            {/* Realization Line */}
             <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="2" points={stats.curvePoints} vectorEffect="non-scaling-stroke" />
             <circle cx={stats.timeProgress} cy={100 - stats.prog} r="1.5" fill="white" stroke="black" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
          </svg>
@@ -194,7 +189,7 @@ const App = () => {
   const [inputBudget, setInputBudget] = useState(0);
   const [inputStartDate, setInputStartDate] = useState('');
   const [inputEndDate, setInputEndDate] = useState('');
-  const [inputWeight, setInputWeight] = useState(0);
+  // inputWeight removed as we use RAB calculated weight now
   
   // RAB & CCO Inputs
   const [rabCategory, setRabCategory] = useState('');
@@ -221,6 +216,7 @@ const App = () => {
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
@@ -237,7 +233,7 @@ const App = () => {
   const [isGettingLoc, setIsGettingLoc] = useState(false);
 
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
-  const [expandedReportIds, setExpandedReportIds] = useState<{[id: string]: boolean}>({});
+  // expandedReportIds removed as it was unused
 
   // --- PERMISSION CHECKERS ---
   const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
@@ -288,12 +284,20 @@ const App = () => {
       const list = snapshot.docs.map(d => {
         const data = d.data();
         return { 
-          id: d.id, ...data, 
+          id: d.id,
+          name: data.name,
+          client: data.client,
+          location: data.location,
+          status: data.status,
+          budgetLimit: data.budgetLimit,
+          startDate: data.startDate,
+          endDate: data.endDate || new Date(new Date(data.startDate).setDate(new Date(data.startDate).getDate() + 30)).toISOString(),
+          
           attendanceLogs: Array.isArray(data.attendanceLogs) ? data.attendanceLogs : [], 
           attendanceEvidences: Array.isArray(data.attendanceEvidences) ? data.attendanceEvidences : [], 
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
           
-          // MIGRATION SUPPORT: If rabItems exists use it, else convert old tasks
+          // MIGRATION SUPPORT
           rabItems: Array.isArray(data.rabItems) ? data.rabItems : (data.tasks || []).map((t: any) => ({
             id: t.id,
             category: 'PEKERJAAN UMUM',
@@ -305,12 +309,11 @@ const App = () => {
             isAddendum: false
           })),
 
-          tasks: [], // Deprecated in UI, kept for data safety
+          tasks: [], 
           workers: Array.isArray(data.workers) ? data.workers : [], 
           materials: Array.isArray(data.materials) ? data.materials : [], 
           materialLogs: Array.isArray(data.materialLogs) ? data.materialLogs : [],
-          taskLogs: Array.isArray(data.taskLogs) ? data.taskLogs : [],
-          endDate: data.endDate || new Date(new Date(data.startDate).setDate(new Date(data.startDate).getDate() + 30)).toISOString()
+          taskLogs: Array.isArray(data.taskLogs) ? data.taskLogs : []
         } as Project;
       });
       list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
@@ -323,7 +326,7 @@ const App = () => {
   const updateProject = async (data: Partial<Project>) => { if (!user || !activeProjectId) return; setIsSyncing(true); try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } catch(e) { alert("Gagal simpan ke database"); } setIsSyncing(false); };
   const getGroupedTransactions = (transactions: Transaction[]): GroupedTransaction[] => { const groups: {[key: string]: GroupedTransaction} = {}; transactions.forEach(t => { const key = `${t.date}-${t.category}-${t.type}`; if (!groups[key]) groups[key] = { id: key, date: t.date, category: t.category, type: t.type, totalAmount: 0, items: [] }; groups[key].totalAmount += t.amount; groups[key].items.push(t); }); return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); };
 
-  // --- EVIDENCE HELPERS (AUTO COMPRESSION & GPS) ---
+  // --- EVIDENCE HELPERS ---
   const handleGetLocation = () => {
     if (!navigator.geolocation) return alert("Browser tidak support GPS");
     setIsGettingLoc(true);
@@ -413,7 +416,6 @@ const App = () => {
     return activeProject.attendanceEvidences.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
   };
 
-  // --- NEW STATS LOGIC with RAB ---
   const getStats = (p: Project) => {
     const tx = p.transactions || [];
     const inc = tx.filter(t => t.type === 'income').reduce((a, b) => a + (b.amount || 0), 0);
@@ -500,7 +502,7 @@ const App = () => {
       volume: rabVol,
       unitPrice: rabPrice,
       progress: selectedRabItem ? selectedRabItem.progress : 0,
-      isAddendum: selectedRabItem ? selectedRabItem.isAddendum : false // Default false for new, unless toggle CCO added later
+      isAddendum: selectedRabItem ? selectedRabItem.isAddendum : false 
     };
 
     let newItems = [...(activeProject.rabItems || [])];
@@ -517,12 +519,9 @@ const App = () => {
   };
   
   const handleAddCCO = () => {
-     // Shortcut to add new CCO item
      setRabItemName(''); setRabCategory('PEKERJAAN TAMBAH KURANG (CCO)'); 
      setSelectedRabItem(null); 
      setModalType('newRAB');
-     // In real implementation, we might want to flag a state 'isCreatingCCO' to true
-     // and use it in handleSaveRAB to set isAddendum: true
   };
 
   const deleteRABItem = (id: number) => {
@@ -531,7 +530,6 @@ const App = () => {
     updateProject({ rabItems: newItems });
   };
 
-  // Group RAB by Category
   const getRABGroups = () => {
     if (!activeProject || !activeProject.rabItems) return {};
     const groups: {[key: string]: RABItem[]} = {};
@@ -539,24 +537,20 @@ const App = () => {
       if(!groups[item.category]) groups[item.category] = [];
       groups[item.category].push(item);
     });
-    // Sort categories alphabetically? Or keep insertion order? Alphabetical is safer for now.
     return groups;
   };
 
   const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
-  const toggleReportGroup = (groupId: string) => { setExpandedReportIds(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
+  
+  // toggleReportGroup was unused, removed.
+
   const handleTransaction = (e: React.FormEvent) => { e.preventDefault(); if (!activeProject) return; const form = e.target as HTMLFormElement; const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; const amount = Number((form.elements.namedItem('amount') as HTMLInputElement).value); const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; if (!desc || isNaN(amount) || amount <= 0) { alert("Data tidak valid"); return; } updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount, type: txType }, ...(activeProject.transactions || [])] }); form.reset(); };
   
   // UPDATE PROGRESS BASED ON RAB ITEM
   const handleUpdateProgress = () => { 
     if (!activeProject || !selectedRabItem) return; 
-    
-    // Update RAB Item Progress
     const updatedRAB = activeProject.rabItems.map(item => item.id === selectedRabItem.id ? { ...item, progress: progressInput } : item);
-    
-    // Log history
     const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedRabItem.id, previousProgress: selectedRabItem.progress, newProgress: progressInput, note: progressNote };
-    
     updateProject({ rabItems: updatedRAB, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); 
     setShowModal(false); 
   };
@@ -572,8 +566,7 @@ const App = () => {
   const openModal = (type: any) => { setModalType(type); setInputName(''); setInputWeight(0); if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory', 'newRAB'].includes(type) && !activeProject) return; if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); } if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); setEvidencePhoto(''); setEvidenceLocation(''); } if (type === 'newProject') { setInputDuration(30); } if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); } if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); } if(type === 'newRAB') { setRabCategory(''); setRabItemName(''); setRabVol(0); setRabPrice(0); setSelectedRabItem(null); } setStockDate(new Date().toISOString().split('T')[0]); setShowModal(true); };
   const createItem = (field: string, newItem: any) => { if(!activeProject) return; updateProject({ [field]: [...(activeProject as any)[field], newItem] }); setShowModal(false); }
   
-  // Updated Demo Data to include RAB
-  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; 
+  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); 
     const rabDemo: RABItem[] = [
         { id: 1, category: 'A. PEKERJAAN PERSIAPAN', name: 'Direksi Keet', unit: 'ls', volume: 1, unitPrice: 2000000, progress: 100, isAddendum: false },
         { id: 2, category: 'A. PEKERJAAN PERSIAPAN', name: 'Pembersihan Lahan', unit: 'm2', volume: 100, unitPrice: 15000, progress: 100, isAddendum: false },
@@ -601,7 +594,6 @@ const App = () => {
 
   if (authStatus === 'loading') return <div className="h-screen flex flex-col items-center justify-center text-slate-500"><Loader2 className="animate-spin mb-2"/>Loading System...</div>;
 
-  const totalRAB = activeProject ? getStats(activeProject).totalRAB : 0;
   const rabGroups = getRABGroups();
 
   return (
@@ -753,7 +745,6 @@ const App = () => {
                     <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
                        <div className="bg-slate-50 p-3 font-bold text-xs text-slate-600 border-b flex justify-between">
                          <span>{category}</span>
-                         {/* Client view doesn't show category totals in list, only in summary, but helpful here */}
                        </div>
                        
                        {/* INTERNAL VIEW (DETAILED) */}
@@ -769,7 +760,6 @@ const App = () => {
                                  <span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span>
                                  <span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span>
                                </div>
-                               {/* Progress Bar */}
                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
                                  <div className="bg-blue-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div>
                                </div>
@@ -785,8 +775,7 @@ const App = () => {
                          </div>
                        )}
 
-                       {/* CLIENT VIEW (SUMMARY PER CAT ONLY? OR LIST WITHOUT PRICE?) */}
-                       {/* Usually client RAB shows breakdown but unit price might be hidden or shown. Let's show Volume & Total only */}
+                       {/* CLIENT VIEW (SUMMARY) */}
                        {rabViewMode === 'client' && (
                          <div className="divide-y divide-slate-100">
                            {rabGroups[category].map(item => (
@@ -795,13 +784,11 @@ const App = () => {
                                  <div className="font-bold text-slate-800">{item.name}</div>
                                  <div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div>
                                </div>
-                               {/* Client view shows physical progress? Yes. Price? Maybe total only. */}
                                <div className="text-right">
                                   <div className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">{item.progress}%</div>
                                </div>
                              </div>
                            ))}
-                           {/* Subtotal Category for Client */}
                            <div className="p-3 bg-blue-50 text-right text-xs font-bold text-slate-700">
                              Subtotal: {formatRupiah(rabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice),0))}
                            </div>
@@ -824,7 +811,29 @@ const App = () => {
             <div className="space-y-4">
                <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-3 rounded-xl shadow font-bold flex justify-center gap-2"><Calendar size={20} /> Isi Absensi</button>
                <div className="bg-white p-4 rounded-xl border shadow-sm mt-4"><h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><FileText size={16}/> Rekap & Filter</h3><div className="flex gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100"><div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1">Dari</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" /></div><div className="flex items-center text-slate-400">-</div><div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1">Sampai</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border rounded p-1 text-xs font-bold" /></div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="border-b bg-slate-50 text-slate-500"><th className="p-2 text-left">Nama</th><th className="p-2 text-center">Hadir</th><th className="p-2 text-center">Lembur</th>{canSeeMoney() && <th className="p-2 text-right">Est. Upah</th>}</tr></thead><tbody>{getFilteredAttendance().map((stat: any, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-slate-50"><td className="p-2 font-medium">{stat.name} <span className="text-[9px] text-slate-400 block">{stat.role} • {stat.unit}</span></td><td className="p-2 text-center font-bold text-green-600">{stat.hadir}</td><td className="p-2 text-center font-bold text-blue-600">{stat.lembur}</td>{canSeeMoney() && <td className="p-2 text-right font-bold">{formatRupiah(stat.totalCost)}</td>}</tr>))}{getFilteredAttendance().length === 0 && <tr><td colSpan={canSeeMoney() ? 4 : 3} className="p-4 text-center text-slate-400">Tidak ada data di periode ini.</td></tr>}</tbody></table></div></div>
-               <div className="bg-white p-4 rounded-xl border shadow-sm mt-4"><h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><ImageIcon size={16}/> Galeri Bukti</h3><div className="grid grid-cols-2 gap-2">{getFilteredEvidence().map(ev => (<div key={ev.id} className="relative rounded-lg overflow-hidden border"><img src={ev.photoUrl} alt="Bukti" className="w-full h-32 object-cover" /><div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[10px] text-white"><div className="truncate">{ev.date}</div><div className="truncate opacity-70">{ev.uploader}</div>{ev.location && (<a href={`https://www.google.com/maps/search/?api=1&query=${ev.location}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-200 mt-1 hover:text-blue-100"><ExternalLink size={8}/> Buka Peta</a>)}</div></div>))}{getFilteredEvidence().length === 0 && <div className="col-span-2 text-center text-xs text-slate-400 py-4">Tidak ada foto di tanggal ini.</div>}</div></div>
+               
+               {/* GALERI BUKTI ABSENSI */}
+               <div className="bg-white p-4 rounded-xl border shadow-sm mt-4">
+                 <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><ImageIcon size={16}/> Galeri Bukti</h3>
+                 <div className="grid grid-cols-2 gap-2">
+                   {getFilteredEvidence().map(ev => (
+                     <div key={ev.id} className="relative rounded-lg overflow-hidden border">
+                       <img src={ev.photoUrl} alt="Bukti" className="w-full h-32 object-cover" />
+                       <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[10px] text-white">
+                         <div className="truncate">{ev.date}</div>
+                         <div className="truncate opacity-70">{ev.uploader}</div>
+                         {ev.location && (
+                           <a href={`https://www.google.com/maps/search/?api=1&query=${ev.location}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-200 mt-1 hover:text-blue-100">
+                             <ExternalLink size={8}/> Buka Peta
+                           </a>
+                         )}
+                       </div>
+                     </div>
+                   ))}
+                   {getFilteredEvidence().length === 0 && <div className="col-span-2 text-center text-xs text-slate-400 py-4">Tidak ada foto di tanggal ini.</div>}
+                 </div>
+               </div>
+
                <div className="flex justify-between items-center mt-4 mb-2"><h3 className="font-bold text-slate-700">Daftar Tim</h3><button onClick={() => openModal('newWorker')} className="text-xs bg-slate-200 px-2 py-1 rounded font-bold">+ Baru</button></div>
                {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-4 rounded-xl border shadow-sm text-sm mb-3"><div className="flex justify-between items-start mb-3 border-b pb-2"><div><p className="font-bold text-base">{w.name}</p><p className="text-xs text-slate-500">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400">Total Hari</p></div></div><div className="flex justify-between items-center bg-slate-50 p-2 rounded mb-3">{canSeeMoney() && <div><p className="text-[10px] text-slate-500">Sisa Hutang:</p><p className={`font-bold ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>}<div className="flex gap-2">{canSeeMoney() && f.balance > 0 && <button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-green-700"><Banknote size={14}/> Bayar</button>}{canAccessWorkers() && (<><button onClick={() => handleEditWorker(w)} className="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-200"><Edit size={14}/></button><button onClick={() => handleDeleteWorker(w)} className="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200"><Trash2 size={14}/></button></>)}</div></div></div>)})}
             </div>
