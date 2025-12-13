@@ -4,7 +4,7 @@ import {
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle
+  History, AlertTriangle, Camera, MapPin, ExternalLink, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -283,7 +283,7 @@ const App = () => {
   const updateProject = async (data: Partial<Project>) => { if (!user || !activeProjectId) return; setIsSyncing(true); try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } catch(e) { alert("Gagal simpan ke database"); } setIsSyncing(false); };
   const getGroupedTransactions = (transactions: Transaction[]): GroupedTransaction[] => { const groups: {[key: string]: GroupedTransaction} = {}; transactions.forEach(t => { const key = `${t.date}-${t.category}-${t.type}`; if (!groups[key]) groups[key] = { id: key, date: t.date, category: t.category, type: t.type, totalAmount: 0, items: [] }; groups[key].totalAmount += t.amount; groups[key].items.push(t); }); return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); };
 
-  // --- EVIDENCE HELPERS ---
+  // --- EVIDENCE HELPERS (AUTO COMPRESSION & GPS) ---
   const handleGetLocation = () => {
     if (!navigator.geolocation) return alert("Browser tidak support GPS");
     setIsGettingLoc(true);
@@ -304,14 +304,49 @@ const App = () => {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 500000) return alert("Ukuran foto terlalu besar (Max 500KB). Gunakan resolusi rendah.");
+    // Note: Kita hapus validasi size 500KB di sini karena akan dikompres
     
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setEvidencePhoto(reader.result as string);
-      handleGetLocation(); // Auto get location after photo
-    };
     reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      // 1. Load image ke dalam memory
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        // 2. Buat Canvas untuk resize
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX_WIDTH = 800; // Resize ke max 800px width
+        const MAX_HEIGHT = 800;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // 3. Compress jadi JPEG quality 70%
+        // Hasilnya akan sangat kecil (biasanya < 150KB)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        
+        setEvidencePhoto(compressedDataUrl);
+        
+        // 4. Setelah foto ada, LANGSUNG ambil lokasi (Auto)
+        handleGetLocation();
+      };
+    };
   };
 
   const saveAttendanceWithEvidence = () => {
@@ -485,7 +520,7 @@ const App = () => {
               {modalType === 'stockHistory' && selectedMaterial && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedMaterial.name}</h4><div className="space-y-3">{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between"><span className="font-bold text-slate-700">{log.date}</span><span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>{log.type === 'in' ? '+' : '-'}{log.quantity}</span></div><div className="text-slate-500 text-xs mt-1 flex justify-between"><span>{log.notes}</span><span className="italic">{log.actor}</span></div></div>))}{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat.</p>}</div></div>)}
               {modalType === 'payWorker' && <><input type="number" className="w-full p-2 border rounded font-bold text-lg" value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} /><button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-2 rounded font-bold">Bayar</button></>}
               
-              {/* MODAL ABSENSI - AUTO LOCATION */}
+              {/* MODAL ABSENSI - AUTO LOCATION & COMPRESSION */}
               {modalType === 'attendance' && activeProject && (
                 <div>
                   <input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} />
@@ -501,7 +536,7 @@ const App = () => {
                         {evidencePhoto ? (
                           <div className="relative">
                             <img src={evidencePhoto} alt="Preview" className="h-32 mx-auto rounded shadow-sm object-cover"/>
-                            <div className="text-xs text-green-600 font-bold mt-1">Foto Berhasil Diambil</div>
+                            <div className="text-xs text-green-600 font-bold mt-1">Foto Berhasil Diambil & Dikompres</div>
                           </div>
                         ) : (
                           <div className="text-slate-500 text-xs flex flex-col items-center gap-1">
