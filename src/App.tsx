@@ -4,7 +4,7 @@ import {
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle, Camera, MapPin, ExternalLink, Image as ImageIcon, CheckCircle
+  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -304,7 +304,6 @@ const App = () => {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Note: Kita hapus validasi size 500KB di sini karena akan dikompres
     
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -338,7 +337,6 @@ const App = () => {
         ctx?.drawImage(img, 0, 0, width, height);
 
         // 3. Compress jadi JPEG quality 70%
-        // Hasilnya akan sangat kecil (biasanya < 150KB)
         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
         
         setEvidencePhoto(compressedDataUrl);
