@@ -4,7 +4,7 @@ import {
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, Printer, 
   Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle, Camera, MapPin, ExternalLink, Image as ImageIcon, CheckCircle
+  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -292,7 +292,8 @@ const App = () => {
         setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`);
         setIsGettingLoc(false);
       },
-      () => {
+      (err) => {
+        console.error("GPS Error:", err);
         alert("Gagal ambil lokasi. Pastikan GPS aktif dan izinkan browser.");
         setIsGettingLoc(false);
       },
@@ -315,8 +316,16 @@ const App = () => {
 
   const saveAttendanceWithEvidence = () => {
     if(!activeProject) return;
-    if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; }
-    if (!evidenceLocation) { alert("Lokasi wajib terdeteksi! Pastikan GPS aktif."); return; }
+    
+    // VALIDASI WAJIB
+    if (!evidencePhoto) {
+      alert("Wajib ambil foto bukti lapangan!");
+      return;
+    }
+    if (!evidenceLocation) {
+      alert("Lokasi wajib terdeteksi! Pastikan GPS aktif.");
+      return;
+    }
 
     const newLogs: any[] = [];
     Object.keys(attendanceData).forEach(wId => {
@@ -335,7 +344,10 @@ const App = () => {
       }, ...newEvidences];
     }
 
-    updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences });
+    updateProject({ 
+      attendanceLogs: [...activeProject.attendanceLogs, ...newLogs],
+      attendanceEvidences: newEvidences
+    });
     setShowModal(false);
   };
 
