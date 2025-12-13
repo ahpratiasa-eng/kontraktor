@@ -292,9 +292,8 @@ const App = () => {
         setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`);
         setIsGettingLoc(false);
       },
-      (err) => {
-        console.error(err);
-        alert("Gagal ambil lokasi. Pastikan GPS aktif dan izinkan browser mengakses lokasi.");
+      () => {
+        alert("Gagal ambil lokasi. Pastikan GPS aktif dan izinkan browser.");
         setIsGettingLoc(false);
       },
       { enableHighAccuracy: true }
@@ -309,24 +308,15 @@ const App = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setEvidencePhoto(reader.result as string);
-      // AUTO TRIGGER LOCATION
-      handleGetLocation();
+      handleGetLocation(); // Auto get location after photo
     };
     reader.readAsDataURL(file);
   };
 
   const saveAttendanceWithEvidence = () => {
     if(!activeProject) return;
-    
-    // VALIDASI WAJIB
-    if (!evidencePhoto) {
-      alert("Wajib ambil foto bukti lapangan!");
-      return;
-    }
-    if (!evidenceLocation) {
-      alert("Lokasi wajib terdeteksi! Pastikan GPS aktif dan tunggu hingga lokasi terkunci.");
-      return;
-    }
+    if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; }
+    if (!evidenceLocation) { alert("Lokasi wajib terdeteksi! Pastikan GPS aktif."); return; }
 
     const newLogs: any[] = [];
     Object.keys(attendanceData).forEach(wId => {
@@ -345,10 +335,7 @@ const App = () => {
       }, ...newEvidences];
     }
 
-    updateProject({ 
-      attendanceLogs: [...activeProject.attendanceLogs, ...newLogs],
-      attendanceEvidences: newEvidences
-    });
+    updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences });
     setShowModal(false);
   };
 
