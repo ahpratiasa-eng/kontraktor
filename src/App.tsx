@@ -180,9 +180,6 @@ const App = () => {
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
   const [loginError, setLoginError] = useState('');
   
-  // STATE BARU: Tipe Laporan (Internal vs Client)
-  const [reportType, setReportType] = useState<'internal' | 'client'>('client');
-
   // FORM INPUTS
   const [inputName, setInputName] = useState('');
   const [inputEmail, setInputEmail] = useState('');
@@ -218,6 +215,7 @@ const App = () => {
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
   const [progressNote, setProgressNote] = useState('');
@@ -234,6 +232,7 @@ const App = () => {
   const [isGettingLoc, setIsGettingLoc] = useState(false);
 
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
+  const [expandedReportIds, setExpandedReportIds] = useState<{[id: string]: boolean}>({});
 
   // --- PERMISSION CHECKERS ---
   const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
@@ -553,6 +552,8 @@ const App = () => {
 
   const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
   
+  const toggleReportGroup = (groupId: string) => { setExpandedReportIds(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
+
   const handleTransaction = (e: React.FormEvent) => { e.preventDefault(); if (!activeProject) return; const form = e.target as HTMLFormElement; const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; const amount = Number((form.elements.namedItem('amount') as HTMLInputElement).value); const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; if (!desc || isNaN(amount) || amount <= 0) { alert("Data tidak valid"); return; } updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount, type: txType }, ...(activeProject.transactions || [])] }); form.reset(); };
   
   // UPDATE PROGRESS BASED ON RAB ITEM
@@ -772,143 +773,76 @@ const App = () => {
               </div>
             </div>
 
-            {/* CONTENT BASED ON VIEW MODE */}
-            
-            {/* 1. VIEW CLIENT (PRESTASI & PROGRESS) */}
-            {rabViewMode === 'client' && (
-              <>
-                 <div className="mb-8 print:break-inside-avoid">
-                    <h3 className="font-bold text-lg mb-4 text-slate-800 border-b pb-2">Status Proyek (Kurva S)</h3>
-                    <SCurveChart stats={getStats(activeProject)} project={activeProject} />
-                 </div>
+            {/* CURVA S DI LAPORAN PDF */}
+            <div className="mb-8 print:break-inside-avoid">
+              <h3 className="font-bold text-lg mb-4 text-slate-800 border-b pb-2">Kurva S (Progress Fisik & Biaya)</h3>
+              <SCurveChart stats={getStats(activeProject)} project={activeProject} />
+            </div>
 
-                 <div className="grid grid-cols-2 gap-4 mb-8 text-sm print:break-inside-avoid">
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                      <p className="text-slate-500 text-xs uppercase mb-1">Nilai Kontrak</p>
-                      <p className="font-bold text-slate-800 text-xl">{formatRupiah(getStats(activeProject).totalRAB)}</p>
-                    </div>
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-slate-500 text-xs uppercase mb-1">Nilai Progress Fisik (Prestasi)</p>
-                      <p className="font-bold text-blue-700 text-xl">{formatRupiah(getStats(activeProject).prog / 100 * getStats(activeProject).totalRAB)}</p>
-                    </div>
-                 </div>
-
-                 <h3 className="font-bold text-lg mb-4 text-slate-800 border-b pb-2">Rincian Prestasi Pekerjaan</h3>
-                 <div className="space-y-4">
-                    {Object.keys(rabGroups).sort().map(category => {
-                      const catTotal = rabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice),0);
-                      const catProgressVal = rabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice * b.progress/100),0);
-                      return (
-                      <div key={category} className="border border-slate-200 rounded-lg overflow-hidden print:break-inside-avoid">
-                         <div className="bg-slate-100 p-2 font-bold text-sm text-slate-700 border-b border-slate-200 flex justify-between">
-                           <span>{category}</span>
-                           <span>{formatRupiah(catTotal)}</span>
-                         </div>
-                         <table className="w-full text-xs text-left">
-                           <thead className="bg-slate-50 text-slate-500 border-b">
-                             <tr>
-                               <th className="p-2 w-1/3">Item</th>
-                               <th className="p-2 text-right">Nilai Kontrak</th>
-                               <th className="p-2 text-center">Bobot</th>
-                               <th className="p-2 text-center">Prog %</th>
-                               <th className="p-2 text-right">Nilai Progress</th>
-                             </tr>
-                           </thead>
-                           <tbody className="divide-y divide-slate-100">
-                             {rabGroups[category].map(item => {
-                               const itemTotal = item.volume * item.unitPrice;
-                               const weight = (itemTotal / getStats(activeProject).totalRAB) * 100;
-                               const valProgress = itemTotal * (item.progress/100);
-                               return (
-                               <tr key={item.id}>
-                                 <td className="p-2 font-medium text-slate-700">{item.name}</td>
-                                 <td className="p-2 text-right text-slate-500">{formatRupiah(itemTotal)}</td>
-                                 <td className="p-2 text-center text-slate-400">{weight.toFixed(2)}%</td>
-                                 <td className="p-2 text-center font-bold text-blue-600">{item.progress}%</td>
-                                 <td className="p-2 text-right font-bold text-slate-800">{formatRupiah(valProgress)}</td>
-                               </tr>
-                             )})}
-                           </tbody>
-                           <tfoot className="bg-slate-50 font-bold">
-                             <tr>
-                               <td colSpan={4} className="p-2 text-right">Subtotal Progress:</td>
-                               <td className="p-2 text-right text-blue-700">{formatRupiah(catProgressVal)}</td>
-                             </tr>
-                           </tfoot>
-                         </table>
-                      </div>
-                    )})}
-                 </div>
-              </>
-            )}
-
-            {/* 2. VIEW INTERNAL (CASHFLOW / KEUNTUNGAN) */}
-            {rabViewMode === 'internal' && (
-              <>
-                <section className="mb-6 grid grid-cols-2 gap-4 text-sm border-b pb-6 print:border-none print:pb-2">
-                   <div className="p-3 bg-green-50 rounded border border-green-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pemasukan (Termin)</p><p className="font-bold text-green-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).inc)}</p></div>
-                   <div className="p-3 bg-red-50 rounded border border-red-100 print:bg-transparent print:border-black"><p className="text-slate-500 text-xs uppercase">Pengeluaran (Real Cost)</p><p className="font-bold text-red-600 text-lg print:text-black">{formatRupiah(getStats(activeProject).exp)}</p></div>
-                   <div className="p-3 bg-blue-50 rounded col-span-2 flex justify-between items-center border border-blue-100 print:bg-transparent print:border-black"><span className="text-slate-500 font-bold">SISA KAS (PROFIT)</span><span className="font-bold text-blue-600 text-xl print:text-black">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</span></div>
-                </section>
-                
-                <section className="mb-6">
-                  <h3 className="font-bold text-lg mb-4 text-slate-800 border-b pb-2">Rincian Transaksi Keuangan</h3>
-                  
-                  <div className="mb-6 print:break-inside-avoid">
-                    <h4 className="text-green-700 font-bold border-b border-green-200 pb-1 mb-2 print:text-black print:border-black">PEMASUKAN</h4>
-                    <div className="space-y-1">
-                      {getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'income')).map((group) => (
-                        <div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none print:mb-2">
-                          <div className="p-2 bg-slate-50 flex justify-between items-center print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold">
-                            <span className="text-sm font-medium">{group.date} • {group.category}</span>
-                            <div className="flex items-center gap-2"><span className="text-sm font-bold text-green-600 print:text-black">{formatRupiah(group.totalAmount)}</span></div>
-                          </div>
-                          <div className="print:block bg-white">
-                            <table className="w-full text-xs text-left">
-                              <tbody className="divide-y divide-slate-100">
-                                {group.items.map(t => (
-                                  <tr key={t.id}>
-                                    <td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td>
-                                    <td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+            {/* CLIENT REPORT (OPSI B) */}
+            <section className="mb-6">
+               {/* Summary Dana Masuk & Terpakai */}
+               <div className="grid grid-cols-2 gap-4 mb-6 text-sm print:break-inside-avoid">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-slate-500 text-xs uppercase mb-1">Total Dana Masuk (Termin)</p>
+                    <p className="font-bold text-green-700 text-xl">{formatRupiah(getStats(activeProject).inc)}</p>
                   </div>
-
-                  <div className="print:break-inside-avoid">
-                    <h4 className="text-red-700 font-bold border-b border-red-200 pb-1 mb-2 print:text-black print:border-black">PENGELUARAN</h4>
-                    <div className="space-y-1">
-                      {getGroupedTransactions(activeProject.transactions.filter(t => t.type === 'expense')).map((group) => (
-                        <div key={group.id} className="border border-slate-100 rounded-lg overflow-hidden print:border-none print:rounded-none print:mb-2">
-                          <div className="p-2 bg-slate-50 flex justify-between items-center print:bg-transparent print:p-0 print:border-b print:border-slate-300 print:font-bold">
-                            <span className="text-sm font-medium">{group.date} • {group.category}</span>
-                            <div className="flex items-center gap-2"><span className="text-sm font-bold text-red-600 print:text-black">{formatRupiah(group.totalAmount)}</span></div>
-                          </div>
-                          <div className="print:block bg-white">
-                            <table className="w-full text-xs text-left">
-                              <tbody className="divide-y divide-slate-100">
-                                {group.items.map(t => (
-                                  <tr key={t.id}>
-                                    <td className="p-2 pl-4 text-slate-600 print:pl-0 print:text-[10px]">{t.description}</td>
-                                    <td className="p-2 text-right text-slate-800 font-medium print:text-[10px]">{formatRupiah(t.amount)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-slate-500 text-xs uppercase mb-1">Nilai Progress Fisik (Prestasi)</p>
+                    <p className="font-bold text-blue-700 text-xl">{formatRupiah(getStats(activeProject).prog / 100 * getStats(activeProject).totalRAB)}</p>
                   </div>
-                </section>
-              </>
-            )}
-            
+               </div>
+
+               <h3 className="font-bold text-lg mb-4 text-slate-800 border-b pb-2">Rincian Prestasi Pekerjaan</h3>
+               
+               <div className="space-y-4">
+                  {Object.keys(rabGroups).sort().map(category => {
+                    // Hitung Subtotal Kategori untuk Laporan Client
+                    const catTotal = rabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice),0);
+                    const catProgressVal = rabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice * b.progress/100),0);
+                    
+                    return (
+                    <div key={category} className="border border-slate-200 rounded-lg overflow-hidden print:break-inside-avoid">
+                       <div className="bg-slate-100 p-3 font-bold text-sm text-slate-700 border-b border-slate-200 flex justify-between">
+                         <span>{category}</span>
+                         <span>{formatRupiah(catTotal)}</span>
+                       </div>
+                       <table className="w-full text-xs text-left">
+                         <thead className="bg-slate-50 text-slate-500 border-b">
+                           <tr>
+                             <th className="p-2 w-1/3">Item</th>
+                             <th className="p-2 text-right">Nilai Kontrak</th>
+                             <th className="p-2 text-center">Bobot</th>
+                             <th className="p-2 text-center">Prog %</th>
+                             <th className="p-2 text-right">Nilai Progress</th>
+                           </tr>
+                         </thead>
+                         <tbody className="divide-y divide-slate-100">
+                           {rabGroups[category].map(item => {
+                             const itemTotal = item.volume * item.unitPrice;
+                             const weight = (itemTotal / getStats(activeProject).totalRAB) * 100;
+                             const valProgress = itemTotal * (item.progress/100);
+                             return (
+                             <tr key={item.id}>
+                               <td className="p-2 font-medium text-slate-700">{item.name}</td>
+                               <td className="p-2 text-right text-slate-500">{formatRupiah(itemTotal)}</td>
+                               <td className="p-2 text-center text-slate-400">{weight.toFixed(2)}%</td>
+                               <td className="p-2 text-center font-bold text-blue-600">{item.progress}%</td>
+                               <td className="p-2 text-right font-bold text-slate-800">{formatRupiah(valProgress)}</td>
+                             </tr>
+                           )})}
+                         </tbody>
+                         <tfoot className="bg-slate-50 font-bold">
+                           <tr>
+                             <td colSpan={4} className="p-2 text-right">Subtotal Progress:</td>
+                             <td className="p-2 text-right text-blue-700">{formatRupiah(catProgressVal)}</td>
+                           </tr>
+                         </tfoot>
+                       </table>
+                    </div>
+                  )})}
+               </div>
+            </section>
           </main>
         </div>
       )}
