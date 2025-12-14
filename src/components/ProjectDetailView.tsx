@@ -63,6 +63,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({});
     const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [showAllGantt, setShowAllGantt] = useState(false);
     const [weather, setWeather] = useState<any>(null);
 
     React.useEffect(() => {
@@ -243,7 +244,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    {activeProject.rabItems.slice(0, 5).map((item, idx) => {
+                                    {activeProject.rabItems.slice(0, showAllGantt ? undefined : 5).map((item, idx) => {
                                         // Stable Gantt Calculation
                                         let startOffset = 0;
                                         let width = 0;
@@ -284,7 +285,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             </div>
                                         );
                                     })}
-                                    {activeProject.rabItems.length > 5 && <div className="text-center text-xs text-slate-400 mt-2">...dan {activeProject.rabItems.length - 5} item lainnya</div>}
+                                    {activeProject.rabItems.length > 5 && (
+                                        <button
+                                            onClick={() => setShowAllGantt(!showAllGantt)}
+                                            className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 py-2 border-t border-slate-100 transition-colors"
+                                        >
+                                            {showAllGantt ? 'Tutup Tampilan Ringkas' : `Lihat Semua (${activeProject.rabItems.length} items)`}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
