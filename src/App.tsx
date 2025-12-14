@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, 
-  Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
+  Rotatecce, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
   History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle, Printer
 } from 'lucide-react';
 
