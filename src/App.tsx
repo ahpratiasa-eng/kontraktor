@@ -45,6 +45,7 @@ const App = () => {
   // Form States (now managed centrally in App to pass to ModalManager)
   const [inputName, setInputName] = useState('');
   const [inputClient, setInputClient] = useState('');
+  const [inputLocation, setInputLocation] = useState('');
   const [inputBudget, setInputBudget] = useState(0);
   const [inputStartDate, setInputStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [inputEndDate, setInputEndDate] = useState(new Date().toISOString().split('T')[0]);
@@ -110,7 +111,7 @@ const App = () => {
       // For now, let's just set the view and hopefully the logic handles null user.
       // Actually, many checks rely on 'user'. We might need a dummy user.
       setUser({ uid: 'guest', email: 'client@guest.com', displayName: 'Tamu Klien' } as any);
-      setUserRole('super_admin'); // DANGEROUS! Don't do this.
+      setUserRole('client_guest'); // Safe role for client
       // Better: Create a new role 'client_guest' in types and handle it.
       // But types are in index.ts. 
       // Let's just set userRole to null (public? no) or 'keuangan'? No.
@@ -151,11 +152,11 @@ const App = () => {
   const handleSaveProject = () => {
     if (!activeProject) {
       // Create new project
-      const newP: any = { name: inputName, client: inputClient, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate, status: 'Berjalan' };
+      const newP: any = { name: inputName, client: inputClient, location: inputLocation, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate, status: 'Berjalan', rabItems: [], transactions: [] };
       addDoc(collection(db, 'app_data', appId, 'projects'), newP);
       setShowModal(false);
     } else {
-      updateProject({ name: inputName, client: inputClient, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false);
+      updateProject({ name: inputName, client: inputClient, location: inputLocation, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false);
     }
   };
 
@@ -163,6 +164,7 @@ const App = () => {
     if (!activeProject) return;
     setInputName(activeProject.name);
     setInputClient(activeProject.client);
+    setInputLocation(activeProject.location);
     setInputBudget(activeProject.budgetLimit);
     setInputStartDate(activeProject.startDate);
     setInputEndDate(activeProject.endDate);
@@ -366,6 +368,7 @@ const App = () => {
         getFilteredEvidence={getFilteredEvidence}
         inputName={inputName} setInputName={setInputName}
         inputClient={inputClient} setInputClient={setInputClient}
+        inputLocation={inputLocation} setInputLocation={setInputLocation}
         inputBudget={inputBudget} setInputBudget={setInputBudget}
         inputStartDate={inputStartDate} setInputStartDate={setInputStartDate}
         inputEndDate={inputEndDate} setInputEndDate={setInputEndDate}

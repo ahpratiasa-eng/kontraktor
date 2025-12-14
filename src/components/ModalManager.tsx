@@ -24,6 +24,7 @@ interface ModalManagerProps {
     // State Setters & Values
     inputName: string; setInputName: (s: string) => void;
     inputClient: string; setInputClient: (s: string) => void;
+    inputLocation: string; setInputLocation: (s: string) => void;
     inputBudget: number; setInputBudget: (n: number) => void;
     inputStartDate: string; setInputStartDate: (s: string) => void;
     inputEndDate: string; setInputEndDate: (s: string) => void;
@@ -72,15 +73,15 @@ interface ModalManagerProps {
 const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const {
         modalType, showModal, setShowModal,
-        handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence,
-        inputName, setInputName, inputClient, setInputClient, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate,
+        handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB,
+        inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate,
         rabCategory, setRabCategory, rabItemName, setRabItemName, rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice,
         progressInput, setProgressInput, progressDate, setProgressDate, progressNote, setProgressNote,
         paymentAmount, setPaymentAmount,
         inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate, inputMandorRate, setInputMandorRate,
         stockType, setStockType, stockQty, setStockQty, stockDate, setStockDate, stockNotes, setStockNotes, selectedMaterial,
         inputEmail, setInputEmail, inputRole, setInputRole,
-        aiPrompt, setAiPrompt, isGeneratingAI, handleImportRAB,
+        aiPrompt, setAiPrompt, isGeneratingAI,
         attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, handlePhotoUpload, handleGetLocation, isGettingLoc,
         activeProject, selectedRabItem, selectedWorkerId
     } = props;
@@ -125,6 +126,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <h3 className="font-bold text-xl mb-4">Proyek Baru</h3>
                             <input className="w-full p-3 border rounded-xl" placeholder="Nama Proyek (Wajib)" value={inputName} onChange={e => setInputName(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Klien / Pemilik" value={inputClient} onChange={e => setInputClient(e.target.value)} />
+                            <input className="w-full p-3 border rounded-xl" placeholder="Lokasi Proyek (Kota/Daerah) - Penting untuk Cuaca" value={inputLocation} onChange={e => setInputLocation(e.target.value)} />
                             <div className="flex gap-2">
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Mulai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /></div>
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Selesai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /></div>
@@ -139,6 +141,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <h3 className="font-bold text-xl mb-4">Edit Proyek</h3>
                             <input className="w-full p-3 border rounded-xl" placeholder="Nama Proyek" value={inputName} onChange={e => setInputName(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Klien" value={inputClient} onChange={e => setInputClient(e.target.value)} />
+                            <input className="w-full p-3 border rounded-xl" placeholder="Lokasi Proyek" value={inputLocation} onChange={e => setInputLocation(e.target.value)} />
                             <div className="flex gap-2">
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Mulai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /></div>
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Selesai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /></div>

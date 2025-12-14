@@ -1,4 +1,4 @@
-export type UserRole = 'kontraktor' | 'keuangan' | 'pengawas' | 'super_admin';
+export type UserRole = 'kontraktor' | 'keuangan' | 'pengawas' | 'super_admin' | 'client_guest';
 
 export type AppUser = {
   email: string;
