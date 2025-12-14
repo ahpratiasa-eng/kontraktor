@@ -3,8 +3,8 @@ import {
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, 
-  RotateCcw, Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
-  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle, Printer
+  Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
+  History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle, Printer, RotateCcw
 } from 'lucide-react';
 
 import { initializeApp } from 'firebase/app';
@@ -99,7 +99,7 @@ type Project = {
   materialLogs: MaterialLog[]; 
   workers: Worker[]; 
   rabItems: RABItem[]; 
-  tasks: Task[]; // Kept for compatibility
+  tasks: Task[]; 
   attendanceLogs: AttendanceLog[]; 
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
@@ -121,36 +121,17 @@ const parseNumber = (str: string) => {
 
 // --- HELPER COMPONENTS ---
 
-// Custom Input Component untuk Angka dengan Format Ribuan
 const NumberInput = ({ value, onChange, placeholder, className }: { value: number, onChange: (val: number) => void, placeholder?: string, className?: string }) => {
   const [displayValue, setDisplayValue] = useState(formatNumber(value));
-
-  useEffect(() => {
-    // Update display jika value berubah dari luar (misal reset form)
-    if (parseNumber(displayValue) !== value) {
-      setDisplayValue(value === 0 ? '' : formatNumber(value));
-    }
-  }, [value]);
-
+  useEffect(() => { if (parseNumber(displayValue) !== value) { setDisplayValue(value === 0 ? '' : formatNumber(value)); } }, [value]);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/[^0-9]/g, ''); // Hanya angka
+    const rawValue = e.target.value.replace(/[^0-9]/g, '');
     const numValue = Number(rawValue);
     setDisplayValue(formatNumber(rawValue));
     onChange(numValue);
   };
-
-  return (
-    <input
-      type="text"
-      className={className}
-      placeholder={placeholder}
-      value={displayValue}
-      onChange={handleChange}
-      inputMode="numeric" // Agar keyboard angka muncul di HP
-    />
-  );
+  return <input type="text" className={className} placeholder={placeholder} value={displayValue} onChange={handleChange} inputMode="numeric" />;
 };
-
 
 const SCurveChart = ({ stats, project, compact = false }: { stats: any, project: Project, compact?: boolean }) => {
   const getAxisDates = () => {
@@ -166,19 +147,34 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
     });
   };
   const dateLabels = getAxisDates();
+
+  // Safety check for empty points or NaN
+  if (!stats.curvePoints || stats.curvePoints.includes('NaN')) {
+    return <div className="text-center text-xs text-slate-400 py-10 bg-slate-50 rounded">Belum ada data progres yang cukup untuk grafik.</div>;
+  }
+
   return (
     <div className={`w-full bg-white rounded-xl border shadow-sm ${compact ? 'p-3' : 'p-4 mb-4 break-inside-avoid'}`}>
       {!compact && <h3 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2"><TrendingUp size={16}/> Kurva S (Bobot Biaya)</h3>}
       <div className={`relative border-l border-b border-slate-300 mx-2 ${compact ? 'h-32 mt-2' : 'h-48 mt-4'} bg-slate-50`}>
-         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
+         <div className="absolute -left-6 top-0 text-[8px] text-slate-400">100%</div> 
+         <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
+         
          <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <line x1="0" y1="25" x2="100" y2="25" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
-            <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
-            <line x1="0" y1="75" x2="100" y2="75" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" />
-            <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2" />
-            <line x1="0" y1="100" x2="100" y2="0" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" />
-            <polyline fill="none" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="2" points={stats.curvePoints} vectorEffect="non-scaling-stroke" />
-            <circle cx={stats.timeProgress} cy={100 - stats.prog} r="1.5" fill="white" stroke="black" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+            <line x1="0" y1="25" x2="100" y2="25" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" vectorEffect="non-scaling-stroke"/>
+            <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" vectorEffect="non-scaling-stroke"/>
+            <line x1="0" y1="75" x2="100" y2="75" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" vectorEffect="non-scaling-stroke"/>
+            <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2" vectorEffect="non-scaling-stroke"/>
+            <line x1="0" y1="100" x2="100" y2="0" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4" vectorEffect="non-scaling-stroke"/>
+            
+            <polyline 
+              fill="none" 
+              stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} 
+              strokeWidth="2" 
+              points={stats.curvePoints} 
+              vectorEffect="non-scaling-stroke" 
+              strokeLinecap="round"
+            />
          </svg>
          <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">{dateLabels.map((date, idx) => (<span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>{date}</span>))}</div>
       </div>
@@ -222,7 +218,6 @@ const App = () => {
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
   const [loginError, setLoginError] = useState('');
   
-  // STATE BARU: Tipe Laporan (Internal vs Client)
   const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
 
   // FORM INPUTS
@@ -258,9 +253,7 @@ const App = () => {
 
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
-
-  // Transaction Inputs (Fixed)
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState(0); // Transaksi
   
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
@@ -286,7 +279,7 @@ const App = () => {
   const canEditProject = () => ['super_admin', 'kontraktor'].includes(userRole || '');
   const canSeeMoney = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
 
-  // --- LOGIC AUTH ---
+  // --- LOGIC AUTH & DATA ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (u) {
@@ -313,41 +306,28 @@ const App = () => {
     }
   }, [userRole]);
 
-  const handleLogin = async () => { setLoginError(''); try { await signInWithPopup(auth, googleProvider); } catch (error) { setLoginError("Terjadi kesalahan saat mencoba login."); } };
-  const handleLogout = async () => { if(confirm("Yakin ingin keluar?")) { await signOut(auth); setProjects([]); setView('project-list'); } };
-
-  // --- USER MANAGEMENT ---
-  const handleAddUser = async () => { if (!inputEmail || !inputName) return; try { await setDoc(doc(db, 'app_users', inputEmail), { email: inputEmail, name: inputName, role: inputRole }); alert("User berhasil ditambahkan!"); setShowModal(false); setInputEmail(''); setInputName(''); } catch (e) { alert("Gagal menambah user."); } };
-  const handleDeleteUser = async (emailToDelete: string) => { if (emailToDelete === user?.email) return alert("Tidak bisa hapus diri sendiri!"); if (confirm(`Hapus akses ${emailToDelete}?`)) { try { await deleteDoc(doc(db, 'app_users', emailToDelete)); } catch (e) { alert("Gagal."); } } };
-
-  // --- DATA SYNC ---
+  // Sync Projects
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'app_data', appId, 'projects'));
     return onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map(d => {
         const data = d.data();
-        // MAPPING EXPLISIT UNTUK MENGHINDARI ERROR TIPE DATA
         return { 
           id: d.id,
-          name: data.name || '',
-          client: data.client || '',
-          location: data.location || '',
-          status: data.status || 'Berjalan',
-          budgetLimit: data.budgetLimit || 0,
-          startDate: data.startDate || new Date().toISOString(),
-          endDate: data.endDate || new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(),
-          isDeleted: data.isDeleted || false, 
+          name: data.name,
+          client: data.client,
+          location: data.location,
+          status: data.status,
+          budgetLimit: data.budgetLimit,
+          startDate: data.startDate,
+          endDate: data.endDate || new Date(new Date(data.startDate).setDate(new Date(data.startDate).getDate() + 30)).toISOString(),
+          isDeleted: data.isDeleted || false,
           
           attendanceLogs: Array.isArray(data.attendanceLogs) ? data.attendanceLogs : [], 
           attendanceEvidences: Array.isArray(data.attendanceEvidences) ? data.attendanceEvidences : [], 
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
-          
-          // MIGRATION SUPPORT
-          rabItems: Array.isArray(data.rabItems) ? data.rabItems : (data.tasks || []).map((t: any) => ({
-            id: t.id, category: 'PEKERJAAN UMUM', name: t.name, unit: 'ls', volume: 1, unitPrice: 0, progress: t.progress, isAddendum: false
-          })),
-
+          rabItems: Array.isArray(data.rabItems) ? data.rabItems : [],
           tasks: [], 
           workers: Array.isArray(data.workers) ? data.workers : [], 
           materials: Array.isArray(data.materials) ? data.materials : [], 
@@ -363,95 +343,8 @@ const App = () => {
   const activeProject = projects.find(p => p.id === activeProjectId);
   const formatRupiah = (num: number) => { if (!canSeeMoney()) return 'Rp ***'; if (typeof num !== 'number' || isNaN(num)) return 'Rp 0'; return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num); };
   const updateProject = async (data: Partial<Project>) => { if (!user || !activeProjectId) return; setIsSyncing(true); try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } catch(e) { alert("Gagal simpan ke database"); } setIsSyncing(false); };
-  const getGroupedTransactions = (transactions: Transaction[]): GroupedTransaction[] => { const groups: {[key: string]: GroupedTransaction} = {}; transactions.forEach(t => { const key = `${t.date}-${t.category}-${t.type}`; if (!groups[key]) groups[key] = { id: key, date: t.date, category: t.category, type: t.type, totalAmount: 0, items: [] }; groups[key].totalAmount += t.amount; groups[key].items.push(t); }); return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); };
-
-  // --- EVIDENCE HELPERS ---
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) return alert("Browser tidak support GPS");
-    setIsGettingLoc(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`);
-        setIsGettingLoc(false);
-      },
-      (err) => {
-        console.error("GPS Error:", err);
-        alert("Gagal ambil lokasi. Pastikan GPS aktif dan izinkan browser.");
-        setIsGettingLoc(false);
-      },
-      { enableHighAccuracy: true }
-    );
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const MAX_WIDTH = 800; 
-        const MAX_HEIGHT = 800;
-
-        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        setEvidencePhoto(compressedDataUrl);
-        handleGetLocation();
-      };
-    };
-  };
-
-  const saveAttendanceWithEvidence = () => {
-    if(!activeProject) return;
-    if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; }
-    if (!evidenceLocation) { alert("Lokasi wajib terdeteksi!"); return; }
-    const newLogs: any[] = []; Object.keys(attendanceData).forEach(wId => { newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' }); });
-    let newEvidences = activeProject.attendanceEvidences || [];
-    if (evidencePhoto || evidenceLocation) {
-      newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: evidencePhoto, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences];
-    }
-    updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences });
-    setShowModal(false);
-  };
-
-  const getFilteredAttendance = () => {
-    if (!activeProject || !activeProject.attendanceLogs) return [];
-    const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999);
-    const filteredLogs = activeProject.attendanceLogs.filter(l => { const d = new Date(l.date); return d >= start && d <= end; });
-    const workerStats: {[key: number]: {name: string, role: string, unit: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {};
-    activeProject.workers.forEach(w => { workerStats[w.id] = { name: w.name, role: w.role, unit: w.wageUnit || 'Harian', hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 }; });
-    filteredLogs.forEach(log => {
-      if (workerStats[log.workerId]) {
-        const worker = activeProject.workers.find(w => w.id === log.workerId);
-        let dailyRate = 0;
-        if (worker) { if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; else dailyRate = worker.mandorRate; }
-        if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += dailyRate; }
-        else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (dailyRate * 1.5); }
-        else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (dailyRate * 0.5); }
-        else if (log.status === 'Absen') { workerStats[log.workerId].absen++; }
-      }
-    });
-    return Object.values(workerStats);
-  };
-
-  const getFilteredEvidence = () => {
-    if (!activeProject || !activeProject.attendanceEvidences) return [];
-    const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999);
-    return activeProject.attendanceEvidences.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
-  };
-
+  
+  // --- STATS LOGIC (S-CURVE FIX) ---
   const getStats = (p: Project) => {
     const tx = p.transactions || [];
     const inc = tx.filter(t => t.type === 'income').reduce((a, b) => a + (b.amount || 0), 0);
@@ -471,195 +364,154 @@ const App = () => {
       });
     }
 
-    const start = new Date(p.startDate).getTime(); const end = new Date(p.endDate).getTime(); const now = new Date().getTime();
-    let latestUpdate = now;
-    if (p.taskLogs && p.taskLogs.length > 0) { const logsTime = p.taskLogs.map(l => new Date(l.date).getTime()); if (Math.max(...logsTime) > now) latestUpdate = Math.max(...logsTime); }
-    const totalDuration = end - start; const elapsed = latestUpdate - start;
-    let timeProgress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
-    if (totalDuration <= 0) timeProgress = 0;
+    const start = new Date(p.startDate).getTime();
+    const end = new Date(p.endDate).getTime();
+    const now = new Date().getTime();
+    const totalDuration = end - start;
+    let timeProgress = 0;
+
+    if (totalDuration > 0) {
+        timeProgress = Math.min(100, Math.max(0, ((now - start) / totalDuration) * 100));
+    }
+
+    // GENERATE S-CURVE POINTS
+    // Kita buat 5 titik utama berdasarkan Task Logs dan RAB Progress
+    // Logic: Ambil log terakhir per item RAB untuk tanggal tertentu
     
-    const uniqueDates = Array.from(new Set((p.taskLogs || []).map(l => l.date))).sort();
-    if (!uniqueDates.includes(p.startDate.split('T')[0])) uniqueDates.unshift(p.startDate.split('T')[0]);
-    const today = new Date().toISOString().split('T')[0];
-    if (!uniqueDates.includes(today)) uniqueDates.push(today);
     const points: string[] = [];
-    const taskProgressState: {[taskId: number]: number} = {};
-    (p.rabItems || []).forEach(t => taskProgressState[t.id] = 0);
     
-    uniqueDates.forEach(dateStr => {
-      const dateVal = new Date(dateStr).getTime();
-      const logsUntilNow = (p.taskLogs || []).filter(l => new Date(l.date).getTime() <= dateVal);
-      logsUntilNow.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(log => { taskProgressState[log.taskId] = log.newProgress; });
-      
-      let totalProg = 0;
-      if (totalRAB > 0) {
-        (p.rabItems || []).forEach(item => {
-          const currentProg = taskProgressState[item.id] || 0;
-          const itemTotal = item.volume * item.unitPrice;
-          const itemWeight = (itemTotal / totalRAB) * 100;
-          totalProg += (currentProg * itemWeight) / 100;
-        });
-      }
-      
-      let x = ((dateVal - start) / totalDuration) * 100; x = Math.max(0, Math.min(100, x));
-      let y = 100 - totalProg; 
-      points.push(`${x},${y}`);
+    // Jika RAB belum ada/kosong, atau durasi 0, return default
+    if (totalRAB === 0 || totalDuration <= 0) {
+       return { inc, exp, prog: weightedProgress, leak: 0, timeProgress, curvePoints: "0,100 100,100", totalRAB };
+    }
+
+    // Ambil semua tanggal unik dari logs + start + end + now
+    let timestamps = [start, end, now];
+    if(p.taskLogs) timestamps = [...timestamps, ...p.taskLogs.map(l => new Date(l.date).getTime())];
+    
+    // Sort dan Unique
+    timestamps = Array.from(new Set(timestamps)).sort((a,b) => a-b);
+    
+    // Filter tanggal yang dalam range proyek saja
+    timestamps = timestamps.filter(t => t >= start && t <= end);
+
+    // Kalau tidak ada titik sama sekali, pakai start & end
+    if (timestamps.length < 2) timestamps = [start, end];
+
+    const itemProgressCache: {[itemId: number]: number} = {};
+    (p.rabItems || []).forEach(i => itemProgressCache[i.id] = 0); // Init 0
+
+    timestamps.forEach(ts => {
+       // Cari log progress yang terjadi SEBELUM atau SAMA DENGAN timestamp ini
+       const relevantLogs = (p.taskLogs || []).filter(l => new Date(l.date).getTime() <= ts);
+       
+       // Update progress cache berdasarkan log terakhir
+       relevantLogs.forEach(log => {
+          itemProgressCache[log.taskId] = log.newProgress;
+       });
+
+       // Hitung total progress bobot pada titik waktu ini
+       let currentTotalWeightProg = 0;
+       (p.rabItems || []).forEach(item => {
+          const p = itemProgressCache[item.id] || 0;
+          const weight = ((item.volume * item.unitPrice) / totalRAB);
+          currentTotalWeightProg += (p * weight);
+       });
+
+       // Koordinat X (0-100)
+       const x = ((ts - start) / totalDuration) * 100;
+       // Koordinat Y (100-0) -> SVG Y=0 ada di atas
+       const y = 100 - currentTotalWeightProg;
+
+       points.push(`${x},${y}`);
     });
 
     return { inc, exp, prog: weightedProgress, leak: 0, timeProgress, curvePoints: points.join(" "), totalRAB };
   };
 
-  const calculateTotalDays = (logs: AttendanceLog[], workerId: number) => {
-    if(!logs) return 0;
-    return logs.filter(l => l.workerId === workerId).reduce((acc, curr) => { if (curr.status === 'Hadir') return acc + 1; if (curr.status === 'Setengah') return acc + 0.5; if (curr.status === 'Lembur') return acc + 1.5; return acc; }, 0);
-  };
-
-  const calculateWorkerFinancials = (p: Project, workerId: number) => {
-    const worker = p.workers.find(w => w.id === workerId); if (!worker) return { totalDue: 0, totalPaid: 0, balance: 0 };
-    const days = calculateTotalDays(p.attendanceLogs, workerId); 
-    let dailyRate = worker.mandorRate;
-    if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7;
-    if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30;
-    const totalDue = days * dailyRate;
-    const totalPaid = (p.transactions || []).filter(t => t.workerId === workerId && t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
-    return { totalDue, totalPaid, balance: totalDue - totalPaid };
-  };
-
-  // --- RAB HELPERS ---
-  const handleSaveRAB = () => {
-    if(!activeProject || !rabItemName) return;
-    
-    // CCO Logic: if marked as addendum, it's a CCO
-    const newItem: RABItem = {
-      id: selectedRabItem ? selectedRabItem.id : Date.now(),
-      category: rabCategory || 'PEKERJAAN UMUM',
-      name: rabItemName,
-      unit: rabUnit,
-      volume: rabVol,
-      unitPrice: rabPrice,
-      progress: selectedRabItem ? selectedRabItem.progress : 0,
-      isAddendum: selectedRabItem ? selectedRabItem.isAddendum : false 
-    };
-
-    let newItems = [...(activeProject.rabItems || [])];
-    if (selectedRabItem) {
-      newItems = newItems.map(i => i.id === selectedRabItem.id ? newItem : i);
-    } else {
-      newItems.push(newItem);
-    }
-
-    updateProject({ rabItems: newItems });
-    setShowModal(false);
-    // Reset
-    setRabItemName(''); setRabVol(0); setRabPrice(0);
-  };
-  
-  const handleEditRABItem = (item: RABItem) => {
-    setSelectedRabItem(item);
-    setRabCategory(item.category);
-    setRabItemName(item.name);
-    setRabUnit(item.unit);
-    setRabVol(item.volume);
-    setRabPrice(item.unitPrice);
-    setModalType('newRAB');
-    setShowModal(true);
-  };
-
-  const handleAddCCO = () => {
-     setRabItemName(''); setRabCategory('PEKERJAAN TAMBAH KURANG (CCO)'); 
-     setSelectedRabItem(null); 
-     setModalType('newRAB');
-  };
-
-  const deleteRABItem = (id: number) => {
-    if(!activeProject || !confirm('Hapus item RAB ini?')) return;
-    const newItems = activeProject.rabItems.filter(i => i.id !== id);
-    updateProject({ rabItems: newItems });
-  };
-
-  const getRABGroups = () => {
-    if (!activeProject || !activeProject.rabItems) return {};
-    const groups: {[key: string]: RABItem[]} = {};
-    activeProject.rabItems.forEach(item => {
-      if(!groups[item.category]) groups[item.category] = [];
-      groups[item.category].push(item);
-    });
-    return groups;
-  };
-
+  // --- HANDLERS LAINNYA ---
+  const handleLogin = async () => { setLoginError(''); try { await signInWithPopup(auth, googleProvider); } catch (error) { setLoginError("Terjadi kesalahan saat mencoba login."); } };
+  const handleLogout = async () => { if(confirm("Yakin ingin keluar?")) { await signOut(auth); setProjects([]); setView('project-list'); } };
+  const handleAddUser = async () => { if (!inputEmail || !inputName) return; try { await setDoc(doc(db, 'app_users', inputEmail), { email: inputEmail, name: inputName, role: inputRole }); alert("User berhasil ditambahkan!"); setShowModal(false); setInputEmail(''); setInputName(''); } catch (e) { alert("Gagal menambah user."); } };
+  const handleDeleteUser = async (emailToDelete: string) => { if (emailToDelete === user?.email) return alert("Tidak bisa hapus diri sendiri!"); if (confirm(`Hapus akses ${emailToDelete}?`)) { try { await deleteDoc(doc(db, 'app_users', emailToDelete)); } catch (e) { alert("Gagal."); } } };
   const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
-  
-  const handleTransaction = (e: React.FormEvent) => { 
-    e.preventDefault(); 
-    if (!activeProject) return; 
-    const form = e.target as HTMLFormElement; 
-    const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; 
-    // amount is from state
-    const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; 
-    
-    if (!desc || amount <= 0) { alert("Data tidak valid"); return; } 
-    updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount: amount, type: txType }, ...(activeProject.transactions || [])] }); 
-    form.reset(); 
-    setAmount(0); // Reset the amount state
-  };
-  
-  // UPDATE PROGRESS BASED ON RAB ITEM
-  const handleUpdateProgress = () => { 
-    if (!activeProject || !selectedRabItem) return; 
-    const updatedRAB = activeProject.rabItems.map(item => item.id === selectedRabItem.id ? { ...item, progress: progressInput } : item);
-    const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedRabItem.id, previousProgress: selectedRabItem.progress, newProgress: progressInput, note: progressNote };
-    updateProject({ rabItems: updatedRAB, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); 
-    setShowModal(false); 
-  };
-  
+  const handleTransaction = (e: React.FormEvent) => { e.preventDefault(); if (!activeProject) return; const form = e.target as HTMLFormElement; const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; if (!desc || amount <= 0) { alert("Data tidak valid"); return; } updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount: amount, type: txType }, ...(activeProject.transactions || [])] }); form.reset(); setAmount(0); };
+  const handleUpdateProgress = () => { if (!activeProject || !selectedRabItem) return; const updatedRAB = activeProject.rabItems.map(item => item.id === selectedRabItem.id ? { ...item, progress: progressInput } : item); const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedRabItem.id, previousProgress: selectedRabItem.progress, newProgress: progressInput, note: progressNote }; updateProject({ rabItems: updatedRAB, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); setShowModal(false); };
   const handleEditProject = () => { if (!activeProject) return; updateProject({ name: inputName, client: inputClient, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false); };
-  const handlePayWorker = () => { if (!activeProject || !selectedWorkerId || paymentAmount <= 0) return; const worker = activeProject.workers.find(w => w.id === selectedWorkerId); const newTx: Transaction = { id: Date.now(), date: new Date().toISOString().split('T')[0], category: 'Upah Tukang', description: `Gaji ${worker?.name || 'Tukang'}`, amount: paymentAmount, type: 'expense', workerId: selectedWorkerId }; updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false); };
-  
+  const handlePayWorker = () => { if (!activeProject || !selectedWorkerId || paymentAmount <= 0) return; const newTx: Transaction = { id: Date.now(), date: new Date().toISOString().split('T')[0], category: 'Upah Tukang', description: `Gaji Tukang`, amount: paymentAmount, type: 'expense', workerId: selectedWorkerId }; updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false); };
   const handleSaveWorker = () => { if(!activeProject) return; if (selectedWorkerId) { const updatedWorkers = activeProject.workers.map(w => { if(w.id === selectedWorkerId) { return { ...w, name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate }; } return w; }); updateProject({ workers: updatedWorkers }); } else { const newWorker: Worker = { id: Date.now(), name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate }; updateProject({ workers: [...(activeProject.workers || []), newWorker] }); } setShowModal(false); };
   const handleEditWorker = (w: Worker) => { setSelectedWorkerId(w.id); setInputName(w.name); setInputWorkerRole(w.role); setInputWageUnit(w.wageUnit); setInputRealRate(w.realRate); setInputMandorRate(w.mandorRate); setModalType('newWorker'); setShowModal(true); };
   const handleDeleteWorker = (w: Worker) => { if(!activeProject) return; if(confirm(`Yakin hapus ${w.name}?`)) { const updatedWorkers = activeProject.workers.filter(worker => worker.id !== w.id); updateProject({ workers: updatedWorkers }); } };
   const handleStockMovement = () => { if (!activeProject || !selectedMaterial || stockQty <= 0) return; const updatedMaterials = activeProject.materials.map(m => { if (m.id === selectedMaterial.id) return { ...m, stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty }; return m; }); const newLog: MaterialLog = { id: Date.now(), materialId: selectedMaterial.id, date: stockDate, type: stockType, quantity: stockQty, notes: stockNotes || '-', actor: user?.displayName || 'User' }; updateProject({ materials: updatedMaterials, materialLogs: [newLog, ...(activeProject.materialLogs || [])] }); setShowModal(false); setStockQty(0); setStockNotes(''); };
-  
-  // SOFT DELETE Logic
-  const handleSoftDeleteProject = async (p: Project) => {
-    if(confirm(`Yakin ingin memindahkan proyek "${p.name}" ke Sampah?`)) {
-      try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: true }); }
-      catch(e) { alert("Gagal menghapus."); }
-    }
-  };
-  const handleRestoreProject = async (p: Project) => {
-    try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: false }); }
-    catch(e) { alert("Gagal restore."); }
-  };
-  const handlePermanentDeleteProject = async (p: Project) => {
-    if(confirm(`PERINGATAN: Proyek "${p.name}" akan dihapus SELAMANYA dan tidak bisa dikembalikan. Lanjutkan?`)) {
-      try { await deleteDoc(doc(db, 'app_data', appId, 'projects', p.id)); }
-      catch(e) { alert("Gagal hapus permanen."); }
-    }
-  };
-
+  const handleSoftDeleteProject = async (p: Project) => { if(confirm(`Yakin ingin memindahkan proyek "${p.name}" ke Sampah?`)) { try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: true }); } catch(e) { alert("Gagal menghapus."); } } };
+  const handleRestoreProject = async (p: Project) => { try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: false }); } catch(e) { alert("Gagal restore."); } };
+  const handlePermanentDeleteProject = async (p: Project) => { if(confirm(`PERINGATAN: Proyek "${p.name}" akan dihapus SELAMANYA dan tidak bisa dikembalikan. Lanjutkan?`)) { try { await deleteDoc(doc(db, 'app_data', appId, 'projects', p.id)); } catch(e) { alert("Gagal hapus permanen."); } } };
   const openModal = (type: any) => { setModalType(type); setInputName(''); if (['editProject', 'attendance', 'payWorker', 'newMaterial', 'stockMovement', 'stockHistory', 'newTask', 'updateProgress', 'taskHistory', 'newRAB'].includes(type) && !activeProject) return; if (type === 'editProject' && activeProject) { setInputName(activeProject.name); setInputClient(activeProject.client); setInputBudget(activeProject.budgetLimit); setInputStartDate(activeProject.startDate.split('T')[0]); setInputEndDate(activeProject.endDate.split('T')[0]); } if (type === 'attendance' && activeProject) { const initData: any = {}; activeProject.workers.forEach(w => initData[w.id] = { status: 'Hadir', note: '' }); setAttendanceData(initData); setEvidencePhoto(''); setEvidenceLocation(''); } if (type === 'newProject') { setInputDuration(30); } if (type === 'addUser') { setInputName(''); setInputEmail(''); setInputRole('pengawas'); } if (type === 'newWorker') { setSelectedWorkerId(null); setInputName(''); setInputRealRate(150000); setInputMandorRate(170000); setInputWorkerRole('Tukang'); setInputWageUnit('Harian'); } if(type === 'newRAB') { setRabCategory(''); setRabItemName(''); setRabVol(0); setRabPrice(0); setSelectedRabItem(null); } setStockDate(new Date().toISOString().split('T')[0]); setShowModal(true); };
   const createItem = (field: string, newItem: any) => { if(!activeProject) return; updateProject({ [field]: [...(activeProject as any)[field], newItem] }); setShowModal(false); }
+  
+  // --- RAB HELPERS ---
+  const handleSaveRAB = () => {
+    if(!activeProject || !rabItemName) return;
+    const newItem: RABItem = { id: selectedRabItem ? selectedRabItem.id : Date.now(), category: rabCategory || 'PEKERJAAN UMUM', name: rabItemName, unit: rabUnit, volume: rabVol, unitPrice: rabPrice, progress: selectedRabItem ? selectedRabItem.progress : 0, isAddendum: selectedRabItem ? selectedRabItem.isAddendum : false };
+    let newItems = [...(activeProject.rabItems || [])];
+    if (selectedRabItem) { newItems = newItems.map(i => i.id === selectedRabItem.id ? newItem : i); } else { newItems.push(newItem); }
+    updateProject({ rabItems: newItems }); setShowModal(false); setRabItemName(''); setRabVol(0); setRabPrice(0);
+  };
+  const handleEditRABItem = (item: RABItem) => { setSelectedRabItem(item); setRabCategory(item.category); setRabItemName(item.name); setRabUnit(item.unit); setRabVol(item.volume); setRabPrice(item.unitPrice); setModalType('newRAB'); setShowModal(true); };
+  const handleAddCCO = () => { setRabItemName(''); setRabCategory('PEKERJAAN TAMBAH KURANG (CCO)'); setSelectedRabItem(null); setModalType('newRAB'); };
+  const deleteRABItem = (id: number) => { if(!activeProject || !confirm('Hapus item RAB ini?')) return; const newItems = activeProject.rabItems.filter(i => i.id !== id); updateProject({ rabItems: newItems }); };
+  const getRABGroups = () => { if (!activeProject || !activeProject.rabItems) return {}; const groups: {[key: string]: RABItem[]} = {}; activeProject.rabItems.forEach(item => { if(!groups[item.category]) groups[item.category] = []; groups[item.category].push(item); }); return groups; };
+  
+  // --- EVIDENCE HELPERS ---
+  const handleGetLocation = () => { if (!navigator.geolocation) return alert("Browser tidak support GPS"); setIsGettingLoc(true); navigator.geolocation.getCurrentPosition((pos) => { setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`); setIsGettingLoc(false); }, (err) => { console.error("GPS Error:", err); alert("Gagal ambil lokasi."); setIsGettingLoc(false); }, { enableHighAccuracy: true }); };
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target?.result as string; img.onload = () => { const canvas = document.createElement('canvas'); let width = img.width; let height = img.height; const MAX_WIDTH = 800; const MAX_HEIGHT = 800; if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, width, height); const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); setEvidencePhoto(compressedDataUrl); handleGetLocation(); }; }; };
+  const saveAttendanceWithEvidence = () => { if(!activeProject) return; if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; } if (!evidenceLocation) { alert("Lokasi wajib terdeteksi!"); return; } const newLogs: any[] = []; Object.keys(attendanceData).forEach(wId => { newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' }); }); let newEvidences = activeProject.attendanceEvidences || []; if (evidencePhoto || evidenceLocation) { newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: evidencePhoto, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences]; } updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences }); setShowModal(false); };
+  const getFilteredAttendance = () => { if (!activeProject || !activeProject.attendanceLogs) return []; const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999); const filteredLogs = activeProject.attendanceLogs.filter(l => { const d = new Date(l.date); return d >= start && d <= end; }); const workerStats: {[key: number]: {name: string, role: string, unit: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {}; activeProject.workers.forEach(w => { workerStats[w.id] = { name: w.name, role: w.role, unit: w.wageUnit || 'Harian', hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 }; }); filteredLogs.forEach(log => { if (workerStats[log.workerId]) { const worker = activeProject.workers.find(w => w.id === log.workerId); let dailyRate = 0; if (worker) { if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; else dailyRate = worker.mandorRate; } if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += dailyRate; } else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (dailyRate * 1.5); } else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (dailyRate * 0.5); } else if (log.status === 'Absen') { workerStats[log.workerId].absen++; } } }); return Object.values(workerStats); };
+  const getFilteredEvidence = () => { if (!activeProject || !activeProject.attendanceEvidences) return []; const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999); return activeProject.attendanceEvidences.filter(e => { const d = new Date(e.date); return d >= start && d <= end; }); };
+  const calculateTotalDays = (logs: AttendanceLog[], workerId: number) => { if(!logs) return 0; return logs.filter(l => l.workerId === workerId).reduce((acc, curr) => { if (curr.status === 'Hadir') return acc + 1; if (curr.status === 'Setengah') return acc + 0.5; if (curr.status === 'Lembur') return acc + 1.5; return acc; }, 0); };
+  const calculateWorkerFinancials = (p: Project, workerId: number) => { const worker = p.workers.find(w => w.id === workerId); if (!worker) return { totalDue: 0, totalPaid: 0, balance: 0 }; const days = calculateTotalDays(p.attendanceLogs, workerId); let dailyRate = worker.mandorRate; if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; const totalDue = days * dailyRate; const totalPaid = (p.transactions || []).filter(t => t.workerId === workerId && t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0); return { totalDue, totalPaid, balance: totalDue - totalPaid }; };
+
+  const getGroupedTransactions = (transactions: Transaction[]): GroupedTransaction[] => { const groups: {[key: string]: GroupedTransaction} = {}; transactions.forEach(t => { const key = `${t.date}-${t.category}-${t.type}`; if (!groups[key]) groups[key] = { id: key, date: t.date, category: t.category, type: t.type, totalAmount: 0, items: [] }; groups[key].totalAmount += t.amount; groups[key].items.push(t); }); return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); };
+
+  // 100% FINISHED DEMO DATA 1 MILYAR
   const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); 
+    const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; };
     const rabDemo: RABItem[] = [
-        { id: 1, category: 'A. PEKERJAAN PERSIAPAN', name: 'Direksi Keet', unit: 'ls', volume: 1, unitPrice: 2000000, progress: 100, isAddendum: false },
-        { id: 2, category: 'A. PEKERJAAN PERSIAPAN', name: 'Pembersihan Lahan', unit: 'm2', volume: 100, unitPrice: 15000, progress: 100, isAddendum: false },
-        { id: 3, category: 'B. PEKERJAAN STRUKTUR', name: 'Galian Tanah', unit: 'm3', volume: 50, unitPrice: 85000, progress: 100, isAddendum: false },
-        { id: 4, category: 'B. PEKERJAAN STRUKTUR', name: 'Pondasi Batu Kali', unit: 'm3', volume: 25, unitPrice: 950000, progress: 80, isAddendum: false },
-        { id: 5, category: 'C. PEKERJAAN DINDING', name: 'Pasangan Bata Merah', unit: 'm2', volume: 200, unitPrice: 120000, progress: 100, isAddendum: false },
-        { id: 6, category: 'D. PEKERJAAN TAMBAH KURANG (CCO)', name: 'Taman Depan (Addendum)', unit: 'ls', volume: 1, unitPrice: 5000000, progress: 100, isAddendum: true },
+        { id: 1, category: 'A. PEKERJAAN PERSIAPAN', name: 'Mobilisasi & Demobilisasi', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false },
+        { id: 2, category: 'A. PEKERJAAN PERSIAPAN', name: 'Direksi Keet & Gudang', unit: 'ls', volume: 1, unitPrice: 20000000, progress: 100, isAddendum: false },
+        { id: 3, category: 'A. PEKERJAAN PERSIAPAN', name: 'Pagar Sementara & Air Kerja', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false },
+        { id: 4, category: 'B. PEKERJAAN STRUKTUR', name: 'Galian & Pondasi', unit: 'm3', volume: 50, unitPrice: 2000000, progress: 100, isAddendum: false },
+        { id: 5, category: 'B. PEKERJAAN STRUKTUR', name: 'Beton Bertulang', unit: 'ls', volume: 1, unitPrice: 250000000, progress: 100, isAddendum: false },
+        { id: 6, category: 'B. PEKERJAAN STRUKTUR', name: 'Rangka Atap Baja Ringan', unit: 'ls', volume: 1, unitPrice: 100000000, progress: 100, isAddendum: false },
+        { id: 7, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Pasangan Dinding Bata & Plester', unit: 'm2', volume: 300, unitPrice: 500000, progress: 100, isAddendum: false },
+        { id: 8, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Lantai Granit 60x60', unit: 'm2', volume: 200, unitPrice: 500000, progress: 100, isAddendum: false },
+        { id: 9, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Plafon Gypsum & List', unit: 'm2', volume: 150, unitPrice: 333333, progress: 100, isAddendum: false },
+        { id: 10, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Pengecatan Dinding & Plafon', unit: 'ls', volume: 1, unitPrice: 50000000, progress: 100, isAddendum: false },
+        { id: 11, category: 'D. PEKERJAAN MEP', name: 'Instalasi Listrik & Titik Lampu', unit: 'titik', volume: 50, unitPrice: 1500000, progress: 100, isAddendum: false },
+        { id: 12, category: 'D. PEKERJAAN MEP', name: 'Instalasi Air Bersih & Kotor', unit: 'ls', volume: 1, unitPrice: 75000000, progress: 100, isAddendum: false },
     ];
-    const demo: Omit<Project, 'id'> = { name: "Rumah Contoh Cluster A (LUNAS)", client: "Bpk Budi", location: "Grand Wisata", status: 'Selesai', budgetLimit: 0, startDate: start.toISOString(), endDate: end.toISOString(), 
+    // Total should be around 1M
+    const demo: Omit<Project, 'id'> = { name: "Rumah Mewah 1 Milyar (Selesai)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 0, startDate: start.toISOString(), endDate: end.toISOString(), 
     rabItems: rabDemo,
     transactions: [
-      { id: 101, date: start.toISOString().split('T')[0], category: 'Termin', description: 'DP 30%', amount: 18150000, type: 'income' },
-      { id: 102, date: new Date(start.getTime() + 30*24*60*60*1000).toISOString().split('T')[0], category: 'Termin', description: 'Termin 2 (50%)', amount: 30250000, type: 'income' },
-      { id: 103, date: end.toISOString().split('T')[0], category: 'Termin', description: 'Pelunasan (20%)', amount: 12100000, type: 'income' },
-      // Expenses dummy
-      { id: 201, date: start.toISOString().split('T')[0], category: 'Material', description: 'Beli Bata & Semen', amount: 15000000, type: 'expense' },
-      { id: 202, date: start.toISOString().split('T')[0], category: 'Upah Tukang', description: 'Bayar Minggu 1', amount: 5000000, type: 'expense' },
+      { id: 101, date: d(0), category: 'Termin', description: 'DP 30%', amount: 300000000, type: 'income' },
+      { id: 102, date: d(2), category: 'Termin', description: 'Termin 2 (40%)', amount: 400000000, type: 'income' },
+      { id: 103, date: d(4), category: 'Termin', description: 'Termin 3 (25%)', amount: 250000000, type: 'income' },
+      { id: 104, date: d(6), category: 'Termin', description: 'Retensi (5%)', amount: 50000000, type: 'income' },
+      { id: 201, date: d(0), category: 'Material', description: 'Belanja Awal Bahan Alam', amount: 200000000, type: 'expense' },
+      { id: 202, date: d(1), category: 'Upah Tukang', description: 'Gaji Bulan 1', amount: 150000000, type: 'expense' },
+      { id: 203, date: d(3), category: 'Material', description: 'Granit & Cat', amount: 300000000, type: 'expense' },
+      { id: 204, date: d(6), category: 'Upah Tukang', description: 'Pelunasan Gaji', amount: 150000000, type: 'expense' },
     ], 
-    materials: [], materialLogs: [], workers: [], tasks: [], taskLogs: [], attendanceLogs: [], attendanceEvidences: [] }; try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); } };
+    // Add Dummy Task Logs to populate S-Curve
+    taskLogs: [
+        {id:1, date:d(0), taskId:1, previousProgress:0, newProgress:10, note:'Start'},
+        {id:2, date:d(1), taskId:1, previousProgress:10, newProgress:30, note:'Progress'},
+        {id:3, date:d(2), taskId:1, previousProgress:30, newProgress:60, note:'Progress'},
+        {id:4, date:d(3), taskId:1, previousProgress:60, newProgress:80, note:'Progress'},
+        {id:5, date:d(4), taskId:1, previousProgress:80, newProgress:100, note:'Finish'}
+    ],
+    materials: [], materialLogs: [], workers: [], tasks: [], attendanceLogs: [], attendanceEvidences: [] }; try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); } };
 
   if (!user && authStatus !== 'loading') {
     return (
