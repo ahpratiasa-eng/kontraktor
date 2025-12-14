@@ -179,7 +179,6 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
          <div className="absolute -left-4 bottom-0 text-[8px] text-slate-400">0%</div>
          
          <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Grid Lines */}
             <line x1="0" y1="25" x2="100" y2="25" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" vectorEffect="non-scaling-stroke"/>
             <line x1="0" y1="50" x2="100" y2="50" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" vectorEffect="non-scaling-stroke"/>
             <line x1="0" y1="75" x2="100" y2="75" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2" vectorEffect="non-scaling-stroke"/>
@@ -194,6 +193,8 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
               vectorEffect="non-scaling-stroke" 
               strokeLinecap="round"
             />
+            
+            <circle cx={stats.timeProgress} cy={100 - stats.prog} r="1.5" fill="white" stroke="black" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
          </svg>
          <div className="absolute top-full left-0 w-full flex justify-between mt-1 text-[9px] text-slate-500 font-medium">{dateLabels.map((date, idx) => (<span key={idx} className={idx === 0 ? '-ml-2' : idx === dateLabels.length - 1 ? '-mr-2' : ''}>{date}</span>))}</div>
       </div>
@@ -342,12 +343,12 @@ const App = () => {
         const data = d.data();
         return { 
           id: d.id,
-          name: data.name,
-          client: data.client,
-          location: data.location,
-          status: data.status,
-          budgetLimit: data.budgetLimit,
-          startDate: data.startDate,
+          name: data.name || '',
+          client: data.client || '',
+          location: data.location || '',
+          status: data.status || 'Berjalan',
+          budgetLimit: data.budgetLimit || 0,
+          startDate: data.startDate || new Date().toISOString(),
           endDate: data.endDate || new Date(new Date(data.startDate).setDate(new Date(data.startDate).getDate() + 30)).toISOString(),
           isDeleted: data.isDeleted || false,
           
@@ -355,7 +356,6 @@ const App = () => {
           attendanceEvidences: Array.isArray(data.attendanceEvidences) ? data.attendanceEvidences : [], 
           transactions: Array.isArray(data.transactions) ? data.transactions : [],
           
-          // MIGRATION SUPPORT
           rabItems: Array.isArray(data.rabItems) ? data.rabItems : (data.tasks || []).map((t: any) => ({
             id: t.id, category: 'PEKERJAAN UMUM', name: t.name, unit: 'ls', volume: 1, unitPrice: 0, progress: t.progress, isAddendum: false
           })),
@@ -647,20 +647,28 @@ const App = () => {
     
     // TOTAL RAB 1M BREAKDOWN
     const rabDemo: RABItem[] = [
+        // A. PERSIAPAN (50jt)
         { id: 1, category: 'A. PEKERJAAN PERSIAPAN', name: 'Mobilisasi & Demobilisasi', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false },
         { id: 2, category: 'A. PEKERJAAN PERSIAPAN', name: 'Direksi Keet & Gudang', unit: 'ls', volume: 1, unitPrice: 20000000, progress: 100, isAddendum: false },
         { id: 3, category: 'A. PEKERJAAN PERSIAPAN', name: 'Pagar Sementara & Air Kerja', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false },
+        
+        // B. STRUKTUR (450jt)
         { id: 4, category: 'B. PEKERJAAN STRUKTUR', name: 'Galian & Pondasi', unit: 'm3', volume: 50, unitPrice: 2000000, progress: 100, isAddendum: false },
         { id: 5, category: 'B. PEKERJAAN STRUKTUR', name: 'Beton Bertulang (Kolom, Balok, Plat)', unit: 'ls', volume: 1, unitPrice: 250000000, progress: 100, isAddendum: false },
         { id: 6, category: 'B. PEKERJAAN STRUKTUR', name: 'Rangka Atap Baja Ringan', unit: 'ls', volume: 1, unitPrice: 100000000, progress: 100, isAddendum: false },
+        
+        // C. ARSITEKTUR (350jt)
         { id: 7, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Pasangan Dinding Bata & Plester', unit: 'm2', volume: 300, unitPrice: 500000, progress: 100, isAddendum: false },
         { id: 8, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Lantai Granit 60x60', unit: 'm2', volume: 200, unitPrice: 500000, progress: 100, isAddendum: false },
         { id: 9, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Plafon Gypsum & List', unit: 'm2', volume: 150, unitPrice: 333333, progress: 100, isAddendum: false },
         { id: 10, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Pengecatan Dinding & Plafon', unit: 'ls', volume: 1, unitPrice: 50000000, progress: 100, isAddendum: false },
+
+        // D. MEP (150jt)
         { id: 11, category: 'D. PEKERJAAN MEP', name: 'Instalasi Listrik & Titik Lampu', unit: 'titik', volume: 50, unitPrice: 1500000, progress: 100, isAddendum: false },
         { id: 12, category: 'D. PEKERJAAN MEP', name: 'Instalasi Air Bersih & Kotor + Toren', unit: 'ls', volume: 1, unitPrice: 75000000, progress: 100, isAddendum: false },
     ];
     
+    // REALISTIC MATERIALS & WORKERS
     const materialsDemo: Material[] = [
         { id: 1, name: 'Semen Tiga Roda', unit: 'Sak', stock: 50, minStock: 20 },
         { id: 2, name: 'Pasir Beton', unit: 'Kibic', stock: 10, minStock: 5 },
@@ -681,10 +689,13 @@ const App = () => {
     const demo: Omit<Project, 'id'> = { name: "Rumah Mewah 1 Milyar (Selesai)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 0, startDate: start.toISOString(), endDate: end.toISOString(), 
     rabItems: rabDemo,
     transactions: [
+      // INCOME TOTAL 1M
       { id: 101, date: d(0), category: 'Termin', description: 'DP 30%', amount: 300000000, type: 'income' },
       { id: 102, date: d(2), category: 'Termin', description: 'Termin 2 (40%)', amount: 400000000, type: 'income' },
       { id: 103, date: d(4), category: 'Termin', description: 'Termin 3 (25%)', amount: 250000000, type: 'income' },
       { id: 104, date: d(6), category: 'Termin', description: 'Retensi (5%)', amount: 50000000, type: 'income' },
+      
+      // EXPENSES (PROFIT MARGIN ~20%) -> TOTAL EXP 800jt
       { id: 201, date: d(0), category: 'Material', description: 'Belanja Awal (Besi, Semen, Pasir)', amount: 200000000, type: 'expense' },
       { id: 202, date: d(1), category: 'Upah Tukang', description: 'Gaji Bulan 1', amount: 100000000, type: 'expense' },
       { id: 203, date: d(2), category: 'Material', description: 'Belanja Struktur Atap & Bata', amount: 200000000, type: 'expense' },
@@ -692,6 +703,7 @@ const App = () => {
       { id: 205, date: d(4), category: 'Material', description: 'Finishing (Granit, Cat, MEP)', amount: 100000000, type: 'expense' },
       { id: 206, date: d(6), category: 'Upah Tukang', description: 'Pelunasan Gaji & Bonus', amount: 100000000, type: 'expense' },
     ], 
+    // DUMMY S-CURVE DATA
     taskLogs: [
         {id:1, date:d(0), taskId:1, previousProgress:0, newProgress:100, note:'Persiapan Selesai'},
         {id:2, date:d(1), taskId:4, previousProgress:0, newProgress:100, note:'Galian Selesai'},
@@ -1105,14 +1117,17 @@ const App = () => {
       )}
 
       {/* MOBILE NAV */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white border-t flex justify-around p-2 print:hidden z-40">
-        <button onClick={() => { setView('project-list'); setActiveTab('dashboard'); }} className="flex flex-col items-center text-xs text-slate-600"><LayoutDashboard size={20}/>Home</button>
-        {canAccessFinance() && <button onClick={() => { setView('project-detail'); setActiveTab('finance'); }} className="flex flex-col items-center text-xs text-slate-600"><Wallet size={20}/>Uang</button>}
-        {canAccessWorkers() && <button onClick={() => { setView('project-detail'); setActiveTab('workers'); }} className="flex flex-col items-center text-xs text-slate-600"><Users size={20}/>Tim</button>}
-        <button onClick={() => { setView('project-detail'); setActiveTab('logistics'); }} className="flex flex-col items-center text-xs text-slate-600"><Package size={20}/>Stok</button>
-        <button onClick={() => { setView('project-detail'); setActiveTab('progress'); }} className="flex flex-col items-center text-xs text-slate-600"><TrendingUp size={20}/>Progres</button>
-      </nav>
-
+      {view === 'project-detail' && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t pb-safe z-40 print:hidden">
+           <div className="max-w-md mx-auto flex justify-between px-2">
+             <button onClick={() => setActiveTab('dashboard')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='dashboard'?'text-blue-600':'text-slate-400'}`}><LayoutDashboard size={20}/><span className="text-[10px]">Home</span></button>
+             {canAccessFinance() && <button onClick={() => setActiveTab('finance')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='finance'?'text-blue-600':'text-slate-400'}`}><Wallet size={20}/><span className="text-[10px]">Uang</span></button>}
+             {canAccessWorkers() && <button onClick={() => setActiveTab('workers')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='workers'?'text-blue-600':'text-slate-400'}`}><Users size={20}/><span className="text-[10px]">Tim</span></button>}
+             <button onClick={() => setActiveTab('logistics')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='logistics'?'text-blue-600':'text-slate-400'}`}><Package size={20}/><span className="text-[10px]">Stok</span></button>
+             <button onClick={() => setActiveTab('progress')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='progress'?'text-blue-600':'text-slate-400'}`}><TrendingUp size={20}/><span className="text-[10px]">Kurva S</span></button>
+           </div>
+        </nav>
+      )}
     </div>
   );
 };
