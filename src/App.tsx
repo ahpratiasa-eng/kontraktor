@@ -24,7 +24,7 @@ import type {
 // Perbaikan path: helpers -> helper (sesuai error log)
 import { 
   formatRupiah, getGroupedTransactions, calculateProjectHealth, getStats 
-} from './utils/helper'; 
+} from './utils/helpers'; 
 import SCurveChart from './components/SCurveChart'; 
 import { NumberInput, TransactionGroup } from './components/UIComponents'; 
 
