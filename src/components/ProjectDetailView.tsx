@@ -10,6 +10,7 @@ import {
     calculateWorkerFinancials
 } from '../utils/helpers';
 import type { Project, RABItem, GroupedTransaction, Worker, Material } from '../types';
+import ProjectGallery from './ProjectGallery';
 import type { UserRole } from '../types';
 
 interface ProjectDetailViewProps {
@@ -41,6 +42,7 @@ interface ProjectDetailViewProps {
     prepareEditProject: () => void;
     prepareEditRABItem: (item: RABItem) => void;
     isClientView?: boolean;
+    handleReportToOwner: () => void;
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
@@ -49,7 +51,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
-    setActiveTab, prepareEditProject, prepareEditRABItem, isClientView
+    setActiveTab, prepareEditProject, prepareEditRABItem, isClientView, handleReportToOwner
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
@@ -164,6 +166,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         ...(!isClientView && canAccessFinance ? [{ id: 'finance', label: 'Keuangan', icon: <Banknote size={18} /> }] : []),
         ...(!isClientView && canAccessWorkers ? [{ id: 'workers', label: 'Tim & Absensi', icon: <ImageIcon size={18} /> }] : []),
         ...(!isClientView ? [{ id: 'logistics', label: 'Logistik', icon: <History size={18} /> }] : []),
+        { id: 'gallery', label: 'Galeri', icon: <ImageIcon size={18} /> },
     ];
 
     return (
@@ -209,6 +212,22 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     Kelembaban: {weather ? weather.humidity : '-'}%<br />Angin: {weather ? weather.wind : '-'} km/h
                                 </div>
                             </div>
+
+                            {/* OWNER REPORT BUTTON (Visible if not client view) */}
+                            {!isClientView && (
+                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200 mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h3 className="font-bold text-green-800 text-sm">Laporan Sore ke Owner</h3>
+                                        <p className="text-xs text-green-600">Kirim update progress & link portal.</p>
+                                    </div>
+                                    <button
+                                        onClick={handleReportToOwner}
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-green-700 shadow-sm flex items-center gap-2"
+                                    >
+                                        <ExternalLink size={14} /> Kirim WA
+                                    </button>
+                                </div>
+                            )}
 
                             {!isClientView && canEditProject && <button onClick={prepareEditProject} className="w-full mb-4 border border-slate-200 text-blue-600 p-2 rounded-lg font-bold hover:bg-blue-50 flex items-center justify-center gap-2"><Settings size={18} /> Pengaturan Proyek</button>}
 
@@ -426,6 +445,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         ))}
                     </div>
                 </div>
+            )}
+
+            {activeTab === 'gallery' && (
+                <ProjectGallery
+                    project={activeProject}
+                    updateProject={updateProject}
+                    canEdit={!isClientView && (canEditProject || canAccessWorkers)}
+                />
             )}
         </div>
     );

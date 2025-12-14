@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Camera, MapPin, Loader2, Save, Upload, Download, FileText as FileType } from 'lucide-react';
+import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType } from 'lucide-react';
 import { NumberInput } from './UIComponents';
 import * as XLSX from 'xlsx';
 import type { UserRole, Material, RABItem, Project } from '../types';
@@ -25,6 +25,7 @@ interface ModalManagerProps {
     inputName: string; setInputName: (s: string) => void;
     inputClient: string; setInputClient: (s: string) => void;
     inputLocation: string; setInputLocation: (s: string) => void;
+    inputOwnerPhone: string; setInputOwnerPhone: (s: string) => void;
     inputBudget: number; setInputBudget: (n: number) => void;
     inputStartDate: string; setInputStartDate: (s: string) => void;
     inputEndDate: string; setInputEndDate: (s: string) => void;
@@ -61,9 +62,9 @@ interface ModalManagerProps {
     attendanceDate: string; setAttendanceDate: (s: string) => void;
     attendanceData: any; setAttendanceData: (d: any) => void;
     evidencePhoto: string | null;
+    evidenceLocation: string | null;
     isGettingLoc: boolean;
     handlePhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    handleGetLocation: () => void;
 
     activeProject: Project | null;
     selectedRabItem: RABItem | null;
@@ -74,7 +75,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const {
         modalType, showModal, setShowModal,
         handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB,
-        inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate,
+        inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate,
         rabCategory, setRabCategory, rabItemName, setRabItemName, rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice,
         progressInput, setProgressInput, progressDate, setProgressDate, progressNote, setProgressNote,
         paymentAmount, setPaymentAmount,
@@ -82,7 +83,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         stockType, setStockType, stockQty, setStockQty, stockDate, setStockDate, stockNotes, setStockNotes, selectedMaterial,
         inputEmail, setInputEmail, inputRole, setInputRole,
         aiPrompt, setAiPrompt, isGeneratingAI,
-        attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, handlePhotoUpload, handleGetLocation, isGettingLoc,
+        attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, evidenceLocation, handlePhotoUpload, isGettingLoc,
         activeProject, selectedRabItem, selectedWorkerId
     } = props;
 
@@ -126,6 +127,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <h3 className="font-bold text-xl mb-4">Proyek Baru</h3>
                             <input className="w-full p-3 border rounded-xl" placeholder="Nama Proyek (Wajib)" value={inputName} onChange={e => setInputName(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Klien / Pemilik" value={inputClient} onChange={e => setInputClient(e.target.value)} />
+                            <input className="w-full p-3 border rounded-xl" placeholder="No WA Owner (Contoh: 62812345678)" value={inputOwnerPhone} onChange={e => setInputOwnerPhone(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Lokasi Proyek (Kota/Daerah) - Penting untuk Cuaca" value={inputLocation} onChange={e => setInputLocation(e.target.value)} />
                             <div className="flex gap-2">
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Mulai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /></div>
@@ -141,6 +143,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <h3 className="font-bold text-xl mb-4">Edit Proyek</h3>
                             <input className="w-full p-3 border rounded-xl" placeholder="Nama Proyek" value={inputName} onChange={e => setInputName(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Klien" value={inputClient} onChange={e => setInputClient(e.target.value)} />
+                            <input className="w-full p-3 border rounded-xl" placeholder="No WA Owner" value={inputOwnerPhone} onChange={e => setInputOwnerPhone(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Lokasi Proyek" value={inputLocation} onChange={e => setInputLocation(e.target.value)} />
                             <div className="flex gap-2">
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Mulai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /></div>
@@ -221,16 +224,23 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
 
                             <div className="bg-slate-50 p-4 rounded-xl border mb-4">
                                 <h4 className="font-bold text-sm mb-3 flex items-center gap-2"><Camera size={16} /> Bukti Lapangan (Wajib)</h4>
-                                <div className="flex items-center gap-4">
-                                    <label className="flex-1 cursor-pointer bg-white border-2 border-dashed border-slate-300 rounded-xl h-32 flex flex-col items-center justify-center hover:bg-slate-50 transition">
-                                        {evidencePhoto ? <img src={evidencePhoto} className="w-full h-full object-cover rounded-xl" /> : <><Camera className="text-slate-400 mb-2" /><span className="text-xs text-slate-500">Ambil Foto</span></>}
-                                        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
-                                    </label>
-                                    <button onClick={handleGetLocation} className="flex-1 h-32 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 flex flex-col items-center justify-center font-bold text-xs hover:bg-blue-100 transition">
-                                        {isGettingLoc ? <Loader2 className="animate-spin mb-2" /> : <MapPin className="mb-2" />}
-                                        Tag Lokasi GPS
-                                    </button>
-                                </div>
+                                <label className="w-full cursor-pointer bg-white border-2 border-dashed border-slate-300 rounded-xl h-48 flex flex-col items-center justify-center hover:bg-slate-50 transition relative overflow-hidden">
+                                    {evidencePhoto ? (
+                                        <>
+                                            <img src={evidencePhoto} className="w-full h-full object-cover" />
+                                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2 text-center">
+                                                {evidenceLocation ? '📍 Lokasi Terdeteksi' : (isGettingLoc ? '📡 Mencari Lokasi...' : 'Lokasi Belum Ada')}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Camera className="text-slate-400 mb-2" size={32} />
+                                            <span className="font-bold text-slate-500">Ambil Foto & Tag Lokasi</span>
+                                            <span className="text-xs text-slate-400 mt-1">Otomatis GPS aktif saat upload</span>
+                                        </>
+                                    )}
+                                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
+                                </label>
                             </div>
 
                             <div className="max-h-60 overflow-y-auto space-y-2">
@@ -252,7 +262,13 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={saveAttendanceWithEvidence} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg mt-4">Simpan Absensi</button>
+                            <button
+                                onClick={saveAttendanceWithEvidence}
+                                disabled={!evidencePhoto || !evidenceLocation}
+                                className={`w-full p-3 rounded-xl font-bold shadow-lg mt-4 transition-colors ${(!evidencePhoto || !evidenceLocation) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                            >
+                                {(!evidencePhoto || !evidenceLocation) ? 'Foto & Lokasi Wajib Diisi' : 'Simpan Absensi'}
+                            </button>
                         </div>
                     )}
 
@@ -330,8 +346,8 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

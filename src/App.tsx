@@ -25,6 +25,8 @@ import type {
   Project, AppUser, RABItem, Transaction, Material,
   MaterialLog, Worker, TaskLog, UserRole
 } from './types';
+import { compressImage } from './utils/imageHelper';
+import { calculateProjectHealth, formatRupiah } from './utils/helpers';
 
 const App = () => {
   const [user, setUser] = useState<any | null>(null);
@@ -46,6 +48,7 @@ const App = () => {
   const [inputName, setInputName] = useState('');
   const [inputClient, setInputClient] = useState('');
   const [inputLocation, setInputLocation] = useState('');
+  const [inputOwnerPhone, setInputOwnerPhone] = useState('');
   const [inputBudget, setInputBudget] = useState(0);
   const [inputStartDate, setInputStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [inputEndDate, setInputEndDate] = useState(new Date().toISOString().split('T')[0]);
@@ -152,19 +155,21 @@ const App = () => {
   const handleSaveProject = () => {
     if (!activeProject) {
       // Create new project
-      const newP: any = { name: inputName, client: inputClient, location: inputLocation, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate, status: 'Berjalan', rabItems: [], transactions: [] };
+      const newP: any = { name: inputName, client: inputClient, location: inputLocation, ownerPhone: inputOwnerPhone, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate, status: 'Berjalan', rabItems: [], transactions: [] };
       addDoc(collection(db, 'app_data', appId, 'projects'), newP);
       setShowModal(false);
     } else {
-      updateProject({ name: inputName, client: inputClient, location: inputLocation, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false);
+      updateProject({ name: inputName, client: inputClient, location: inputLocation, ownerPhone: inputOwnerPhone, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false);
     }
   };
 
   const prepareEditProject = () => {
     if (!activeProject) return;
     setInputName(activeProject.name);
+    setInputName(activeProject.name);
     setInputClient(activeProject.client);
     setInputLocation(activeProject.location);
+    setInputOwnerPhone(activeProject.ownerPhone || '');
     setInputBudget(activeProject.budgetLimit);
     setInputStartDate(activeProject.startDate);
     setInputEndDate(activeProject.endDate);
@@ -193,9 +198,72 @@ const App = () => {
   const handlePermanentDeleteProject = async (p: Project) => { if (confirm(`PERINGATAN: Proyek "${p.name}" akan dihapus SELAMANYA dan tidak bisa dikembalikan. Lanjutkan?`)) { try { await deleteDoc(doc(db, 'app_data', appId, 'projects', p.id)); } catch (e) { alert("Gagal hapus permanen."); } } };
 
   const handleGetLocation = () => { if (!navigator.geolocation) return alert("Browser tidak support GPS"); setIsGettingLoc(true); navigator.geolocation.getCurrentPosition((pos) => { setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`); setIsGettingLoc(false); }, (err) => { console.error(err); alert("Gagal ambil lokasi."); setIsGettingLoc(false); }, { enableHighAccuracy: true }); };
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target?.result as string; img.onload = () => { const canvas = document.createElement('canvas'); let width = img.width; let height = img.height; const MAX_WIDTH = 800; const MAX_HEIGHT = 800; if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, width, height); const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); setEvidencePhoto(compressedDataUrl); handleGetLocation(); }; }; };
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImage(file, 800, 0.6); // 800px max, 60% quality
+      setEvidencePhoto(compressed);
+      handleGetLocation();
+    } catch (e) {
+      alert("Gagal memproses foto.");
+      console.error(e);
+    }
+  };
 
-  const saveAttendanceWithEvidence = () => { if (!activeProject) return; if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; } if (!evidenceLocation) { alert("Lokasi wajib terdeteksi!"); return; } const newLogs: any[] = []; Object.keys(attendanceData).forEach(wId => { newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' }); }); let newEvidences = activeProject.attendanceEvidences || []; if (evidencePhoto || evidenceLocation) { newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: evidencePhoto, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences]; } updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences }); setShowModal(false); };
+  const handleReportToOwner = () => {
+    if (!activeProject || !activeProject.ownerPhone) return alert("Nomor WA Owner belum diisi di Pengaturan Proyek!");
+
+    const stats = calculateProjectHealth(activeProject);
+    const clientLink = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
+
+    let phone = activeProject.ownerPhone.replace(/\D/g, '');
+    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+
+    const msg = `*Update Sore Proyek: ${activeProject.name}*\n📅 Tanggal: ${new Date().toLocaleDateString('id-ID')}\n\n📈 Progress Real: ${stats.realProgress.toFixed(2)}%\n⚠️ Status: ${stats.issues.length ? stats.issues.join(', ') : 'Aman'}\n\nPantau detail & foto di portal klien:\n${clientLink}\n\n_Dikirim otomatis jam 17.00 WIB_`;
+
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const saveAttendanceWithEvidence = () => {
+    if (!activeProject) return;
+    if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; }
+    if (!evidenceLocation) { alert("Lokasi wajib terdeteksi!"); return; }
+
+    const newLogs: any[] = [];
+    let presentCount = 0;
+
+    Object.keys(attendanceData).forEach(wId => {
+      const status = attendanceData[Number(wId)].status;
+      newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: status, note: '' });
+      if (status === 'Hadir' || status === 'Lembur' || status === 'Setengah') presentCount++;
+    });
+
+    let newEvidences = activeProject.attendanceEvidences || [];
+    if (evidencePhoto || evidenceLocation) {
+      newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: evidencePhoto, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences];
+    }
+
+    updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences });
+    setShowModal(false);
+
+    // WhatsApp Notification Logic (Versi KONTRAKTOR - Internal)
+    if (confirm("Absensi tersimpan. Kirim laporan harian ke Grup/Bos (Kontraktor)?")) {
+      const today = new Date().toISOString().split('T')[0];
+      const todayMats = (activeProject.materialLogs || []).filter(m => m.date === today);
+      const matText = todayMats.length > 0
+        ? todayMats.map(m => `- ${activeProject.materials.find(x => x.id === m.materialId)?.name}: ${m.quantity} (${m.type})`).join('\n')
+        : '- Nihil';
+
+      const todayTx = (activeProject.transactions || []).filter(t => t.date === today);
+      const income = todayTx.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+      const expense = todayTx.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+
+      const msg = `*Laporan Harian Internal: ${activeProject.name}*\n📅 ${today}\n\n👷 Absensi: ${presentCount} Tukang\n\n📦 Material:\n${matText}\n\n💰 Cashflow Hari Ini:\nMasuk: ${formatRupiah(income)}\nKeluar: ${formatRupiah(expense)}\n\n📍 Lokasi: https://maps.google.com/?q=${evidenceLocation}\n\n_Laporan via Kontraktor Pro_`;
+
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+  };
   const getFilteredEvidence = () => { if (!activeProject || !activeProject.attendanceEvidences) return []; return activeProject.attendanceEvidences; }; // Simplified for now
 
   const openModal = (type: string) => { setModalType(type); setShowModal(true); };
@@ -335,7 +403,7 @@ const App = () => {
               deleteRABItem={deleteRABItem}
               handleEditWorker={handleEditWorker}
               handleDeleteWorker={handleDeleteWorker}
-
+              handleReportToOwner={handleReportToOwner}
             />
           )}
 
@@ -370,6 +438,7 @@ const App = () => {
         inputName={inputName} setInputName={setInputName}
         inputClient={inputClient} setInputClient={setInputClient}
         inputLocation={inputLocation} setInputLocation={setInputLocation}
+        inputOwnerPhone={inputOwnerPhone} setInputOwnerPhone={setInputOwnerPhone}
         inputBudget={inputBudget} setInputBudget={setInputBudget}
         inputStartDate={inputStartDate} setInputStartDate={setInputStartDate}
         inputEndDate={inputEndDate} setInputEndDate={setInputEndDate}
@@ -398,8 +467,8 @@ const App = () => {
         attendanceDate={attendanceDate} setAttendanceDate={setAttendanceDate}
         attendanceData={attendanceData} setAttendanceData={setAttendanceData}
         evidencePhoto={evidencePhoto}
+        evidenceLocation={evidenceLocation}
         handlePhotoUpload={handlePhotoUpload}
-        handleGetLocation={handleGetLocation}
         isGettingLoc={isGettingLoc}
         activeProject={activeProject}
         selectedRabItem={selectedRabItem}

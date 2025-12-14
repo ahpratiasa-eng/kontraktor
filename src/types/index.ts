@@ -62,10 +62,18 @@ export type AttendanceEvidence = {
   timestamp: string;
 };
 
+export type GalleryItem = {
+  id: number;
+  url: string;
+  caption: string;
+  date: string;
+  uploader: string;
+};
+
 export type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
 
 export type Project = {
-  id: string; name: string; client: string; location: string; status: string; budgetLimit: number;
+  id: string; name: string; client: string; location: string; ownerPhone?: string; status: string; budgetLimit: number;
   startDate: string; endDate: string;
   isDeleted?: boolean;
   transactions: Transaction[];
@@ -77,6 +85,7 @@ export type Project = {
   attendanceLogs: AttendanceLog[];
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
+  gallery?: GalleryItem[];
 };
 
 export type GroupedTransaction = {
