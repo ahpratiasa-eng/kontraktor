@@ -152,7 +152,7 @@ const App = () => {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Buatkan daftar item RAB konstruksi berdasarkan deskripsi berikut: '${aiPrompt}'. Output wajib format JSON murni array of objects dengan key: category, name, unit, volume, unitPrice. No markdown.` }] }] })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Buatkan daftar item RAB konstruksi dalam Bahasa Indonesia berdasarkan deskripsi berikut: '${aiPrompt}'. Output wajib format JSON murni array of objects dengan key: category, name, unit, volume, unitPrice. Pastikan nama item dan kategori menggunakan istilah konstruksi standar Indonesia. No markdown.` }] }] })
       });
       const data = await response.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
