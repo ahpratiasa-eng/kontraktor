@@ -37,6 +37,7 @@ interface ProjectDetailViewProps {
     canAccessWorkers: boolean;
     canSeeMoney: boolean;
     canEditProject: boolean;
+    setActiveTab: (tab: string) => void;
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
@@ -44,7 +45,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     openModal, setModalType, setShowModal, setSelectedRabItem, setProgressInput, setProgressDate,
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
-    canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject
+    canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
+    setActiveTab
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
@@ -75,11 +77,6 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         setAmount(0);
     };
 
-
-
-    // Re-implementing getFilteredAttendance closer to original to ensure no functionality loss
-    // Note: The original implementation in App.tsx had logic to sum up counts.
-    // Ideally this should be in helpers if complex.
     const getAttendanceSummary = () => {
         const start = new Date(filterStartDate); start.setHours(0, 0, 0, 0);
         const end = new Date(filterEndDate); end.setHours(23, 59, 59, 999);
@@ -92,13 +89,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             const hadir = logs.filter((l: any) => l.status === 'Hadir').length;
             const lembur = logs.filter((l: any) => l.status === 'Lembur').length;
 
-            // Cost calc
-            let daily = w.realRate; // Assuming real rate is daily
+            let daily = w.realRate;
             if (w.wageUnit === 'Mingguan') daily = w.realRate / 7;
             if (w.wageUnit === 'Bulanan') daily = w.realRate / 30;
 
-            // Simple cost calculation for the table display
-            const totalCost = (hadir * daily) + (lembur * (daily / 8) * 1.5); // Example logic or 0
+            const totalCost = (hadir * daily) + (lembur * (daily / 8) * 1.5);
 
             return {
                 name: w.name,
@@ -119,12 +114,29 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         });
     };
 
-
-
-
+    const tabs = [
+        { id: 'dashboard', label: 'Ringkasan', icon: <FileText size={18} /> },
+        { id: 'progress', label: 'Kurva S & RAB', icon: <Sparkles size={18} /> },
+        ...(canAccessFinance ? [{ id: 'finance', label: 'Keuangan', icon: <Banknote size={18} /> }] : []),
+        ...(canAccessWorkers ? [{ id: 'workers', label: 'Tim & Absensi', icon: <ImageIcon size={18} /> }] : []),
+        { id: 'logistics', label: 'Logistik', icon: <History size={18} /> }, // Using History generic icon for logicstics if needed or Package
+    ];
 
     return (
         <div className="space-y-6">
+            {/* Desktop Navigation Tabs */}
+            <div className="hidden md:flex items-center gap-1 border-b border-slate-200 mb-6 overflow-x-auto pb-1">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-4 py-3 rounded-t-lg text-sm font-bold flex items-center gap-2 transition-colors border-b-2 ${activeTab === tab.id ? 'bg-blue-50 text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-50'
+                            }`}
+                    >
+                        {tab.icon} {tab.label}
+                    </button>
+                ))}
+            </div>
             {activeTab === 'progress' && (
                 <div className="flex items-center gap-2 mb-4 bg-slate-200 p-1 rounded-lg w-full md:w-auto md:inline-flex">
                     <button onClick={() => setRabViewMode('client')} className={`flex-1 md:flex-none px-4 text-xs font-bold py-2 rounded-md transition ${rabViewMode === 'client' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}>View Client</button>

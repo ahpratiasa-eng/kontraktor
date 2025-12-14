@@ -147,7 +147,7 @@ const App = () => {
   const handleGenerateRAB = async () => {
     if (!aiPrompt) return alert("Masukkan deskripsi proyek dulu!");
     setIsGeneratingAI(true);
-    const apiKey = "YOUR_API_KEY";
+    const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
         method: 'POST',
@@ -234,6 +234,7 @@ const App = () => {
             <ProjectDetailView
               activeProject={activeProject}
               activeTab={activeTab}
+              setActiveTab={setActiveTab}
               userRole={userRole}
               setView={setView}
               updateProject={updateProject}
