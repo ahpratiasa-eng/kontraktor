@@ -167,6 +167,15 @@ const App = () => {
 
   // Fetch Landing Page Config
   useEffect(() => {
+    const defaultConfig: LandingPageConfig = {
+      companyName: 'Guna Karya',
+      tagline: 'Wujudkan Hunian Impian Anda',
+      subtitle: 'Layanan konstruksi profesional untuk rumah tinggal, renovasi, dan pembangunan baru. Kualitas terjamin dengan harga transparan.',
+      whatsappNumber: '6281234567890',
+      instagramHandle: 'guna.karya',
+      portfolioItems: []
+    };
+
     const fetchLandingConfig = async () => {
       try {
         const docRef = doc(db, 'app_data', appId, 'settings', 'landing_page');
@@ -174,19 +183,12 @@ const App = () => {
         if (docSnap.exists()) {
           setLandingConfig(docSnap.data() as LandingPageConfig);
         } else {
-          // Default config if none exists
-          const defaultConfig: LandingPageConfig = {
-            companyName: 'Guna Karya',
-            tagline: 'Wujudkan Hunian Impian Anda',
-            subtitle: 'Layanan konstruksi profesional untuk rumah tinggal, renovasi, dan pembangunan baru. Kualitas terjamin dengan harga transparan.',
-            whatsappNumber: '6281234567890',
-            instagramHandle: 'guna.karya',
-            portfolioItems: []
-          };
           setLandingConfig(defaultConfig);
         }
       } catch (e) {
         console.error('Failed to fetch landing config:', e);
+        // Use default config if fetch fails (e.g., permission denied for guests)
+        setLandingConfig(defaultConfig);
       }
     };
     fetchLandingConfig();
