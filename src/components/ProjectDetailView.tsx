@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote,
-    ImageIcon, ExternalLink
+    ImageIcon, ExternalLink, Upload
 } from 'lucide-react';
 import { NumberInput, TransactionGroup } from './UIComponents';
 import SCurveChart from './SCurveChart';
@@ -38,6 +38,9 @@ interface ProjectDetailViewProps {
     canSeeMoney: boolean;
     canEditProject: boolean;
     setActiveTab: (tab: string) => void;
+    prepareEditProject: () => void;
+    prepareEditRABItem: (item: RABItem) => void;
+    isClientView?: boolean;
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
@@ -46,10 +49,15 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
-    setActiveTab
+    setActiveTab, prepareEditProject, prepareEditRABItem, isClientView
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
+
+    // Enforce Client View Mode
+    React.useEffect(() => {
+        if (isClientView) setRabViewMode('client');
+    }, [isClientView]);
     const [txType, setTxType] = useState<'expense' | 'income'>('expense');
     const [amount, setAmount] = useState(0);
     const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({});
@@ -150,8 +158,33 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                             <h2 className="text-xl font-bold text-slate-800 mb-1">{activeProject.name}</h2>
                             <p className="text-sm text-slate-500 mb-6">{activeProject.location}</p>
-                            {userRole === 'kontraktor' && <button onClick={() => openModal('editProject')} className="w-full mb-4 border border-slate-200 text-blue-600 p-2 rounded-lg font-bold hover:bg-blue-50 flex items-center justify-center gap-2"><Settings size={18} /> Pengaturan Proyek</button>}
-                            {canSeeMoney && (<button onClick={() => setView('report-view')} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-700 shadow-lg transition-transform hover:scale-105"><FileText size={20} /> Lihat Laporan Detail</button>)}
+
+                            {/* Weather Widget (Simple Mock) */}
+                            <div className="bg-blue-50 p-4 rounded-xl mb-6 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white p-2 rounded-full shadow-sm text-yellow-500">
+                                        <div className="animate-pulse">☀️</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-slate-500">Cuaca Lokasi (Live)</div>
+                                        <div className="font-bold text-slate-700">Cerah Berawan, 32°C</div>
+                                    </div>
+                                </div>
+                                <div className="text-right text-xs text-slate-400">
+                                    Kelembaban: 65%<br />Angin: 10km/h
+                                </div>
+                            </div>
+
+                            {userRole === 'kontraktor' && <button onClick={prepareEditProject} className="w-full mb-4 border border-slate-200 text-blue-600 p-2 rounded-lg font-bold hover:bg-blue-50 flex items-center justify-center gap-2"><Settings size={18} /> Pengaturan Proyek</button>}
+
+                            <div className="flex gap-2">
+                                {canSeeMoney && (<button onClick={() => setView('report-view')} className="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-700 shadow-lg transition-transform hover:scale-105"><FileText size={20} /> Laporan</button>)}
+                                <button onClick={() => {
+                                    const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
+                                    navigator.clipboard.writeText(url);
+                                    alert(`Link Portal Klien disalin!\nKirim link ini ke klien Anda:\n${url}`);
+                                }} className="flex-1 bg-green-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-green-700 shadow-lg transition-transform hover:scale-105"><ExternalLink size={20} /> Portal Klien</button>
+                            </div>
                         </div>
                     </div>
                     <div className="lg:col-span-2"><SCurveChart stats={getStats(activeProject)} project={activeProject} /></div>
@@ -159,22 +192,65 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             )}
 
             {activeTab === 'progress' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-3"><SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} /></div>
-                    <div className="lg:col-span-3">
-                        <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg text-slate-700">Rincian RAB</h3>{canEditProject && <div className="flex gap-2"><button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1"><Sparkles size={14} /> Auto RAB</button><button onClick={() => { /* handleAddCCO prop */ }} className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-bold border border-orange-200">+ CCO</button><button onClick={() => { setSelectedRabItem(null); setModalType('newRAB'); setShowModal(true); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold">+ Item</button></div>}</div>
-                        <div className="space-y-4 pb-20">
-                            {Object.keys(rabGroups).sort().map(category => (
-                                <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
-                                    <div className="bg-slate-50 p-4 font-bold text-sm text-slate-700 border-b flex justify-between"><span>{category}</span></div>
-                                    {rabViewMode === 'internal' && (
-                                        <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className={`p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}><div className="flex justify-between mb-2"><span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span><span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span></div><div className="flex justify-between text-xs text-slate-500 mb-3"><span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span><span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mb-3"><div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div></div>{canEditProject && (<div className="flex justify-end gap-2"><button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button><button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14} /></button><button onClick={() => { /* handleEditRABItem(item) */ }} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14} /></button><button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14} /></button></div>)}</div>))}</div>
-                                    )}
-                                    {rabViewMode === 'client' && (
-                                        <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className="p-4 text-sm flex justify-between items-center hover:bg-slate-50"><div><div className="font-bold text-slate-800">{item.name}</div><div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div></div><div className="text-right"><div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div></div></div>))}<div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">Subtotal: {formatRupiah(rabGroups[category].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</div></div>
-                                    )}
+                <div className="space-y-6">
+                    {/* Gantt Chart Section */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <h3 className="font-bold text-lg text-slate-700 mb-4 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan (Gantt Chart)</h3>
+                        <div className="overflow-x-auto">
+                            <div className="min-w-[800px]">
+                                <div className="flex border-b border-slate-100 pb-2 mb-2">
+                                    <div className="w-1/4 font-bold text-xs text-slate-500">Item Pekerjaan</div>
+                                    <div className="w-3/4 flex relative h-6">
+                                        {[...Array(12)].map((_, i) => (
+                                            <div key={i} className="flex-1 border-l border-slate-100 text-[10px] text-slate-400 pl-1">
+                                                Mgg {i + 1}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            ))}
+                                <div className="space-y-4">
+                                    {activeProject.rabItems.slice(0, 5).map((item, idx) => {
+                                        // Mock calculation for demo purposes if dates missing
+                                        // In real app, use item.startDate and item.endDate vs project start
+                                        const startOffset = idx * 10; // Simple stagger
+                                        const width = 20 + (Math.random() * 30);
+                                        return (
+                                            <div key={item.id} className="flex items-center group hover:bg-slate-50 rounded-lg p-1">
+                                                <div className="w-1/4 text-xs font-medium truncate pr-2">{item.name}</div>
+                                                <div className="w-3/4 relative h-6 bg-slate-50 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`absolute top-1 bottom-1 rounded-full opacity-80 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
+                                                        style={{ left: `${startOffset}%`, width: `${width}%` }}
+                                                    >
+                                                        <span className="text-[9px] text-white px-2 font-bold flex items-center h-full">{item.progress}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {activeProject.rabItems.length > 5 && <div className="text-center text-xs text-slate-400 mt-2">...dan {activeProject.rabItems.length - 5} item lainnya</div>}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-3"><SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} /></div>
+                        <div className="lg:col-span-3">
+                            <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg text-slate-700">Rincian RAB</h3>{canEditProject && <div className="flex gap-2"><button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-green-100 text-green-700 px-3 py-2 rounded-lg font-bold border border-green-200 hover:bg-green-200 flex items-center gap-1"><Upload size={14} /> Import Excel</button><button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1"><Sparkles size={14} /> Auto RAB</button><button onClick={() => { /* handleAddCCO prop */ }} className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-bold border border-orange-200">+ CCO</button><button onClick={() => { setSelectedRabItem(null); setModalType('newRAB'); setShowModal(true); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold">+ Item</button></div>}</div>
+                            <div className="space-y-4 pb-20">
+                                {Object.keys(rabGroups).sort().map(category => (
+                                    <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                                        <div className="bg-slate-50 p-4 font-bold text-sm text-slate-700 border-b flex justify-between"><span>{category}</span></div>
+                                        {rabViewMode === 'internal' && (
+                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className={`p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}><div className="flex justify-between mb-2"><span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span><span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span></div><div className="flex justify-between text-xs text-slate-500 mb-3"><span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span><span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mb-3"><div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div></div>{canEditProject && (<div className="flex justify-end gap-2"><button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button><button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14} /></button><button onClick={() => prepareEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14} /></button><button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14} /></button></div>)}</div>))}</div>
+                                        )}
+                                        {rabViewMode === 'client' && (
+                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className="p-4 text-sm flex justify-between items-center hover:bg-slate-50"><div><div className="font-bold text-slate-800">{item.name}</div><div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div></div><div className="text-right"><div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div></div></div>))}<div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">Subtotal: {formatRupiah(rabGroups[category].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</div></div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

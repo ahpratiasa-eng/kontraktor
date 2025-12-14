@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Camera, MapPin, Loader2, Save } from 'lucide-react';
+import { X, Camera, MapPin, Loader2, Save, Upload, Download, FileText as FileType } from 'lucide-react';
 import { NumberInput } from './UIComponents';
+import * as XLSX from 'xlsx';
 import type { UserRole, Material, RABItem, Project } from '../types';
 
 interface ModalManagerProps {
@@ -18,6 +19,7 @@ interface ModalManagerProps {
     handleAddUser: () => void;
     handleGenerateRAB: () => void;
     saveAttendanceWithEvidence: () => void;
+    handleImportRAB: (items: any[]) => void;
     getFilteredEvidence: () => any[]; // For gallery
     // State Setters & Values
     inputName: string; setInputName: (s: string) => void;
@@ -78,10 +80,35 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate, inputMandorRate, setInputMandorRate,
         stockType, setStockType, stockQty, setStockQty, stockDate, setStockDate, stockNotes, setStockNotes, selectedMaterial,
         inputEmail, setInputEmail, inputRole, setInputRole,
-        aiPrompt, setAiPrompt, isGeneratingAI,
+        aiPrompt, setAiPrompt, isGeneratingAI, handleImportRAB,
         attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, handlePhotoUpload, handleGetLocation, isGettingLoc,
         activeProject, selectedRabItem, selectedWorkerId
     } = props;
+
+    const downloadTemplate = () => {
+        const ws = XLSX.utils.json_to_sheet([
+            { "Kategori": "A. PERSIAPAN", "Nama Item": "Pembersihan Lahan", "Satuan": "m2", "Volume": 100, "Harga Satuan": 15000 },
+            { "Kategori": "B. STRUKTUR", "Nama Item": "Galian Tanah", "Satuan": "m3", "Volume": 50, "Harga Satuan": 75000 }
+        ]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Template RAB");
+        XLSX.writeFile(wb, "Template_RAB_KontraktorPro.xlsx");
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const bstr = evt.target?.result;
+            const wb = XLSX.read(bstr, { type: 'binary' });
+            const wsname = wb.SheetNames[0];
+            const ws = wb.Sheets[wsname];
+            const data = XLSX.utils.sheet_to_json(ws);
+            handleImportRAB(data);
+        };
+        reader.readAsBinaryString(file);
+    };
 
     if (!showModal) return null;
 
@@ -268,6 +295,35 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <button onClick={handleGenerateRAB} disabled={isGeneratingAI} className="w-full bg-purple-600 text-white p-3 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 disabled:bg-slate-400">
                                 {isGeneratingAI ? <><Loader2 className="animate-spin" /> Sedang Berpikir...</> : 'Generate RAB Otomatis'}
                             </button>
+                        </div>
+                    )}
+
+                    {modalType === 'importRAB' && (
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><Upload size={24} className="text-green-600" /> Import RAB Excel</h3>
+
+                            <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-800 space-y-2">
+                                <p className="font-bold">Panduan:</p>
+                                <ul className="list-disc pl-5">
+                                    <li>Gunakan format template yang disediakan.</li>
+                                    <li>Pastikan kolom <b>Kategori, Nama Item, Satuan, Volume, Harga Satuan</b> terisi.</li>
+                                </ul>
+                            </div>
+
+                            <button onClick={downloadTemplate} className="w-full border border-green-600 text-green-600 p-3 rounded-xl font-bold hover:bg-green-50 flex items-center justify-center gap-2">
+                                <Download size={18} /> Download Template Excel
+                            </button>
+
+                            <div className="relative border-2 border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center justify-center hover:bg-slate-50 transition cursor-pointer">
+                                <FileType size={32} className="text-slate-400 mb-2" />
+                                <p className="text-sm text-slate-500 mb-2">Upload file .xlsx atau .xls</p>
+                                <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    onChange={handleFileUpload}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>

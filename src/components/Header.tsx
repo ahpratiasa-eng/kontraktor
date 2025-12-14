@@ -35,9 +35,11 @@ const Header: React.FC<HeaderProps> = ({
             )}
 
             <div className="flex items-center gap-2 ml-auto">
-                <button onClick={() => setView('trash-bin')} className="md:hidden text-slate-400 p-2 hover:text-red-500">
-                    <Trash2 size={20} />
-                </button>
+                {view === 'project-list' && (
+                    <button onClick={() => setView('trash-bin')} className="md:hidden text-slate-400 p-2 hover:text-red-500">
+                        <Trash2 size={20} />
+                    </button>
+                )}
                 {canAccessManagement && view === 'project-list' && (
                     <button onClick={() => setView('user-management')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200 md:hidden">
                         <Settings size={18} />

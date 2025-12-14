@@ -15,16 +15,18 @@ export type RABItem = {
   unitPrice: number;
   progress: number;
   isAddendum: boolean;
+  startDate?: string;
+  endDate?: string;
 };
 
-export type Transaction = { 
-  id: number; 
-  date: string; 
-  category: string; 
-  description: string; 
-  amount: number; 
-  type: 'expense' | 'income'; 
-  workerId?: number; 
+export type Transaction = {
+  id: number;
+  date: string;
+  category: string;
+  description: string;
+  amount: number;
+  type: 'expense' | 'income';
+  workerId?: number;
 };
 
 export type Material = { id: number; name: string; unit: string; stock: number; minStock: number; };
@@ -39,13 +41,13 @@ export type MaterialLog = {
   actor: string;
 };
 
-export type Worker = { 
-  id: number; 
-  name: string; 
-  role: 'Tukang' | 'Kenek' | 'Mandor'; 
-  realRate: number; 
-  mandorRate: number; 
-  wageUnit: 'Harian' | 'Mingguan' | 'Bulanan'; 
+export type Worker = {
+  id: number;
+  name: string;
+  role: 'Tukang' | 'Kenek' | 'Mandor';
+  realRate: number;
+  mandorRate: number;
+  wageUnit: 'Harian' | 'Mingguan' | 'Bulanan';
 };
 
 export type Task = { id: number; name: string; weight: number; progress: number; lastUpdated: string; };
@@ -62,17 +64,17 @@ export type AttendanceEvidence = {
 
 export type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
 
-export type Project = { 
-  id: string; name: string; client: string; location: string; status: string; budgetLimit: number; 
-  startDate: string; endDate: string; 
+export type Project = {
+  id: string; name: string; client: string; location: string; status: string; budgetLimit: number;
+  startDate: string; endDate: string;
   isDeleted?: boolean;
-  transactions: Transaction[]; 
-  materials: Material[]; 
-  materialLogs: MaterialLog[]; 
-  workers: Worker[]; 
-  rabItems: RABItem[]; 
-  tasks: Task[]; 
-  attendanceLogs: AttendanceLog[]; 
+  transactions: Transaction[];
+  materials: Material[];
+  materialLogs: MaterialLog[];
+  workers: Worker[];
+  rabItems: RABItem[];
+  tasks: Task[];
+  attendanceLogs: AttendanceLog[];
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
 };
