@@ -7,10 +7,16 @@ import SCurveChart from './SCurveChart';
 interface ReportViewProps {
     activeProject: Project;
     setView: (view: any) => void;
+    isClientView?: boolean;
 }
 
-const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView }) => {
+const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClientView }) => {
     const [rabViewMode, setRabViewMode] = useState<'client' | 'internal'>('client');
+
+    // Enforce Client View
+    React.useEffect(() => {
+        if (isClientView) setRabViewMode('client');
+    }, [isClientView]);
     const rabGroups = getRABGroups(activeProject);
     const stats = getStats(activeProject);
     const today = new Date().toLocaleDateString('id-ID', { dateStyle: 'full' });
@@ -27,20 +33,22 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView }) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="bg-slate-700 p-1 rounded flex text-xs">
-                        <button
-                            onClick={() => setRabViewMode('client')}
-                            className={`px-3 py-1 rounded transition ${rabViewMode === 'client' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300 hover:text-white'}`}
-                        >
-                            Client
-                        </button>
-                        <button
-                            onClick={() => setRabViewMode('internal')}
-                            className={`px-3 py-1 rounded transition ${rabViewMode === 'internal' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300 hover:text-white'}`}
-                        >
-                            Internal
-                        </button>
-                    </div>
+                    {!isClientView && (
+                        <div className="bg-slate-700 p-1 rounded flex text-xs">
+                            <button
+                                onClick={() => setRabViewMode('client')}
+                                className={`px-3 py-1 rounded transition ${rabViewMode === 'client' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300 hover:text-white'}`}
+                            >
+                                Client
+                            </button>
+                            <button
+                                onClick={() => setRabViewMode('internal')}
+                                className={`px-3 py-1 rounded transition ${rabViewMode === 'internal' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300 hover:text-white'}`}
+                            >
+                                Internal
+                            </button>
+                        </div>
+                    )}
                     <button onClick={() => window.print()} className="bg-white text-slate-800 p-2 rounded-full hover:bg-slate-100 shadow-sm">
                         <Printer size={20} />
                     </button>
@@ -107,9 +115,52 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView }) => {
                         ))}
                     </>
                 ) : (
-                    <div className="bg-red-50 text-red-800 p-4 rounded-xl text-center font-bold mb-6 border border-red-200">
-                        Laporan Internal (Cashflow) - RAHASIA DAPUR
-                    </div>
+                    <>
+                        <div className="bg-orange-50 p-4 border border-orange-200 rounded-xl mb-6 print:break-inside-avoid">
+                            <h3 className="font-bold text-lg text-orange-800 mb-2 flex items-center gap-2">⚠️ Laporan Internal (Cashflow & Detail)</h3>
+                            <div className="grid grid-cols-3 gap-6 text-sm">
+                                <div><p className="text-slate-500">Total RAB</p><p className="font-bold text-slate-800">{formatRupiah(stats.totalRAB)}</p></div>
+                                <div><p className="text-slate-500">Realisasi (Input)</p><p className="font-bold text-slate-800">{formatRupiah(activeProject.transactions?.reduce((a, b) => b.type === 'expense' ? a + b.amount : a, 0) || 0)}</p></div>
+                                <div><p className="text-slate-500">Estimasi Laba</p><p className="font-bold text-green-600">{formatRupiah(stats.totalRAB - (activeProject.transactions?.reduce((a, b) => b.type === 'expense' ? a + b.amount : a, 0) || 0))}</p></div>
+                            </div>
+                        </div>
+
+                        {Object.keys(rabGroups).map(cat => (
+                            <div key={cat} className="mb-6 print:break-inside-avoid">
+                                <div className="bg-slate-100 p-2 font-bold text-sm border">{cat}</div>
+                                <table className="w-full text-xs border border-t-0">
+                                    <thead>
+                                        <tr className="bg-slate-50">
+                                            <th className="border p-2 w-1/4 text-left">Item</th>
+                                            <th className="border p-2 text-center">Vol</th>
+                                            <th className="border p-2 text-right">Hrg Satuan</th>
+                                            <th className="border p-2 text-right">Total RAB</th>
+                                            <th className="border p-2 text-center">Bobot</th>
+                                            <th className="border p-2 text-center">Prog %</th>
+                                            <th className="border p-2 text-right">Nilai Prog</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {rabGroups[cat].map(item => {
+                                            const total = item.volume * item.unitPrice;
+                                            const val = total * (item.progress / 100);
+                                            return (
+                                                <tr key={item.id}>
+                                                    <td className="border p-2">{item.name}</td>
+                                                    <td className="border p-2 text-center">{item.volume} {item.unit}</td>
+                                                    <td className="border p-2 text-right text-slate-500">{formatRupiah(item.unitPrice)}</td>
+                                                    <td className="border p-2 text-right font-bold">{formatRupiah(total)}</td>
+                                                    <td className="border p-2 text-center">{((total / stats.totalRAB) * 100).toFixed(2)}%</td>
+                                                    <td className="border p-2 text-center">{item.progress}%</td>
+                                                    <td className="border p-2 text-right font-bold text-blue-700">{formatRupiah(val)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ))}
+                    </>
                 )}
             </main>
         </div>

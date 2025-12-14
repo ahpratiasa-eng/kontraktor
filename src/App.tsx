@@ -341,10 +341,11 @@ const App = () => {
 
 
           {/* REPORT VIEW */}
-          {view === 'report-view' && activeProject && canSeeMoney() && (
+          {view === 'report-view' && activeProject && (canSeeMoney() || isClientView) && (
             <ReportView
               activeProject={activeProject}
               setView={setView}
+              isClientView={isClientView}
             />
           )}
         </div>
