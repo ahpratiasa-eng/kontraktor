@@ -15,13 +15,13 @@ import {
   deleteDoc, onSnapshot, query, getDoc, setDoc 
 } from 'firebase/firestore';
 
-// --- IMPORTS DARI FILE TERPISAH (MODULAR) ---
+// --- IMPORTS MODULAR ---
+// Pastikan file-file ini ada di folder proyek Anda di iPad
 import { auth, db, googleProvider, appId } from './lib/firebase';
 import type { 
   Project, AppUser, RABItem, Transaction, Material, 
-  MaterialLog, Worker, AttendanceLog, TaskLog, UserRole, GroupedTransaction
+  MaterialLog, Worker, AttendanceLog, TaskLog, GroupedTransaction, UserRole
 } from './types'; 
-// Perbaikan path: helpers -> helper (sesuai error log)
 import { 
   formatRupiah, getGroupedTransactions, calculateProjectHealth, getStats 
 } from './utils/helpers'; 
@@ -29,23 +29,31 @@ import SCurveChart from './components/SCurveChart';
 import { NumberInput, TransactionGroup } from './components/UIComponents'; 
 
 const App = () => {
+  // --- STATE MANAGEMENT ---
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null); 
   const [authStatus, setAuthStatus] = useState<'loading' | 'connected' | 'error'>('loading');
+  
+  // Navigation State
   const [view, setView] = useState<'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin'>('project-list'); 
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Data State
   const [projects, setProjects] = useState<Project[]>([]);
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  // UI State
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState<any>(null);
+  const [modalType, setModalType] = useState<'newProject' | 'editProject' | 'addUser' | 'newRAB' | 'newWorker' | 'stockMovement' | 'stockHistory' | 'payWorker' | 'attendance' | 'taskHistory' | 'updateProgress' | 'aiRAB' | 'newMaterial' | null>(null);
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
   const [loginError, setLoginError] = useState('');
-  
   const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
+  const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
+  const [isGettingLoc, setIsGettingLoc] = useState(false);
 
-  // Input States
+  // Form Input States
   const [inputName, setInputName] = useState(''); 
   const [inputEmail, setInputEmail] = useState(''); 
   const [inputRole, setInputRole] = useState<UserRole>('pengawas'); 
@@ -54,6 +62,7 @@ const App = () => {
   const [inputStartDate, setInputStartDate] = useState(''); 
   const [inputEndDate, setInputEndDate] = useState('');
   
+  // RAB & CCO Inputs
   const [rabCategory, setRabCategory] = useState(''); 
   const [rabItemName, setRabItemName] = useState(''); 
   const [rabUnit, setRabUnit] = useState('ls'); 
@@ -61,65 +70,167 @@ const App = () => {
   const [rabPrice, setRabPrice] = useState(0); 
   const [selectedRabItem, setSelectedRabItem] = useState<RABItem | null>(null);
 
+  // Worker & Payroll Inputs
   const [inputRealRate, setInputRealRate] = useState(150000); 
   const [inputMandorRate, setInputMandorRate] = useState(170000); 
   const [inputWorkerRole, setInputWorkerRole] = useState<'Tukang' | 'Kenek' | 'Mandor'>('Tukang'); 
   const [inputWageUnit, setInputWageUnit] = useState<'Harian' | 'Mingguan' | 'Bulanan'>('Harian');
-
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null); 
+  const [paymentAmount, setPaymentAmount] = useState(0); 
+  
+  // Stock Inputs
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null); 
   const [stockType, setStockType] = useState<'in' | 'out'>('in'); 
   const [stockQty, setStockQty] = useState(0); 
   const [stockDate, setStockDate] = useState(new Date().toISOString().split('T')[0]); 
   const [stockNotes, setStockNotes] = useState('');
 
-  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null); 
-  const [paymentAmount, setPaymentAmount] = useState(0); 
+  // Transaction Input
   const [amount, setAmount] = useState(0); 
   
+  // Progress Tracking Inputs
   const [progressInput, setProgressInput] = useState(0); 
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]); 
   const [progressNote, setProgressNote] = useState('');
   
+  // Attendance & Evidence Inputs
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]); 
   const [attendanceData, setAttendanceData] = useState<{[workerId: number]: {status: string, note: string}}>({}); 
   const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]); 
   const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
-  
   const [evidencePhoto, setEvidencePhoto] = useState<string>(''); 
   const [evidenceLocation, setEvidenceLocation] = useState<string>(''); 
-  const [isGettingLoc, setIsGettingLoc] = useState(false);
-
-  const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}); 
   
+  // AI States
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-  // Permission Checks
+  // --- PERMISSION CHECKS ---
   const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
   const canAccessWorkers = () => ['super_admin', 'kontraktor', 'pengawas'].includes(userRole || '');
   const canAccessManagement = () => userRole === 'super_admin';
   const canEditProject = () => ['super_admin', 'kontraktor'].includes(userRole || '');
   const canSeeMoney = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
 
-  // Effects
-  useEffect(() => { const u = onAuthStateChanged(auth, async (u) => { if (u) { try { const d = await getDoc(doc(db, 'app_users', u.email!)); if (d.exists()) { setUser(u); setUserRole(d.data().role); setAuthStatus('connected'); setLoginError(''); } else { await signOut(auth); setLoginError(`Email ${u.email} tidak terdaftar.`); } } catch (e) { setAuthStatus('error'); } } else { setUser(null); setAuthStatus('connected'); } }); return () => u(); }, []);
-  useEffect(() => { if (userRole === 'super_admin') return onSnapshot(query(collection(db, 'app_users')), (s) => setAppUsers(s.docs.map(d => d.data() as AppUser))); }, [userRole]);
-  useEffect(() => { if (user) return onSnapshot(query(collection(db, 'app_data', appId, 'projects')), (s) => { const l = s.docs.map(d => { const x = d.data(); return { id: d.id, ...x, rabItems: Array.isArray(x.rabItems) ? x.rabItems : [], transactions: x.transactions || [], materials: x.materials || [], workers: x.workers || [], attendanceLogs: x.attendanceLogs || [], isDeleted: x.isDeleted || false } as Project; }); l.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); setProjects(l); }); }, [user]);
+  // --- EFFECTS ---
+  useEffect(() => { 
+    const unsubscribe = onAuthStateChanged(auth, async (u) => { 
+      if (u) { 
+        try { 
+          const userDocRef = doc(db, 'app_users', u.email!);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) { 
+            setUser(u); setUserRole(userDocSnap.data().role); setAuthStatus('connected'); setLoginError(''); 
+          } else { 
+            await signOut(auth); setLoginError(`Email ${u.email} tidak terdaftar.`); 
+          } 
+        } catch (error) { setAuthStatus('error'); } 
+      } else { setUser(null); setAuthStatus('connected'); } 
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => { 
+    if (userRole === 'super_admin') {
+      const q = query(collection(db, 'app_users'));
+      return onSnapshot(q, (snapshot) => { setAppUsers(snapshot.docs.map(d => d.data() as AppUser)); });
+    }
+  }, [userRole]);
+
+  useEffect(() => { 
+    if (user) {
+      const q = query(collection(db, 'app_data', appId, 'projects'));
+      return onSnapshot(q, (snapshot) => { 
+        const list = snapshot.docs.map(d => {
+          const data = d.data();
+          return { 
+            id: d.id,
+            name: data.name || '',
+            client: data.client || '',
+            location: data.location || '',
+            status: data.status || 'Berjalan',
+            budgetLimit: data.budgetLimit || 0,
+            startDate: data.startDate || new Date().toISOString(),
+            endDate: data.endDate || new Date(new Date(data.startDate).setDate(new Date(data.startDate).getDate() + 30)).toISOString(),
+            isDeleted: data.isDeleted || false,
+            attendanceLogs: Array.isArray(data.attendanceLogs) ? data.attendanceLogs : [], 
+            attendanceEvidences: Array.isArray(data.attendanceEvidences) ? data.attendanceEvidences : [], 
+            transactions: Array.isArray(data.transactions) ? data.transactions : [],
+            rabItems: Array.isArray(data.rabItems) ? data.rabItems : [],
+            tasks: [], workers: Array.isArray(data.workers) ? data.workers : [], materials: Array.isArray(data.materials) ? data.materials : [], materialLogs: Array.isArray(data.materialLogs) ? data.materialLogs : [], taskLogs: Array.isArray(data.taskLogs) ? data.taskLogs : []
+          } as Project;
+        });
+        list.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+        setProjects(list); 
+      }, (error) => { if (error.code === 'permission-denied') { alert("Akses Ditolak."); signOut(auth); } });
+    }
+  }, [user]);
 
   const activeProject = projects.find(p => p.id === activeProjectId);
-  const rabGroups = activeProject ? {} : {}; // Placeholder logic
-  const getRABGroups = () => { if (!activeProject || !activeProject.rabItems) return {}; const groups: Record<string, RABItem[]> = {}; activeProject.rabItems.forEach(item => { if(!groups[item.category]) groups[item.category] = []; groups[item.category].push(item); }); return groups; };
-  const calculatedRabGroups = getRABGroups();
 
-  // Helper Functions inside App
-  const updateProject = async (data: Partial<Project>) => { if (!user || !activeProjectId) return; setIsSyncing(true); try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } catch(e) { alert("Gagal simpan."); } setIsSyncing(false); };
+  // --- LOGIC HELPERS ---
+  const getRABGroups = () => { 
+    if (!activeProject || !activeProject.rabItems) return {}; 
+    const groups: {[key: string]: RABItem[]} = {}; 
+    activeProject.rabItems.forEach(item => { if(!groups[item.category]) groups[item.category] = []; groups[item.category].push(item); }); 
+    return groups; 
+  };
+  const rabGroups = getRABGroups();
+
+  const getFilteredAttendance = () => {
+    if (!activeProject || !activeProject.attendanceLogs) return [];
+    const start = new Date(filterStartDate); start.setHours(0,0,0,0); 
+    const end = new Date(filterEndDate); end.setHours(23,59,59,999);
+    const filteredLogs = activeProject.attendanceLogs.filter(l => { const d = new Date(l.date); return d >= start && d <= end; });
+    const workerStats: {[key: number]: {name: string, role: string, unit: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {};
+    activeProject.workers.forEach(w => { workerStats[w.id] = { name: w.name, role: w.role, unit: w.wageUnit || 'Harian', hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 }; });
+    filteredLogs.forEach(log => {
+      if (workerStats[log.workerId]) {
+        const worker = activeProject.workers.find(w => w.id === log.workerId);
+        let dailyRate = 0;
+        if (worker) { if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; else dailyRate = worker.mandorRate; }
+        if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += dailyRate; }
+        else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (dailyRate * 1.5); }
+        else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (dailyRate * 0.5); }
+        else if (log.status === 'Absen') { workerStats[log.workerId].absen++; }
+      }
+    });
+    return Object.values(workerStats);
+  };
+
+  const getFilteredEvidence = () => {
+    if (!activeProject || !activeProject.attendanceEvidences) return [];
+    const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999);
+    return activeProject.attendanceEvidences.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
+  };
+
+  const calculateTotalDays = (logs: AttendanceLog[], workerId: number) => {
+    if(!logs) return 0;
+    return logs.filter(l => l.workerId === workerId).reduce((acc, curr) => { if (curr.status === 'Hadir') return acc + 1; if (curr.status === 'Setengah') return acc + 0.5; if (curr.status === 'Lembur') return acc + 1.5; return acc; }, 0);
+  };
+
+  const calculateWorkerFinancials = (p: Project, workerId: number) => {
+    const worker = p.workers.find(w => w.id === workerId); if (!worker) return { totalDue: 0, totalPaid: 0, balance: 0 };
+    const days = calculateTotalDays(p.attendanceLogs, workerId); 
+    let dailyRate = worker.mandorRate;
+    if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7;
+    if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30;
+    const totalDue = days * dailyRate;
+    const totalPaid = (p.transactions || []).filter(t => t.workerId === workerId && t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
+    return { totalDue, totalPaid, balance: totalDue - totalPaid };
+  };
+
+  // --- CRUD HANDLERS ---
   const handleLogin = async () => { setLoginError(''); try { await signInWithPopup(auth, googleProvider); } catch (e) { setLoginError("Login gagal."); } };
   const handleLogout = async () => { if(confirm("Keluar?")) await signOut(auth); setProjects([]); setView('project-list'); };
+  
+  const updateProject = async (data: Partial<Project>) => { if (!user || !activeProjectId) return; setIsSyncing(true); try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } catch(e) { alert("Gagal simpan."); } setIsSyncing(false); };
+  
   const handleAddUser = async () => { if (!inputEmail || !inputName) return; try { await setDoc(doc(db, 'app_users', inputEmail), { email: inputEmail, name: inputName, role: inputRole }); alert("User berhasil ditambahkan!"); setShowModal(false); setInputEmail(''); setInputName(''); } catch (e) { alert("Gagal menambah user."); } };
   const handleDeleteUser = async (emailToDelete: string) => { if (emailToDelete === user?.email) return alert("Tidak bisa hapus diri sendiri!"); if (confirm(`Hapus akses ${emailToDelete}?`)) { try { await deleteDoc(doc(db, 'app_users', emailToDelete)); } catch (e) { alert("Gagal."); } } };
-  
+
   const handleSaveRAB = () => { 
-     if(!activeProject) return; 
+     if(!activeProject || !rabItemName) return; 
      const newItem = { id: selectedRabItem ? selectedRabItem.id : Date.now(), category: rabCategory, name: rabItemName, unit: rabUnit, volume: rabVol, unitPrice: rabPrice, progress: selectedRabItem?.progress || 0, isAddendum: selectedRabItem?.isAddendum || false };
      const newItems = selectedRabItem ? activeProject.rabItems.map(i => i.id === newItem.id ? newItem : i) : [...activeProject.rabItems, newItem];
      updateProject({ rabItems: newItems }); setShowModal(false); setRabItemName(''); setRabVol(0); setRabPrice(0);
@@ -127,30 +238,31 @@ const App = () => {
   const handleEditRABItem = (item: RABItem) => { setSelectedRabItem(item); setRabCategory(item.category); setRabItemName(item.name); setRabUnit(item.unit); setRabVol(item.volume); setRabPrice(item.unitPrice); setModalType('newRAB'); setShowModal(true); };
   const handleAddCCO = () => { setRabItemName(''); setRabCategory('PEKERJAAN TAMBAH KURANG (CCO)'); setSelectedRabItem(null); setModalType('newRAB'); };
   const deleteRABItem = (id: number) => { if(!activeProject || !confirm('Hapus item RAB ini?')) return; const newItems = activeProject.rabItems.filter(i => i.id !== id); updateProject({ rabItems: newItems }); };
+
   const handleTransaction = (e: React.FormEvent) => { e.preventDefault(); if (!activeProject) return; const form = e.target as HTMLFormElement; const desc = (form.elements.namedItem('desc') as HTMLInputElement).value; const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value; if (!desc || amount <= 0) { alert("Data tidak valid"); return; } updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount: amount, type: txType }, ...(activeProject.transactions || [])] }); form.reset(); setAmount(0); };
+
   const handleUpdateProgress = () => { if (!activeProject || !selectedRabItem) return; const updatedRAB = activeProject.rabItems.map(item => item.id === selectedRabItem.id ? { ...item, progress: progressInput } : item); const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedRabItem.id, previousProgress: selectedRabItem.progress, newProgress: progressInput, note: progressNote }; updateProject({ rabItems: updatedRAB, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); setShowModal(false); };
+  
   const handleEditProject = () => { if (!activeProject) return; updateProject({ name: inputName, client: inputClient, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate }); setShowModal(false); };
-  const handlePayWorker = () => { if (!activeProject || !selectedWorkerId || paymentAmount <= 0) return; const worker = activeProject.workers.find(w => w.id === selectedWorkerId); const newTx: Transaction = { id: Date.now(), date: new Date().toISOString().split('T')[0], category: 'Upah Tukang', description: `Gaji Tukang`, amount: paymentAmount, type: 'expense', workerId: selectedWorkerId }; updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false); };
+  
+  const handlePayWorker = () => { if (!activeProject || !selectedWorkerId || paymentAmount <= 0) return; const newTx: Transaction = { id: Date.now(), date: new Date().toISOString().split('T')[0], category: 'Upah Tukang', description: `Gaji Tukang`, amount: paymentAmount, type: 'expense', workerId: selectedWorkerId }; updateProject({ transactions: [newTx, ...activeProject.transactions] }); setShowModal(false); };
   const handleSaveWorker = () => { if(!activeProject) return; if (selectedWorkerId) { const updatedWorkers = activeProject.workers.map(w => { if(w.id === selectedWorkerId) { return { ...w, name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate }; } return w; }); updateProject({ workers: updatedWorkers }); } else { const newWorker: Worker = { id: Date.now(), name: inputName, role: inputWorkerRole, wageUnit: inputWageUnit, realRate: inputRealRate, mandorRate: inputMandorRate }; updateProject({ workers: [...(activeProject.workers || []), newWorker] }); } setShowModal(false); };
   const handleEditWorker = (w: Worker) => { setSelectedWorkerId(w.id); setInputName(w.name); setInputWorkerRole(w.role); setInputWageUnit(w.wageUnit); setInputRealRate(w.realRate); setInputMandorRate(w.mandorRate); setModalType('newWorker'); setShowModal(true); };
   const handleDeleteWorker = (w: Worker) => { if(!activeProject) return; if(confirm(`Yakin hapus ${w.name}?`)) { const updatedWorkers = activeProject.workers.filter(worker => worker.id !== w.id); updateProject({ workers: updatedWorkers }); } };
+  
   const handleStockMovement = () => { if (!activeProject || !selectedMaterial || stockQty <= 0) return; const updatedMaterials = activeProject.materials.map(m => { if (m.id === selectedMaterial.id) return { ...m, stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty }; return m; }); const newLog: MaterialLog = { id: Date.now(), materialId: selectedMaterial.id, date: stockDate, type: stockType, quantity: stockQty, notes: stockNotes || '-', actor: user?.displayName || 'User' }; updateProject({ materials: updatedMaterials, materialLogs: [newLog, ...(activeProject.materialLogs || [])] }); setShowModal(false); setStockQty(0); setStockNotes(''); };
+  const createItem = (field: string, newItem: any) => { if(!activeProject) return; updateProject({ [field]: [...(activeProject as any)[field], newItem] }); setShowModal(false); }
+
   const handleSoftDeleteProject = async (p: Project) => { if(confirm(`Yakin ingin memindahkan proyek "${p.name}" ke Sampah?`)) { try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: true }); } catch(e) { alert("Gagal menghapus."); } } };
   const handleRestoreProject = async (p: Project) => { try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: false }); } catch(e) { alert("Gagal restore."); } };
   const handlePermanentDeleteProject = async (p: Project) => { if(confirm(`PERINGATAN: Proyek "${p.name}" akan dihapus SELAMANYA dan tidak bisa dikembalikan. Lanjutkan?`)) { try { await deleteDoc(doc(db, 'app_data', appId, 'projects', p.id)); } catch(e) { alert("Gagal hapus permanen."); } } };
+
   const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
   
   const handleGetLocation = () => { if (!navigator.geolocation) return alert("Browser tidak support GPS"); setIsGettingLoc(true); navigator.geolocation.getCurrentPosition((pos) => { setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`); setIsGettingLoc(false); }, (err) => { alert("Gagal ambil lokasi."); setIsGettingLoc(false); }, { enableHighAccuracy: true }); };
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target?.result as string; img.onload = () => { const canvas = document.createElement('canvas'); let width = img.width; let height = img.height; const MAX_WIDTH = 800; const MAX_HEIGHT = 800; if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, width, height); const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); setEvidencePhoto(compressedDataUrl); handleGetLocation(); }; }; };
   const saveAttendanceWithEvidence = () => { if(!activeProject) return; if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; } if (!evidenceLocation) { alert("Lokasi wajib terdeteksi!"); return; } const newLogs: any[] = []; Object.keys(attendanceData).forEach(wId => { newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' }); }); let newEvidences = activeProject.attendanceEvidences || []; if (evidencePhoto || evidenceLocation) { newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: evidencePhoto, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences]; } updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences }); setShowModal(false); };
   
-  const getFilteredAttendance = () => { if (!activeProject || !activeProject.attendanceLogs) return []; const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999); const filteredLogs = activeProject.attendanceLogs.filter(l => { const d = new Date(l.date); return d >= start && d <= end; }); const workerStats: {[key: number]: {name: string, role: string, unit: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {}; activeProject.workers.forEach(w => { workerStats[w.id] = { name: w.name, role: w.role, unit: w.wageUnit || 'Harian', hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 }; }); filteredLogs.forEach(log => { if (workerStats[log.workerId]) { const worker = activeProject.workers.find(w => w.id === log.workerId); let dailyRate = 0; if (worker) { if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; else dailyRate = worker.mandorRate; } if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += dailyRate; } else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (dailyRate * 1.5); } else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (dailyRate * 0.5); } else if (log.status === 'Absen') { workerStats[log.workerId].absen++; } } }); return Object.values(workerStats); };
-  const getFilteredEvidence = () => { if (!activeProject || !activeProject.attendanceEvidences) return []; const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999); return activeProject.attendanceEvidences.filter(e => { const d = new Date(e.date); return d >= start && d <= end; }); };
-  const calculateTotalDays = (logs: AttendanceLog[], workerId: number) => { if(!logs) return 0; return logs.filter(l => l.workerId === workerId).reduce((acc, curr) => { if (curr.status === 'Hadir') return acc + 1; if (curr.status === 'Setengah') return acc + 0.5; if (curr.status === 'Lembur') return acc + 1.5; return acc; }, 0); };
-  const calculateWorkerFinancials = (p: Project, workerId: number) => { const worker = p.workers.find(w => w.id === workerId); if (!worker) return { totalDue: 0, totalPaid: 0, balance: 0 }; const days = calculateTotalDays(p.attendanceLogs, workerId); let dailyRate = worker.mandorRate; if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; const totalDue = days * dailyRate; const totalPaid = (p.transactions || []).filter(t => t.workerId === workerId && t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0); return { totalDue, totalPaid, balance: totalDue - totalPaid }; };
-  
-  const openModal = (type: any) => { setModalType(type); setShowModal(true); };
-
   const handleGenerateRAB = async () => {
     if (!aiPrompt) return alert("Masukkan deskripsi proyek dulu!");
     setIsGeneratingAI(true);
@@ -176,28 +288,18 @@ const App = () => {
     } catch (e) { console.error(e); alert("Gagal generate AI. Coba lagi."); } finally { setIsGeneratingAI(false); }
   };
 
-  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; const demo: any = { name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "PIK 2", status: 'Selesai', budgetLimit: 0, startDate: d(-30), endDate: d(30), rabItems: [ {id:1, category:'A. PERSIAPAN', name:'Pembersihan Lahan', unit:'ls', volume:1, unitPrice:15000000, progress:100, isAddendum:false} ], transactions: [], workers: [], materials: [], materialLogs: [], taskLogs: [], attendanceLogs: [], attendanceEvidences: [] }; await addDoc(collection(db, 'app_data', appId, 'projects'), demo); setIsSyncing(false); };
+  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; const demo: any = { name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "PIK 2", status: 'Selesai', budgetLimit: 0, startDate: d(-30), endDate: d(30), rabItems: [ {id:1, category:'A. PERSIAPAN', name:'Pembersihan Lahan', unit:'ls', volume:1, unitPrice:15000000, progress:100, isAddendum:false} ], transactions: [], workers: [], materials: [], materialLogs: [], taskLogs: [], attendanceLogs: [], attendanceEvidences: [] }; await addDoc(collection(db, 'app_data', appId, 'projects'), demo); setIsSyncing(false); };
 
-  if (!user && authStatus !== 'loading') {
-    return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
-          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><Lock className="text-blue-600" size={32} /></div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-2">Kontraktor Pro</h1>
-          <p className="text-slate-500 mb-8 text-sm">Hanya personel terdaftar yang dapat masuk.</p>
-          {loginError && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs mb-4 border border-red-200">{loginError}</div>}
-          <button onClick={handleLogin} className="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-all"><LogIn size={20} />Masuk dengan Google</button>
-        </div>
-      </div>
-    );
-  }
+  const openModal = (type: any) => { setModalType(type); setShowModal(true); };
 
-  if (authStatus === 'loading') return <div className="h-screen flex flex-col items-center justify-center text-slate-500"><Loader2 className="animate-spin mb-2"/>Loading System...</div>;
+  if (!user && authStatus !== 'loading') return <div className="h-screen flex items-center justify-center"><button onClick={handleLogin} className="bg-blue-600 text-white p-4 rounded-xl font-bold">Login Google</button></div>;
+  if (authStatus === 'loading') return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin"/></div>;
 
   return (
     <div className="flex min-h-screen bg-slate-100 font-sans text-slate-900">
       <style>{`@media print { body { background: white; } .print\\:hidden { display: none !important; } .print\\:break-inside-avoid { break-inside: avoid; } }`}</style>
       
+      {/* SIDEBAR (Desktop Only) */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r fixed inset-y-0 z-20 print:hidden">
         <div className="p-6 border-b flex items-center gap-2 font-bold text-xl text-slate-800"><Building2 className="text-blue-600"/> Kontraktor Pro</div>
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -209,10 +311,13 @@ const App = () => {
         <div className="p-4 border-t"><button onClick={handleLogout} className="w-full border border-red-200 text-red-600 p-2 rounded-lg text-sm flex items-center justify-center gap-2"><LogOut size={16}/> Logout</button></div>
       </aside>
 
+      {/* MAIN CONTENT AREA */}
       <div className="flex-1 md:ml-64 flex flex-col relative pb-20 md:pb-0">
+        
+        {/* HEADER */}
         <header className="bg-white px-4 py-3 sticky top-0 z-10 shadow-sm flex justify-between items-center print:hidden">
             {view === 'project-list' || view === 'user-management' || view === 'trash-bin' ? (
-            <div className="flex items-center gap-2 font-bold text-slate-800 md:hidden"><Building2 className="text-blue-600"/> <span>Kontraktor App</span></div>
+            <div className="flex items-center gap-2 font-bold text-slate-800 md:hidden"><Building2 className="text-blue-600"/> <div className="flex flex-col"><span>Kontraktor App</span>{user && <span className="text-[10px] text-slate-400 font-normal uppercase">{userRole?.replace('_', ' ')}: {user.displayName?.split(' ')[0]}</span>}</div></div>
             ) : (<button onClick={() => setView('project-list')} className="text-slate-500 flex items-center gap-1 text-sm"><ArrowLeft size={18}/> Kembali</button>)}
             <div className="flex items-center gap-2 ml-auto">
              <button onClick={() => setView('trash-bin')} className="md:hidden text-slate-400 p-2 hover:text-red-500"><Trash2 size={20}/></button>
@@ -222,7 +327,10 @@ const App = () => {
             </div>
         </header>
 
+        {/* CONTENT */}
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+            
+            {/* TRASH BIN VIEW */}
             {view === 'trash-bin' && (
                 <main className="space-y-4">
                 <h2 className="font-bold text-2xl text-slate-800 mb-6">Tong Sampah Proyek</h2>
@@ -231,6 +339,7 @@ const App = () => {
                 </main>
             )}
 
+            {/* USER MANAGEMENT VIEW */}
             {view === 'user-management' && canAccessManagement() && (
                 <main className="space-y-6">
                     <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4"><div><h2 className="font-bold text-2xl flex items-center gap-2"><ShieldCheck size={28}/> Kelola Akses Pengguna</h2></div><button onClick={() => openModal('addUser')} className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-50 shadow-md"><UserPlus size={20}/> Tambah User</button></div>
@@ -249,14 +358,16 @@ const App = () => {
                     </div>
                     {projects.filter(p => !p.isDeleted).length === 0 && <div className="text-center py-20 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 bg-slate-50"><p className="mb-4">Belum ada proyek aktif.</p><button onClick={loadDemoData} disabled={isSyncing} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-green-700 shadow-lg flex items-center gap-2 mx-auto transition-transform hover:scale-105">{isSyncing ? <Loader2 className="animate-spin"/> : <RefreshCw size={18}/>} Muat Data Demo 1 Milyar</button></div>}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {projects.filter(p => !p.isDeleted).map(p => (
+                        {projects.filter(p => !p.isDeleted).map(p => {
+                            const health = calculateProjectHealth(p);
+                            return (
                             <div key={p.id} onClick={() => { setActiveProjectId(p.id); setView('project-detail'); }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all group relative overflow-hidden">
-                                {calculateProjectHealth(p).isCritical && <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-3 py-1 rounded-bl-xl font-bold flex items-center gap-1 shadow-sm"><AlertTriangle size={12}/> PERHATIAN</div>}
+                                {health.isCritical && <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-3 py-1 rounded-bl-xl font-bold flex items-center gap-1 shadow-sm"><AlertTriangle size={12}/> PERHATIAN</div>}
                                 <div className="flex justify-between items-start mb-4"><div><h3 className="font-bold text-xl text-slate-800 group-hover:text-blue-600 transition-colors">{p.name}</h3><p className="text-sm text-slate-500 flex items-center gap-1 mt-1"><Users size={14}/> {p.client}</p></div></div>
-                                <div className="space-y-2"><div className="flex justify-between text-xs text-slate-600"><span>Progress Fisik</span><span className="font-bold">{getStats(p).prog.toFixed(0)}%</span></div><div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-1000 ${calculateProjectHealth(p).isCritical ? 'bg-red-500' : 'bg-blue-600'}`} style={{ width: `${getStats(p).prog}%` }}></div></div></div>
+                                <div className="space-y-2"><div className="flex justify-between text-xs text-slate-600"><span>Progress Fisik</span><span className="font-bold">{getStats(p).prog.toFixed(0)}%</span></div><div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-1000 ${health.isCritical ? 'bg-red-500' : 'bg-blue-600'}`} style={{ width: `${getStats(p).prog}%` }}></div></div></div>
                                 <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center"><div className="text-xs text-slate-400">Update: {new Date().toLocaleDateString('id-ID')}</div>{canEditProject() && <button onClick={(e) => {e.stopPropagation(); handleSoftDeleteProject(p); }} className="text-slate-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={18}/></button>}</div>
                             </div>
-                        ))}
+                        )})}
                     </div>
                 </main>
             )}
@@ -288,14 +399,14 @@ const App = () => {
                             <div className="lg:col-span-3">
                                 <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg text-slate-700">Rincian RAB</h3>{canEditProject() && <div className="flex gap-2"><button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1"><Sparkles size={14}/> Auto RAB</button><button onClick={handleAddCCO} className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-bold border border-orange-200">+ CCO</button><button onClick={() => { setSelectedRabItem(null); setModalType('newRAB'); setShowModal(true); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold">+ Item</button></div>}</div>
                                 <div className="space-y-4 pb-20">
-                                    {Object.keys(calculatedRabGroups).sort().map(category => (
+                                    {Object.keys(rabGroups).sort().map(category => (
                                         <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
                                         <div className="bg-slate-50 p-4 font-bold text-sm text-slate-700 border-b flex justify-between"><span>{category}</span></div>
                                         {rabViewMode === 'internal' && (
-                                            <div className="divide-y divide-slate-100">{calculatedRabGroups[category].map(item => (<div key={item.id} className={`p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}><div className="flex justify-between mb-2"><span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span><span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span></div><div className="flex justify-between text-xs text-slate-500 mb-3"><span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span><span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mb-3"><div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div></div>{canEditProject() && (<div className="flex justify-end gap-2"><button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button><button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14}/></button><button onClick={() => handleEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14}/></button><button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14}/></button></div>)}</div>))}</div>
+                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className={`p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}><div className="flex justify-between mb-2"><span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span><span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span></div><div className="flex justify-between text-xs text-slate-500 mb-3"><span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span><span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mb-3"><div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div></div>{canEditProject() && (<div className="flex justify-end gap-2"><button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button><button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14}/></button><button onClick={() => handleEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14}/></button><button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14}/></button></div>)}</div>))}</div>
                                         )}
                                         {rabViewMode === 'client' && (
-                                            <div className="divide-y divide-slate-100">{calculatedRabGroups[category].map(item => (<div key={item.id} className="p-4 text-sm flex justify-between items-center hover:bg-slate-50"><div><div className="font-bold text-slate-800">{item.name}</div><div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div></div><div className="text-right"><div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div></div></div>))}<div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">Subtotal: {formatRupiah(calculatedRabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice),0))}</div></div>
+                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className="p-4 text-sm flex justify-between items-center hover:bg-slate-50"><div><div className="font-bold text-slate-800">{item.name}</div><div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div></div><div className="text-right"><div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div></div></div>))}<div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">Subtotal: {formatRupiah(rabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice),0))}</div></div>
                                         )}
                                         </div>
                                     ))}
@@ -312,62 +423,6 @@ const App = () => {
                     {activeTab === 'logistics' && (
                         <div className="max-w-4xl mx-auto"><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-xl text-slate-700">Stok Material</h3><button onClick={() => openModal('newMaterial')} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold shadow-md">+ Material Baru</button></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{(activeProject.materials || []).map(m => (<div key={m.id} className="bg-white p-5 rounded-2xl border shadow-sm relative overflow-hidden">{m.stock <= m.minStock && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-3 py-1 rounded-bl-xl font-bold shadow-sm">STOK MENIPIS</div>}<div className="flex justify-between items-start mb-4"><div><div className="font-bold text-slate-800 text-lg mb-1">{m.name}</div><div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded inline-block">Min: {m.minStock} {m.unit}</div></div><div className="text-right"><div className={`text-2xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div><div className="text-xs text-slate-400">{m.unit}</div></div></div><div className="flex gap-2 border-t pt-3"><button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border hover:bg-slate-50 transition-colors"><Edit size={14} /> Update Stok</button><button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-white text-slate-500 rounded-lg border hover:bg-slate-50 shadow-sm"><History size={18}/></button></div></div>))}</div></div>
                     )}
-                </div>
-            )}
-
-            {/* REPORT VIEW */}
-            {view === 'report-view' && activeProject && canSeeMoney() && (
-                <div className="min-h-screen bg-white">
-                    <header className="bg-slate-800 text-white px-4 py-4 flex items-center justify-between sticky top-0 shadow-md z-20 print:hidden">
-                        <div className="flex items-center gap-3"><button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1 rounded"><ArrowLeft/></button><div><h2 className="font-bold uppercase tracking-wider text-sm">Laporan Detail</h2></div></div>
-                        <div className="flex items-center gap-2">
-                           <div className="bg-slate-700 p-1 rounded flex text-xs">
-                             <button onClick={() => setRabViewMode('client')} className={`px-3 py-1 rounded transition ${rabViewMode === 'client' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300 hover:text-white'}`}>Client</button>
-                             <button onClick={() => setRabViewMode('internal')} className={`px-3 py-1 rounded transition ${rabViewMode === 'internal' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300 hover:text-white'}`}>Internal</button>
-                           </div>
-                           <button onClick={() => window.print()} className="bg-white text-slate-800 p-2 rounded-full hover:bg-slate-100 shadow-sm"><Printer size={20}/></button>
-                        </div>
-                    </header>
-                    <main className="p-8 max-w-4xl mx-auto">
-                        <div className="border-b-2 border-slate-800 pb-6 mb-8">
-                            <h1 className="text-4xl font-bold uppercase mb-2">{activeProject.name}</h1>
-                            <div className="flex justify-between text-sm text-slate-600 font-medium"><span>Klien: {activeProject.client}</span><span>{new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}</span></div>
-                        </div>
-                        <div className="mb-8 print:break-inside-avoid"><h3 className="font-bold text-lg mb-4 border-b pb-2">Status Proyek</h3><SCurveChart stats={getStats(activeProject)} project={activeProject} /></div>
-                        
-                        {rabViewMode === 'client' ? (
-                            <>
-                            <div className="grid grid-cols-2 gap-6 mb-8 print:break-inside-avoid">
-                                <div className="bg-slate-50 p-4 border rounded-xl"><p className="text-xs uppercase text-slate-500 font-bold">Nilai Kontrak</p><p className="text-2xl font-bold text-slate-800">{formatRupiah(getStats(activeProject).totalRAB)}</p></div>
-                                <div className="bg-blue-50 p-4 border border-blue-100 rounded-xl"><p className="text-xs uppercase text-slate-500 font-bold">Prestasi Fisik</p><p className="text-2xl font-bold text-blue-700">{formatRupiah(getStats(activeProject).prog / 100 * getStats(activeProject).totalRAB)}</p></div>
-                            </div>
-                            <h3 className="font-bold text-lg mb-4 border-b pb-2">Rincian Prestasi</h3>
-                            {Object.keys(calculatedRabGroups).map(cat => (
-                                <div key={cat} className="mb-6 print:break-inside-avoid">
-                                    <div className="bg-slate-100 p-2 font-bold text-sm border">{cat}</div>
-                                    <table className="w-full text-xs border border-t-0">
-                                        <thead><tr className="bg-slate-50"><th className="border p-2 w-1/3 text-left">Item</th><th className="border p-2 text-right">Nilai</th><th className="border p-2 text-center">Bobot</th><th className="border p-2 text-center">Prog %</th><th className="border p-2 text-right">Prestasi</th></tr></thead>
-                                        <tbody>{calculatedRabGroups[cat].map(item => { const total = item.volume*item.unitPrice; const val = total*(item.progress/100); return <tr key={item.id}><td className="border p-2">{item.name}</td><td className="border p-2 text-right">{formatRupiah(total)}</td><td className="border p-2 text-center">{((total/getStats(activeProject).totalRAB)*100).toFixed(2)}%</td><td className="border p-2 text-center font-bold">{item.progress}%</td><td className="border p-2 text-right font-bold">{formatRupiah(val)}</td></tr> })}</tbody>
-                                    </table>
-                                </div>
-                            ))}
-                            </>
-                        ) : (
-                            <>
-                            <div className="bg-red-50 text-red-800 p-4 rounded-xl text-center font-bold mb-6 border border-red-200">Laporan Internal (Cashflow) - RAHASIA DAPUR</div>
-                            <div className="grid grid-cols-3 gap-4 mb-6 text-center text-sm font-bold">
-                                <div className="bg-green-100 p-3 rounded">Masuk: {formatRupiah(getStats(activeProject).inc)}</div>
-                                <div className="bg-red-100 p-3 rounded">Keluar: {formatRupiah(getStats(activeProject).exp)}</div>
-                                <div className="bg-blue-100 p-3 rounded">Profit: {formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</div>
-                            </div>
-                            <h3 className="font-bold text-lg mb-4 border-b pb-2">Detail Transaksi</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div><h4 className="font-bold text-green-700 border-b mb-2">Pemasukan</h4>{getGroupedTransactions(activeProject.transactions.filter(t=>t.type==='income')).map((g: GroupedTransaction)=><div key={g.id} className="text-xs flex justify-between border-b py-1"><span>{g.category}</span><span>{formatRupiah(g.totalAmount)}</span></div>)}</div>
-                                <div><h4 className="font-bold text-red-700 border-b mb-2">Pengeluaran</h4>{getGroupedTransactions(activeProject.transactions.filter(t=>t.type==='expense')).map((g: GroupedTransaction)=><div key={g.id} className="text-xs flex justify-between border-b py-1"><span>{g.category}</span><span>{formatRupiah(g.totalAmount)}</span></div>)}</div>
-                            </div>
-                            </>
-                        )}
-                    </main>
                 </div>
             )}
         </div>
@@ -397,6 +452,7 @@ const App = () => {
                {modalType === 'payWorker' && <><div className="mb-4"><label className="text-xs text-slate-500">Nominal Pembayaran</label><NumberInput className="w-full p-2 border rounded font-bold text-lg" value={paymentAmount} onChange={setPaymentAmount} /></div><button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-2 rounded font-bold">Bayar</button></>}
                {modalType === 'attendance' && activeProject && (<div><input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} /><div className="bg-slate-50 p-3 rounded mb-3 border border-blue-100"><h4 className="font-bold text-sm mb-2 text-slate-700 flex items-center gap-2"><Camera size={14}/> Bukti Lapangan (Wajib)</h4><div className="mb-2"><label className={`block w-full border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${evidencePhoto ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-100'}`}><input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />{evidencePhoto ? (<div className="relative"><img src={evidencePhoto} alt="Preview" className="h-32 mx-auto rounded shadow-sm object-cover"/><div className="text-xs text-green-600 font-bold mt-1">Foto Berhasil Diambil & Dikompres</div></div>) : (<div className="text-slate-500 text-xs flex flex-col items-center gap-1"><Camera size={24} className="text-slate-400"/><span>Klik untuk Ambil Foto</span></div>)}</label></div><div className="text-center">{isGettingLoc && <div className="text-xs text-blue-600 flex items-center justify-center gap-1 animate-pulse"><Loader2 size={12} className="animate-spin"/> Sedang mengambil titik lokasi...</div>}{!isGettingLoc && evidenceLocation && <div className="text-xs text-green-600 flex items-center justify-center gap-1 font-bold bg-green-100 py-1 rounded"><CheckCircle size={12}/> Lokasi Terkunci: {evidenceLocation}</div>}{!isGettingLoc && !evidenceLocation && evidencePhoto && <div className="text-xs text-red-500 font-bold">Gagal ambil lokasi. Pastikan GPS aktif!</div>}</div></div><div className="max-h-64 overflow-y-auto space-y-2 mb-4">{activeProject.workers.map(w => (<div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center"><span>{w.name}</span><select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}><option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option></select></div>))}</div><button onClick={saveAttendanceWithEvidence} disabled={!evidencePhoto || !evidenceLocation} className={`w-full text-white p-3 rounded font-bold transition-all ${(!evidencePhoto || !evidenceLocation) ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg'}`}>{(!evidencePhoto || !evidenceLocation) ? 'Lengkapi Bukti Dulu' : 'Simpan Absensi'}</button></div>)}
                {modalType === 'addUser' && (<><input className="w-full p-2 border rounded" placeholder="Nama Lengkap" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Email Google" type="email" value={inputEmail} onChange={e => setInputEmail(e.target.value)} /><div className="flex gap-2 items-center"><label className="text-xs w-20">Role</label><select className="flex-1 p-2 border rounded" value={inputRole} onChange={e => setInputRole(e.target.value as UserRole)}><option value="pengawas">Pengawas (Absen & Tukang Only)</option><option value="keuangan">Keuangan (Uang Only)</option><option value="kontraktor">Kontraktor (Project Manager)</option><option value="super_admin">Super Admin (Owner)</option></select></div><button onClick={handleAddUser} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Tambah User</button></>)}
+               {modalType === 'newMaterial' && <><input className="w-full p-2 border rounded" placeholder="Material" value={inputName} onChange={e=>setInputName(e.target.value)}/><button onClick={()=>createItem('materials', {id:Date.now(), name:inputName, unit:'Unit', stock:0, minStock:5})} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
             </div>
           </div>
         </div>
