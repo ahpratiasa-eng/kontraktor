@@ -129,7 +129,36 @@ const App = () => {
     }
   }, []);
 
-  useEffect(() => { const u = onAuthStateChanged(auth, async (u) => { if (u) { try { const d = await getDoc(doc(db, 'app_users', u.email!)); if (d.exists()) { setUser(u); setUserRole(d.data().role); setAuthStatus('connected'); } else { await signOut(auth); console.error('Email not authorized:', u.email); alert(`Email ${u.email} tidak terdaftar.`); } } catch (e) { setAuthStatus('error'); } } else { setUser(null); setAuthStatus('connected'); } }); return () => u(); }, []);
+  useEffect(() => {
+    const u = onAuthStateChanged(auth, async (u) => {
+      // Skip auth handling if we're in client view mode (guest access)
+      if (isClientView) {
+        setAuthStatus('connected');
+        return;
+      }
+
+      if (u) {
+        try {
+          const d = await getDoc(doc(db, 'app_users', u.email!));
+          if (d.exists()) {
+            setUser(u);
+            setUserRole(d.data().role);
+            setAuthStatus('connected');
+          } else {
+            await signOut(auth);
+            console.error('Email not authorized:', u.email);
+            alert(`Email ${u.email} tidak terdaftar.`);
+          }
+        } catch (e) {
+          setAuthStatus('error');
+        }
+      } else {
+        setUser(null);
+        setAuthStatus('connected');
+      }
+    });
+    return () => u();
+  }, [isClientView]);
   useEffect(() => { if (userRole === 'super_admin') return onSnapshot(query(collection(db, 'app_users')), (s) => setAppUsers(s.docs.map(d => d.data() as AppUser))); }, [userRole]);
   useEffect(() => { if (user) return onSnapshot(query(collection(db, 'app_data', appId, 'projects')), (s) => { const l = s.docs.map(d => { const x = d.data(); return { id: d.id, ...x, rabItems: Array.isArray(x.rabItems) ? x.rabItems : [], transactions: x.transactions || [], materials: x.materials || [], workers: x.workers || [], attendanceLogs: x.attendanceLogs || [], isDeleted: x.isDeleted || false } as Project; }); l.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); setProjects(l); }); }, [user]);
 
@@ -308,8 +337,8 @@ const App = () => {
   const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; const demo: any = { name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "PIK 2", status: 'Selesai', budgetLimit: 0, startDate: d(-30), endDate: d(30), rabItems: [{ id: 1, category: 'A. PERSIAPAN', name: 'Pembersihan Lahan', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false }], transactions: [], workers: [], materials: [], materialLogs: [], taskLogs: [], attendanceLogs: [], attendanceEvidences: [] }; await addDoc(collection(db, 'app_data', appId, 'projects'), demo); setIsSyncing(false); };
 
 
-  if (!user && authStatus !== 'loading') return <LandingPage onLogin={handleLogin} />;
-  if (authStatus === 'loading') return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (!user && authStatus !== 'loading' && !isClientView) return <LandingPage onLogin={handleLogin} />;
+  if (authStatus === 'loading' && !isClientView) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   return (
     <div className="flex min-h-screen bg-slate-100 font-sans text-slate-900">

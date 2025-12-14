@@ -6,10 +6,15 @@ import {
     FileCheck,
     Users,
     ShieldCheck,
-    ArrowRight,
     Menu,
     X,
-    Smartphone
+    Smartphone,
+    Hammer,
+    Home,
+    Instagram,
+    ExternalLink,
+    Phone,
+    MapPin
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -28,6 +33,33 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const portfolioItems = [
+        {
+            image: '/portfolio_house_1.png',
+            title: 'Rumah Modern Minimalis',
+            status: 'Selesai',
+            location: 'Jakarta Selatan'
+        },
+        {
+            image: '/portfolio_construction_1.png',
+            title: 'Pembangunan Rumah 2 Lantai',
+            status: 'Sedang Berjalan',
+            location: 'Bekasi'
+        },
+        {
+            image: '/portfolio_house_2.png',
+            title: 'Hunian Tropis Elegan',
+            status: 'Selesai',
+            location: 'Tangerang'
+        },
+        {
+            image: '/portfolio_construction_2.png',
+            title: 'Renovasi Atap & Struktur',
+            status: 'Sedang Berjalan',
+            location: 'Depok'
+        }
+    ];
+
     return (
         <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">
 
@@ -43,14 +75,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-8">
+                        <a href="#portfolio" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Portofolio</a>
                         <a href="#features" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Fitur</a>
-                        <a href="#benefits" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Keunggulan</a>
-                        <a href="#testimonials" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Testimoni</a>
+                        <a href="#contact" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Kontak</a>
                         <button
                             onClick={onLogin}
                             className="px-6 py-2.5 rounded-full bg-slate-900 text-white font-semibold text-sm hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-900/20"
                         >
-                            Masuk / Daftar
+                            Masuk
                         </button>
                     </div>
 
@@ -66,13 +98,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 {/* Mobile Menu Dropdown */}
                 {mobileMenuOpen && (
                     <div className="absolute top-full left-0 right-0 bg-white border-b border-slate-100 p-6 flex flex-col gap-4 shadow-xl md:hidden">
+                        <a href="#portfolio" className="text-lg font-medium text-slate-600">Portofolio</a>
                         <a href="#features" className="text-lg font-medium text-slate-600">Fitur</a>
-                        <a href="#benefits" className="text-lg font-medium text-slate-600">Keunggulan</a>
+                        <a href="#contact" className="text-lg font-medium text-slate-600">Kontak</a>
                         <button
                             onClick={onLogin}
                             className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold"
                         >
-                            Masuk Sekarang
+                            Masuk
                         </button>
                     </div>
                 )}
@@ -85,103 +118,142 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-[400px] h-[400px] bg-orange-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
 
                 <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold uppercase tracking-wide mb-6 animate-fade-in-up">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold uppercase tracking-wide mb-6">
                         <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-                        Platform Manajemen Konstruksi #1
+                        Jasa Konstruksi & Renovasi Terpercaya
                     </div>
 
                     <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.1] mb-8 tracking-tight">
-                        Kelola Proyek Konstruksi <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Lebih Cerdas & Efisien</span>
+                        Wujudkan Hunian <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Impian Anda</span>
                     </h1>
 
                     <p className="text-lg md:text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Satu aplikasi untuk memantau progress lapangan, mengatur cashflow, laporan harian, hingga manajemen tukang. Tinggalkan cara lama yang ribet.
+                        Layanan konstruksi profesional untuk rumah tinggal, renovasi, dan pembangunan baru. Kualitas terjamin dengan harga transparan.
                     </p>
 
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-                        <button
-                            onClick={onLogin}
-                            className="w-full md:w-auto px-8 py-4 rounded-xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-all hover:-translate-y-1 shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2"
+                        <a
+                            href="https://wa.me/6281234567890"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full md:w-auto px-8 py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-700 transition-all hover:-translate-y-1 shadow-xl shadow-green-600/30 flex items-center justify-center gap-2"
                         >
-                            Coba Gratis Sekarang
-                            <ArrowRight className="w-5 h-5" />
-                        </button>
-                        <button
-                            className="w-full md:w-auto px-8 py-4 rounded-xl bg-white text-slate-700 border border-slate-200 font-bold text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                            <Phone className="w-5 h-5" />
+                            Hubungi Kami
+                        </a>
+                        <a
+                            href="https://instagram.com/guna.karya"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full md:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center gap-2"
                         >
-                            <Smartphone className="w-5 h-5 text-slate-400" />
-                            Download Aplikasi
-                        </button>
+                            <Instagram className="w-5 h-5" />
+                            Lihat Instagram
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            {/* PORTFOLIO SECTION */}
+            <section id="portfolio" className="py-20 bg-slate-50">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-100 text-orange-600 text-xs font-bold uppercase tracking-wide mb-4">
+                            <Hammer className="w-4 h-4" />
+                            Portofolio Proyek
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Hasil Karya Kami</h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto">Lihat berbagai proyek yang telah dan sedang kami kerjakan dengan kualitas terbaik.</p>
                     </div>
 
-                    {/* Hero Image / Dashboard Mockup */}
-                    <div className="mt-16 md:mt-24 relative mx-auto max-w-5xl">
-                        <div className="rounded-2xl bg-slate-900 p-2 md:p-4 shadow-2xl border border-slate-800 rotate-x-12 perspective-1000">
-                            {/* Abstract UI Representation */}
-                            <div className="bg-slate-800 rounded-xl overflow-hidden aspect-[16/9] border border-slate-700 relative flex items-center justify-center">
-                                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900" />
-                                {/* Floating Cards simulating UI */}
-                                <div className="absolute top-10 left-10 w-48 h-32 bg-slate-700 rounded-lg border border-slate-600 shadow-xl opacity-80" />
-                                <div className="absolute bottom-10 right-10 w-64 h-40 bg-blue-600/20 rounded-lg border border-blue-500/30 backdrop-blur-sm shadow-xl flex items-center justify-center">
-                                    <div className="text-center">
-                                        <div className="text-3xl font-bold text-blue-400 mb-1">85%</div>
-                                        <div className="text-xs text-blue-200">Progress Minggu Ini</div>
-                                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {portfolioItems.map((item, i) => (
+                            <div key={i} className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                                <div className="aspect-[4/3] overflow-hidden">
+                                    <img
+                                        src={item.image}
+                                        alt={item.title}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    />
                                 </div>
-                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-slate-400">
-                                    <Building2 className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                    <p>Dashboard Preview</p>
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent" />
+                                <div className="absolute bottom-0 left-0 right-0 p-6">
+                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3 ${item.status === 'Selesai' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                                        }`}>
+                                        {item.status === 'Selesai' ? <Home className="w-3 h-3" /> : <Hammer className="w-3 h-3" />}
+                                        {item.status}
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-1">{item.title}</h3>
+                                    <p className="text-sm text-slate-300 flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" />
+                                        {item.location}
+                                    </p>
                                 </div>
                             </div>
-                        </div>
+                        ))}
+                    </div>
+
+                    {/* Instagram CTA */}
+                    <div className="mt-12 text-center">
+                        <a
+                            href="https://instagram.com/guna.karya"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-bold text-lg hover:opacity-90 transition-all shadow-lg"
+                        >
+                            <Instagram className="w-6 h-6" />
+                            Lihat Lebih Banyak di Instagram
+                            <ExternalLink className="w-5 h-5" />
+                        </a>
+                        <p className="text-slate-500 mt-4 text-sm">@guna.karya • Update proyek terbaru setiap hari</p>
                     </div>
                 </div>
             </section>
 
             {/* FEATURES GRID */}
-            <section id="features" className="py-20 bg-slate-50">
+            <section id="features" className="py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Fitur Lengkap untuk Kontraktor Modern</h2>
-                        <p className="text-slate-500 max-w-2xl mx-auto">Semua yang Anda butuhkan untuk mengelola proyek dari nol hingga serah terima kunci.</p>
+                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Kenapa Pilih Guna Karya?</h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto">Kami berkomitmen memberikan hasil terbaik untuk setiap proyek.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[
                             {
                                 icon: <BarChart3 className="w-8 h-8 text-blue-600" />,
-                                title: "Monitoring Progress Real-time",
-                                desc: "Pantau persentase penyelesaian proyek (Kurva S) secara otomatis berdasarkan input harian dari lapangan."
+                                title: "Progress Transparan",
+                                desc: "Pantau perkembangan proyek Anda secara real-time. Kami kirimkan laporan harian lengkap dengan foto."
                             },
                             {
                                 icon: <Wallet className="w-8 h-8 text-green-600" />,
-                                title: "Manajemen Keuangan & RAB",
-                                desc: "Catat setiap pemasukan dan pengeluaran. Bandingkan realisasi vs RAB agar budget tidak boncos."
+                                title: "Harga Jujur",
+                                desc: "RAB detail dan transparan. Tidak ada biaya tersembunyi, semua dibahas di awal sebelum proyek dimulai."
                             },
                             {
                                 icon: <FileCheck className="w-8 h-8 text-purple-600" />,
-                                title: "Laporan Harian Otomatis",
-                                desc: "Generate laporan harian lengkap dengan foto, absensi tukang, dan cuaca langsung kirim ke Owner via WhatsApp."
+                                title: "Kualitas Terjamin",
+                                desc: "Material berkualitas tinggi dan pengerjaan oleh tukang berpengalaman dengan standar tinggi."
                             },
                             {
                                 icon: <ShieldCheck className="w-8 h-8 text-orange-600" />,
-                                title: "Aman & Terenkripsi",
-                                desc: "Data proyek Anda tersimpan aman di cloud. Akses kapan saja dari HP atau Laptop tanpa takut data hilang."
+                                title: "Garansi Pekerjaan",
+                                desc: "Garansi untuk setiap pekerjaan yang kami lakukan. Kepuasan Anda adalah prioritas utama kami."
                             },
                             {
                                 icon: <Users className="w-8 h-8 text-indigo-600" />,
-                                title: "Kelola Tukang & Upah",
-                                desc: "Sistem absensi harian dan perhitungan gaji otomatis. Kelola mandor dan tukang lebih transparan."
+                                title: "Tim Profesional",
+                                desc: "Mandor dan tukang terlatih yang sudah berpengalaman menangani berbagai jenis proyek konstruksi."
                             },
                             {
                                 icon: <Smartphone className="w-8 h-8 text-rose-600" />,
-                                title: "Akses Mobile Friendly",
-                                desc: "Aplikasi ringan yang didesain khusus untuk penggunaan mudah di lapangan maupun di kantor."
+                                title: "Komunikasi Mudah",
+                                desc: "Konsultasi gratis via WhatsApp. Respon cepat untuk setiap pertanyaan dan kebutuhan Anda."
                             }
                         ].map((feature, i) => (
-                            <div key={i} className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1">
-                                <div className="w-14 h-14 rounded-xl bg-slate-50 flex items-center justify-center mb-6">
+                            <div key={i} className="bg-slate-50 p-8 rounded-2xl border border-slate-100 hover:shadow-lg transition-all hover:-translate-y-1">
+                                <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center mb-6 shadow-sm">
                                     {feature.icon}
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
@@ -192,47 +264,81 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 </div>
             </section>
 
-            {/* SOCIAL PROOF */}
-            <section className="py-20 bg-white overflow-hidden">
-                <div className="max-w-7xl mx-auto px-6 text-center">
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-10">Dipercaya oleh Kontraktor di Seluruh Indonesia</p>
-                    <div className="flex flex-wrap items-center justify-center gap-12 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                        {/* Logos styled simply with text for now as placeholders */}
-                        <div className="text-2xl font-black text-slate-800">WIJAYA KARYA</div>
-                        <div className="text-2xl font-black text-slate-800">ADHI KARYA</div>
-                        <div className="text-2xl font-black text-slate-800">WASKITA</div>
-                        <div className="text-2xl font-black text-slate-800">PP PROPERTI</div>
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA SECTION */}
-            <section className="py-24 bg-slate-900 relative overflow-hidden">
+            {/* CONTACT SECTION */}
+            <section id="contact" className="py-24 bg-slate-900 relative overflow-hidden">
                 <div className="absolute inset-0 bg-blue-600/10" />
                 <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Siap Mengubah Cara Anda Bekerja?</h2>
-                    <p className="text-xl text-slate-300 mb-10">Bergabunglah dengan ribuan kontraktor cerdas lainnya. Tingkatkan profitabilitas proyek Anda sekarang juga.</p>
-                    <button
-                        onClick={onLogin}
-                        className="px-10 py-5 rounded-xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/30"
-                    >
-                        Mulai Gratis (Login Google)
-                    </button>
-                    <p className="mt-6 text-sm text-slate-400">Tidak perlu kartu kredit. Setup dalam 2 menit.</p>
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Siap Mulai Proyek Anda?</h2>
+                    <p className="text-xl text-slate-300 mb-10">Konsultasikan kebutuhan konstruksi atau renovasi Anda dengan tim kami. Gratis!</p>
+
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
+                        <a
+                            href="https://wa.me/6281234567890?text=Halo%20Guna%20Karya,%20saya%20ingin%20konsultasi%20tentang%20proyek%20konstruksi"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full md:w-auto px-10 py-5 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-500 transition-all shadow-xl shadow-green-500/30 flex items-center justify-center gap-2"
+                        >
+                            <Phone className="w-5 h-5" />
+                            Chat WhatsApp
+                        </a>
+                        <a
+                            href="https://instagram.com/guna.karya"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full md:w-auto px-10 py-5 rounded-xl bg-white/10 backdrop-blur text-white border border-white/20 font-bold text-lg hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Instagram className="w-5 h-5" />
+                            @guna.karya
+                        </a>
+                    </div>
+
+                    <p className="text-sm text-slate-400">Respon cepat dalam 1x24 jam</p>
                 </div>
             </section>
 
             {/* FOOTER */}
             <footer className="bg-slate-50 py-12 border-t border-slate-200">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-slate-500 text-sm">
-                    <p>&copy; {new Date().getFullYear()} Guna Karya. All rights reserved.</p>
-                    <div className="flex items-center gap-6">
-                        <a href="#" className="hover:text-slate-900">Privacy Policy</a>
-                        <a href="#" className="hover:text-slate-900">Terms of Service</a>
-                        <a href="#" className="hover:text-slate-900">Contact Support</a>
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-slate-500 text-sm">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-blue-600 p-1.5 rounded-lg">
+                                <Building2 className="text-white w-4 h-4" />
+                            </div>
+                            <span className="font-bold text-slate-800">Guna Karya</span>
+                        </div>
+                        <p>&copy; {new Date().getFullYear()} Guna Karya. All rights reserved.</p>
+                        <div className="flex items-center gap-4">
+                            <a
+                                href="https://instagram.com/guna.karya"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-pink-600 transition-colors"
+                            >
+                                <Instagram className="w-5 h-5" />
+                            </a>
+                            <a
+                                href="https://wa.me/6281234567890"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-green-600 transition-colors"
+                            >
+                                <Phone className="w-5 h-5" />
+                            </a>
+                        </div>
                     </div>
                 </div>
             </footer>
+
+            {/* FLOATING WHATSAPP BUTTON */}
+            <a
+                href="https://wa.me/6281234567890?text=Halo%20Guna%20Karya,%20saya%20ingin%20konsultasi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-6 right-6 z-50 bg-green-500 text-white p-4 rounded-full shadow-lg shadow-green-500/40 hover:bg-green-600 hover:scale-110 transition-all animate-bounce"
+                title="Chat WhatsApp"
+            >
+                <Phone className="w-6 h-6" />
+            </a>
 
         </div>
     );
