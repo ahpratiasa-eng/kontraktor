@@ -14,14 +14,17 @@ import {
     Instagram,
     ExternalLink,
     Phone,
-    MapPin
+    MapPin,
+    Loader2
 } from 'lucide-react';
+import type { LandingPageConfig } from '../types';
 
 interface LandingPageProps {
     onLogin: () => void;
+    config: LandingPageConfig | null;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onLogin, config }) => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -33,32 +36,59 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const portfolioItems = [
-        {
-            image: '/portfolio_house_1.png',
-            title: 'Rumah Modern Minimalis',
-            status: 'Selesai',
-            location: 'Jakarta Selatan'
-        },
-        {
-            image: '/portfolio_construction_1.png',
-            title: 'Pembangunan Rumah 2 Lantai',
-            status: 'Sedang Berjalan',
-            location: 'Bekasi'
-        },
-        {
-            image: '/portfolio_house_2.png',
-            title: 'Hunian Tropis Elegan',
-            status: 'Selesai',
-            location: 'Tangerang'
-        },
-        {
-            image: '/portfolio_construction_2.png',
-            title: 'Renovasi Atap & Struktur',
-            status: 'Sedang Berjalan',
-            location: 'Depok'
-        }
-    ];
+    // Default values if config is not loaded
+    const companyName = config?.companyName || 'Guna Karya';
+    const tagline = config?.tagline || 'Wujudkan Hunian Impian Anda';
+    const subtitle = config?.subtitle || 'Layanan konstruksi profesional untuk rumah tinggal, renovasi, dan pembangunan baru. Kualitas terjamin dengan harga transparan.';
+    const whatsappNumber = config?.whatsappNumber || '6281234567890';
+    const instagramHandle = config?.instagramHandle || 'guna.karya';
+
+    // Use config portfolio items if available, otherwise use default
+    const portfolioItems = config?.portfolioItems && config.portfolioItems.length > 0
+        ? config.portfolioItems.map(item => ({
+            image: item.imageUrl,
+            title: item.title,
+            status: item.status,
+            location: item.location
+        }))
+        : [
+            {
+                image: '/portfolio_house_1.png',
+                title: 'Rumah Modern Minimalis',
+                status: 'Selesai' as const,
+                location: 'Jakarta Selatan'
+            },
+            {
+                image: '/portfolio_construction_1.png',
+                title: 'Pembangunan Rumah 2 Lantai',
+                status: 'Sedang Berjalan' as const,
+                location: 'Bekasi'
+            },
+            {
+                image: '/portfolio_house_2.png',
+                title: 'Hunian Tropis Elegan',
+                status: 'Selesai' as const,
+                location: 'Tangerang'
+            },
+            {
+                image: '/portfolio_construction_2.png',
+                title: 'Renovasi Atap & Struktur',
+                status: 'Sedang Berjalan' as const,
+                location: 'Depok'
+            }
+        ];
+
+    // Show loading if config is still loading
+    if (!config) {
+        return (
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                    <p className="text-slate-500">Memuat halaman...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">
@@ -70,7 +100,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                         <div className="bg-blue-600 p-2 rounded-lg">
                             <Building2 className="text-white w-6 h-6" />
                         </div>
-                        <span className={`text-2xl font-bold tracking-tight ${isScrolled ? 'text-slate-900' : 'text-slate-900'}`}>Guna Karya</span>
+                        <span className={`text-2xl font-bold tracking-tight ${isScrolled ? 'text-slate-900' : 'text-slate-900'}`}>{companyName}</span>
                     </div>
 
                     {/* Desktop Menu */}
@@ -124,17 +154,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     </div>
 
                     <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.1] mb-8 tracking-tight">
-                        Wujudkan Hunian <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Impian Anda</span>
+                        {tagline.split(' ').slice(0, 2).join(' ')} <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                            {tagline.split(' ').slice(2).join(' ') || 'Impian Anda'}
+                        </span>
                     </h1>
 
                     <p className="text-lg md:text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Layanan konstruksi profesional untuk rumah tinggal, renovasi, dan pembangunan baru. Kualitas terjamin dengan harga transparan.
+                        {subtitle}
                     </p>
 
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4">
                         <a
-                            href="https://wa.me/6281234567890"
+                            href={`https://wa.me/${whatsappNumber}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="w-full md:w-auto px-8 py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-700 transition-all hover:-translate-y-1 shadow-xl shadow-green-600/30 flex items-center justify-center gap-2"
@@ -143,7 +175,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             Hubungi Kami
                         </a>
                         <a
-                            href="https://instagram.com/guna.karya"
+                            href={`https://instagram.com/${instagramHandle}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="w-full md:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center gap-2"
@@ -170,12 +202,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {portfolioItems.map((item, i) => (
                             <div key={i} className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-                                <div className="aspect-[4/3] overflow-hidden">
-                                    <img
-                                        src={item.image}
-                                        alt={item.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                    />
+                                <div className="aspect-[4/3] overflow-hidden bg-slate-200">
+                                    {item.image ? (
+                                        <img
+                                            src={item.image}
+                                            alt={item.title}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                            <Building2 className="w-16 h-16 opacity-30" />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent" />
                                 <div className="absolute bottom-0 left-0 right-0 p-6">
@@ -197,7 +235,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     {/* Instagram CTA */}
                     <div className="mt-12 text-center">
                         <a
-                            href="https://instagram.com/guna.karya"
+                            href={`https://instagram.com/${instagramHandle}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-bold text-lg hover:opacity-90 transition-all shadow-lg"
@@ -206,7 +244,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             Lihat Lebih Banyak di Instagram
                             <ExternalLink className="w-5 h-5" />
                         </a>
-                        <p className="text-slate-500 mt-4 text-sm">@guna.karya • Update proyek terbaru setiap hari</p>
+                        <p className="text-slate-500 mt-4 text-sm">@{instagramHandle} • Update proyek terbaru setiap hari</p>
                     </div>
                 </div>
             </section>
@@ -215,7 +253,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             <section id="features" className="py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Kenapa Pilih Guna Karya?</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Kenapa Pilih {companyName}?</h2>
                         <p className="text-slate-500 max-w-2xl mx-auto">Kami berkomitmen memberikan hasil terbaik untuk setiap proyek.</p>
                     </div>
 
@@ -273,7 +311,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
                         <a
-                            href="https://wa.me/6281234567890?text=Halo%20Guna%20Karya,%20saya%20ingin%20konsultasi%20tentang%20proyek%20konstruksi"
+                            href={`https://wa.me/${whatsappNumber}?text=Halo%20${encodeURIComponent(companyName)},%20saya%20ingin%20konsultasi%20tentang%20proyek%20konstruksi`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="w-full md:w-auto px-10 py-5 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-500 transition-all shadow-xl shadow-green-500/30 flex items-center justify-center gap-2"
@@ -282,13 +320,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             Chat WhatsApp
                         </a>
                         <a
-                            href="https://instagram.com/guna.karya"
+                            href={`https://instagram.com/${instagramHandle}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="w-full md:w-auto px-10 py-5 rounded-xl bg-white/10 backdrop-blur text-white border border-white/20 font-bold text-lg hover:bg-white/20 transition-all flex items-center justify-center gap-2"
                         >
                             <Instagram className="w-5 h-5" />
-                            @guna.karya
+                            @{instagramHandle}
                         </a>
                     </div>
 
@@ -304,12 +342,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             <div className="bg-blue-600 p-1.5 rounded-lg">
                                 <Building2 className="text-white w-4 h-4" />
                             </div>
-                            <span className="font-bold text-slate-800">Guna Karya</span>
+                            <span className="font-bold text-slate-800">{companyName}</span>
                         </div>
-                        <p>&copy; {new Date().getFullYear()} Guna Karya. All rights reserved.</p>
+                        <p>&copy; {new Date().getFullYear()} {companyName}. All rights reserved.</p>
                         <div className="flex items-center gap-4">
                             <a
-                                href="https://instagram.com/guna.karya"
+                                href={`https://instagram.com/${instagramHandle}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="hover:text-pink-600 transition-colors"
@@ -317,7 +355,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                                 <Instagram className="w-5 h-5" />
                             </a>
                             <a
-                                href="https://wa.me/6281234567890"
+                                href={`https://wa.me/${whatsappNumber}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="hover:text-green-600 transition-colors"
@@ -331,7 +369,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
             {/* FLOATING WHATSAPP BUTTON */}
             <a
-                href="https://wa.me/6281234567890?text=Halo%20Guna%20Karya,%20saya%20ingin%20konsultasi"
+                href={`https://wa.me/${whatsappNumber}?text=Halo%20${encodeURIComponent(companyName)},%20saya%20ingin%20konsultasi`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="fixed bottom-6 right-6 z-50 bg-green-500 text-white p-4 rounded-full shadow-lg shadow-green-500/40 hover:bg-green-600 hover:scale-110 transition-all animate-bounce"

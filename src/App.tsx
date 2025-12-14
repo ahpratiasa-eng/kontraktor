@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Loader2, RotateCcw, ShieldCheck, UserPlus,
-  Trash2
+  Trash2, Palette
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
@@ -11,6 +11,7 @@ import ProjectDetailView from './components/ProjectDetailView';
 import ReportView from './components/ReportView';
 import ModalManager from './components/ModalManager';
 import LandingPage from './components/LandingPage';
+import LandingEditor from './components/LandingEditor';
 
 import {
   signInWithPopup, signOut, onAuthStateChanged
@@ -24,7 +25,7 @@ import {
 import { auth, db, googleProvider, appId } from './lib/firebase';
 import type {
   Project, AppUser, RABItem, Transaction, Material,
-  MaterialLog, Worker, TaskLog, UserRole
+  MaterialLog, Worker, TaskLog, UserRole, LandingPageConfig
 } from './types';
 import { compressImage } from './utils/imageHelper';
 import { calculateProjectHealth, formatRupiah } from './utils/helpers';
@@ -33,13 +34,15 @@ const App = () => {
   const [user, setUser] = useState<any | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [authStatus, setAuthStatus] = useState<'loading' | 'connected' | 'error'>('loading');
-  const [view, setView] = useState<'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin'>('project-list');
+  const [view, setView] = useState<'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin' | 'landing-settings'>('project-list');
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isClientView, setIsClientView] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [landingConfig, setLandingConfig] = useState<LandingPageConfig | null>(null);
+  const [showLandingEditor, setShowLandingEditor] = useState(false);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -161,6 +164,44 @@ const App = () => {
   }, [isClientView]);
   useEffect(() => { if (userRole === 'super_admin') return onSnapshot(query(collection(db, 'app_users')), (s) => setAppUsers(s.docs.map(d => d.data() as AppUser))); }, [userRole]);
   useEffect(() => { if (user) return onSnapshot(query(collection(db, 'app_data', appId, 'projects')), (s) => { const l = s.docs.map(d => { const x = d.data(); return { id: d.id, ...x, rabItems: Array.isArray(x.rabItems) ? x.rabItems : [], transactions: x.transactions || [], materials: x.materials || [], workers: x.workers || [], attendanceLogs: x.attendanceLogs || [], isDeleted: x.isDeleted || false } as Project; }); l.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); setProjects(l); }); }, [user]);
+
+  // Fetch Landing Page Config
+  useEffect(() => {
+    const fetchLandingConfig = async () => {
+      try {
+        const docRef = doc(db, 'app_data', appId, 'settings', 'landing_page');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setLandingConfig(docSnap.data() as LandingPageConfig);
+        } else {
+          // Default config if none exists
+          const defaultConfig: LandingPageConfig = {
+            companyName: 'Guna Karya',
+            tagline: 'Wujudkan Hunian Impian Anda',
+            subtitle: 'Layanan konstruksi profesional untuk rumah tinggal, renovasi, dan pembangunan baru. Kualitas terjamin dengan harga transparan.',
+            whatsappNumber: '6281234567890',
+            instagramHandle: 'guna.karya',
+            portfolioItems: []
+          };
+          setLandingConfig(defaultConfig);
+        }
+      } catch (e) {
+        console.error('Failed to fetch landing config:', e);
+      }
+    };
+    fetchLandingConfig();
+  }, []);
+
+  const saveLandingConfig = async (config: LandingPageConfig) => {
+    try {
+      const docRef = doc(db, 'app_data', appId, 'settings', 'landing_page');
+      await setDoc(docRef, config);
+      setLandingConfig(config);
+    } catch (e) {
+      console.error('Failed to save landing config:', e);
+      throw e;
+    }
+  };
 
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
 
@@ -337,7 +378,7 @@ const App = () => {
   const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; const demo: any = { name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "PIK 2", status: 'Selesai', budgetLimit: 0, startDate: d(-30), endDate: d(30), rabItems: [{ id: 1, category: 'A. PERSIAPAN', name: 'Pembersihan Lahan', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false }], transactions: [], workers: [], materials: [], materialLogs: [], taskLogs: [], attendanceLogs: [], attendanceEvidences: [] }; await addDoc(collection(db, 'app_data', appId, 'projects'), demo); setIsSyncing(false); };
 
 
-  if (!user && authStatus !== 'loading' && !isClientView) return <LandingPage onLogin={handleLogin} />;
+  if (!user && authStatus !== 'loading' && !isClientView) return <LandingPage onLogin={handleLogin} config={landingConfig} />;
   if (authStatus === 'loading' && !isClientView) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   return (
@@ -390,6 +431,70 @@ const App = () => {
             <main className="space-y-6">
               <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4"><div><h2 className="font-bold text-2xl flex items-center gap-2"><ShieldCheck size={28} /> Kelola Akses Pengguna</h2></div><button onClick={() => openModal('addUser')} className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-50 shadow-md"><UserPlus size={20} /> Tambah User</button></div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{appUsers.map((u) => (<div key={u.email} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4"><div className="flex items-start justify-between"><div><div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold text-lg mb-2">{u.name.charAt(0)}</div><p className="font-bold text-lg text-slate-800">{u.name}</p><p className="text-sm text-slate-500">{u.email}</p></div>{u.email !== user?.email && <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={20} /></button>}</div><span className="self-start text-xs px-3 py-1 rounded-full font-bold bg-blue-100 text-blue-700 uppercase">{u.role.replace('_', ' ')}</span></div>))}</div>
+            </main>
+          )}
+
+          {/* LANDING PAGE SETTINGS VIEW */}
+          {view === 'landing-settings' && canAccessManagement() && (
+            <main className="space-y-6">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-bold text-2xl flex items-center gap-2">
+                    <Palette size={28} /> Kelola Landing Page
+                  </h2>
+                  <p className="text-indigo-100 mt-1">Edit konten halaman depan website</p>
+                </div>
+                <button
+                  onClick={() => setShowLandingEditor(true)}
+                  className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-50 shadow-md"
+                >
+                  <Palette size={20} /> Edit Landing Page
+                </button>
+              </div>
+
+              {/* Preview Card */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-6 border-b border-slate-100">
+                  <h3 className="font-bold text-lg text-slate-800">Preview Konfigurasi</h3>
+                </div>
+                <div className="p-6 space-y-4">
+                  {landingConfig ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-slate-50 p-4 rounded-xl">
+                          <p className="text-xs text-slate-500 font-bold uppercase mb-1">Nama Perusahaan</p>
+                          <p className="text-lg font-bold text-slate-800">{landingConfig.companyName}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-xl">
+                          <p className="text-xs text-slate-500 font-bold uppercase mb-1">Nomor WhatsApp</p>
+                          <p className="text-lg font-bold text-green-600">+{landingConfig.whatsappNumber}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-xl">
+                          <p className="text-xs text-slate-500 font-bold uppercase mb-1">Instagram</p>
+                          <p className="text-lg font-bold text-pink-600">@{landingConfig.instagramHandle}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-xl">
+                          <p className="text-xs text-slate-500 font-bold uppercase mb-1">Jumlah Portofolio</p>
+                          <p className="text-lg font-bold text-blue-600">{landingConfig.portfolioItems.length} Item</p>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-xl">
+                        <p className="text-xs text-slate-500 font-bold uppercase mb-1">Tagline</p>
+                        <p className="text-lg font-bold text-slate-800">{landingConfig.tagline}</p>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-xl">
+                        <p className="text-xs text-slate-500 font-bold uppercase mb-1">Deskripsi</p>
+                        <p className="text-sm text-slate-600">{landingConfig.subtitle}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-slate-400">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                      <p>Memuat konfigurasi...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </main>
           )}
 
@@ -504,6 +609,15 @@ const App = () => {
         selectedRabItem={selectedRabItem}
         selectedWorkerId={selectedWorkerId}
       />
+
+      {/* LANDING PAGE EDITOR MODAL */}
+      {showLandingEditor && landingConfig && (
+        <LandingEditor
+          config={landingConfig}
+          onSave={saveLandingConfig}
+          onClose={() => setShowLandingEditor(false)}
+        />
+      )}
 
       {/* MOBILE BOTTOM NAVIGATION */}
       {!isClientView && (

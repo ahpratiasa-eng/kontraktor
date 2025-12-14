@@ -92,3 +92,20 @@ export type Project = {
 export type GroupedTransaction = {
   id: string; date: string; category: string; type: 'expense' | 'income'; totalAmount: number; items: Transaction[];
 };
+
+export type PortfolioItem = {
+  id: number;
+  imageUrl: string;
+  title: string;
+  status: 'Selesai' | 'Sedang Berjalan';
+  location: string;
+};
+
+export type LandingPageConfig = {
+  companyName: string;
+  tagline: string;
+  subtitle: string;
+  whatsappNumber: string;
+  instagramHandle: string;
+  portfolioItems: PortfolioItem[];
+};

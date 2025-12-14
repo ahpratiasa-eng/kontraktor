@@ -30,6 +30,11 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogou
                         <Users size={20} /> User Management
                     </button>
                 )}
+                {canAccessManagement() && (
+                    <button onClick={() => setView('landing-settings')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'landing-settings' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        <Building2 size={20} /> Landing Page
+                    </button>
+                )}
                 <button onClick={() => setView('trash-bin')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'trash-bin' ? 'bg-red-50 text-red-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
                     <Trash2 size={20} /> Tong Sampah
                 </button>
