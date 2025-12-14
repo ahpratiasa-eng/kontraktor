@@ -175,10 +175,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 </div>
                             </div>
 
-                            {canEditProject && <button onClick={prepareEditProject} className="w-full mb-4 border border-slate-200 text-blue-600 p-2 rounded-lg font-bold hover:bg-blue-50 flex items-center justify-center gap-2"><Settings size={18} /> Pengaturan Proyek</button>}
+                            {!isClientView && canEditProject && <button onClick={prepareEditProject} className="w-full mb-4 border border-slate-200 text-blue-600 p-2 rounded-lg font-bold hover:bg-blue-50 flex items-center justify-center gap-2"><Settings size={18} /> Pengaturan Proyek</button>}
 
                             <div className="flex flex-col sm:flex-row gap-2">
-                                {canSeeMoney && (<button onClick={() => setView('report-view')} className="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-700 shadow-lg transition-transform hover:scale-105"><FileText size={20} /> Laporan</button>)}
+                                {!isClientView && canSeeMoney && (<button onClick={() => setView('report-view')} className="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-700 shadow-lg transition-transform hover:scale-105"><FileText size={20} /> Laporan</button>)}
                                 {!isClientView && <button onClick={() => {
                                     const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
                                     navigator.clipboard.writeText(url);
