@@ -44,7 +44,7 @@ interface ProjectDetailViewProps {
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
-    activeProject, activeTab, userRole, setView, updateProject,
+    activeProject, activeTab, setView, updateProject,
     openModal, setModalType, setShowModal, setSelectedRabItem, setProgressInput, setProgressDate,
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
@@ -160,8 +160,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             <p className="text-sm text-slate-500 mb-6">{activeProject.location}</p>
 
                             {/* Weather Widget (Simple Mock) */}
-                            <div className="bg-blue-50 p-4 rounded-xl mb-6 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
+                            <div className="bg-blue-50 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
                                     <div className="bg-white p-2 rounded-full shadow-sm text-yellow-500">
                                         <div className="animate-pulse">☀️</div>
                                     </div>
@@ -170,14 +170,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         <div className="font-bold text-slate-700">Cerah Berawan, 32°C</div>
                                     </div>
                                 </div>
-                                <div className="text-right text-xs text-slate-400">
+                                <div className="text-left sm:text-right w-full sm:w-auto text-xs text-slate-400 pl-12 sm:pl-0">
                                     Kelembaban: 65%<br />Angin: 10km/h
                                 </div>
                             </div>
 
-                            {userRole === 'kontraktor' && <button onClick={prepareEditProject} className="w-full mb-4 border border-slate-200 text-blue-600 p-2 rounded-lg font-bold hover:bg-blue-50 flex items-center justify-center gap-2"><Settings size={18} /> Pengaturan Proyek</button>}
+                            {canEditProject && <button onClick={prepareEditProject} className="w-full mb-4 border border-slate-200 text-blue-600 p-2 rounded-lg font-bold hover:bg-blue-50 flex items-center justify-center gap-2"><Settings size={18} /> Pengaturan Proyek</button>}
 
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2">
                                 {canSeeMoney && (<button onClick={() => setView('report-view')} className="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-700 shadow-lg transition-transform hover:scale-105"><FileText size={20} /> Laporan</button>)}
                                 {!isClientView && <button onClick={() => {
                                     const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
