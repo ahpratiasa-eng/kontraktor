@@ -63,6 +63,41 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({});
     const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [weather, setWeather] = useState<any>(null);
+
+    React.useEffect(() => {
+        if (!activeProject.location) return;
+        const fetchWeather = async () => {
+            try {
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(activeProject.location)}&count=1&language=id&format=json`);
+                const geoData = await geoRes.json();
+                if (!geoData.results?.[0]) return;
+                const { latitude, longitude, name } = geoData.results[0];
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`);
+                const weatherData = await weatherRes.json();
+                setWeather({ temp: weatherData.current.temperature_2m, humidity: weatherData.current.relative_humidity_2m, wind: weatherData.current.wind_speed_10m, code: weatherData.current.weather_code, city: name });
+            } catch (e) { console.error("Weather error", e); }
+        };
+        fetchWeather();
+    }, [activeProject.location]);
+
+    const getWeatherIcon = (code: number) => {
+        if (code === 0) return '☀️';
+        if (code <= 3) return '⛅';
+        if (code <= 48) return '🌫️';
+        if (code <= 67) return '🌧️';
+        if (code >= 80) return '⛈️';
+        return '☁️';
+    };
+
+    const getWeatherDesc = (code: number) => {
+        if (code === 0) return 'Cerah';
+        if (code <= 3) return 'Berawan';
+        if (code <= 48) return 'Berkabut';
+        if (code <= 67) return 'Hujan Ringan';
+        if (code >= 80) return 'Hujan Lebat';
+        return 'Mendung';
+    };
 
     // Derived Values & Local Handlers
     const rabGroups = (() => {
@@ -159,19 +194,18 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             <h2 className="text-xl font-bold text-slate-800 mb-1">{activeProject.name}</h2>
                             <p className="text-sm text-slate-500 mb-6">{activeProject.location}</p>
 
-                            {/* Weather Widget (Simple Mock) */}
                             <div className="bg-blue-50 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                                    <div className="bg-white p-2 rounded-full shadow-sm text-yellow-500">
-                                        <div className="animate-pulse">☀️</div>
+                                    <div className="bg-white p-2 rounded-full shadow-sm text-yellow-500 text-2xl">
+                                        <div className="animate-pulse">{weather ? getWeatherIcon(weather.code) : '☀️'}</div>
                                     </div>
                                     <div>
-                                        <div className="text-xs text-slate-500">Cuaca Lokasi (Live)</div>
-                                        <div className="font-bold text-slate-700">Cerah Berawan, 32°C</div>
+                                        <div className="text-xs text-slate-500">Cuaca {weather ? weather.city : 'Lokasi'} (Live)</div>
+                                        <div className="font-bold text-slate-700">{weather ? `${getWeatherDesc(weather.code)}, ${weather.temp}°C` : 'Memuat Cuaca...'}</div>
                                     </div>
                                 </div>
                                 <div className="text-left sm:text-right w-full sm:w-auto text-xs text-slate-400 pl-12 sm:pl-0">
-                                    Kelembaban: 65%<br />Angin: 10km/h
+                                    Kelembaban: {weather ? weather.humidity : '-'}%<br />Angin: {weather ? weather.wind : '-'} km/h
                                 </div>
                             </div>
 
@@ -210,10 +244,32 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 </div>
                                 <div className="space-y-4">
                                     {activeProject.rabItems.slice(0, 5).map((item, idx) => {
-                                        // Mock calculation for demo purposes if dates missing
-                                        // In real app, use item.startDate and item.endDate vs project start
-                                        const startOffset = idx * 10; // Simple stagger
-                                        const width = 20 + (Math.random() * 30);
+                                        // Stable Gantt Calculation
+                                        let startOffset = 0;
+                                        let width = 0;
+
+                                        const pStart = new Date(activeProject.startDate).getTime();
+                                        const pEnd = new Date(activeProject.endDate).getTime();
+                                        const totalDuration = pEnd - pStart;
+
+                                        if (item.startDate && item.endDate && totalDuration > 0) {
+                                            const iStart = new Date(item.startDate).getTime();
+                                            const iEnd = new Date(item.endDate).getTime();
+                                            startOffset = ((iStart - pStart) / totalDuration) * 100;
+                                            width = ((iEnd - iStart) / totalDuration) * 100;
+                                        } else {
+                                            // Fallback: Deterministic Stagger based on Index
+                                            // This ensures it never "jumps" on re-render
+                                            startOffset = Math.min((idx * 15), 80);
+                                            width = 15;
+                                        }
+
+                                        // Safety Clamps
+                                        if (startOffset < 0) startOffset = 0;
+                                        if (startOffset > 100) startOffset = 0; // Reset if out of bounds (e.g. date error)
+                                        if (width < 5) width = 5;
+                                        if (startOffset + width > 100) width = 100 - startOffset;
+
                                         return (
                                             <div key={item.id} className="flex items-center group hover:bg-slate-50 rounded-lg p-1">
                                                 <div className="w-1/4 text-xs font-medium truncate pr-2">{item.name}</div>
