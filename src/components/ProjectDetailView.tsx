@@ -125,9 +125,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const tabs = [
         { id: 'dashboard', label: 'Ringkasan', icon: <FileText size={18} /> },
         { id: 'progress', label: 'Kurva S & RAB', icon: <Sparkles size={18} /> },
-        ...(canAccessFinance ? [{ id: 'finance', label: 'Keuangan', icon: <Banknote size={18} /> }] : []),
-        ...(canAccessWorkers ? [{ id: 'workers', label: 'Tim & Absensi', icon: <ImageIcon size={18} /> }] : []),
-        { id: 'logistics', label: 'Logistik', icon: <History size={18} /> }, // Using History generic icon for logicstics if needed or Package
+        ...(!isClientView && canAccessFinance ? [{ id: 'finance', label: 'Keuangan', icon: <Banknote size={18} /> }] : []),
+        ...(!isClientView && canAccessWorkers ? [{ id: 'workers', label: 'Tim & Absensi', icon: <ImageIcon size={18} /> }] : []),
+        ...(!isClientView ? [{ id: 'logistics', label: 'Logistik', icon: <History size={18} /> }] : []),
     ];
 
     return (
@@ -179,11 +179,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                             <div className="flex gap-2">
                                 {canSeeMoney && (<button onClick={() => setView('report-view')} className="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-700 shadow-lg transition-transform hover:scale-105"><FileText size={20} /> Laporan</button>)}
-                                <button onClick={() => {
+                                {!isClientView && <button onClick={() => {
                                     const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
                                     navigator.clipboard.writeText(url);
                                     alert(`Link Portal Klien disalin!\nKirim link ini ke klien Anda:\n${url}`);
-                                }} className="flex-1 bg-green-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-green-700 shadow-lg transition-transform hover:scale-105"><ExternalLink size={20} /> Portal Klien</button>
+                                }} className="flex-1 bg-green-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-green-700 shadow-lg transition-transform hover:scale-105"><ExternalLink size={20} /> Portal Klien</button>}
                             </div>
                         </div>
                     </div>
@@ -242,7 +242,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 {Object.keys(rabGroups).sort().map(category => (
                                     <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
                                         <div className="bg-slate-50 p-4 font-bold text-sm text-slate-700 border-b flex justify-between"><span>{category}</span></div>
-                                        {rabViewMode === 'internal' && (
+                                        {(!isClientView && rabViewMode === 'internal') && (
                                             <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className={`p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}><div className="flex justify-between mb-2"><span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span><span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span></div><div className="flex justify-between text-xs text-slate-500 mb-3"><span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span><span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mb-3"><div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div></div>{canEditProject && (<div className="flex justify-end gap-2"><button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button><button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14} /></button><button onClick={() => prepareEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14} /></button><button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14} /></button></div>)}</div>))}</div>
                                         )}
                                         {rabViewMode === 'client' && (

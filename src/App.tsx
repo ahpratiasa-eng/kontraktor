@@ -245,28 +245,33 @@ const App = () => {
       <style>{`@media print { body { background: white; } .print\\:hidden { display: none !important; } .print\\:break-inside-avoid { break-inside: avoid; } }`}</style>
 
       {/* SIDEBAR (Desktop Only) */}
-      <Sidebar
-        view={view}
-        setView={setView}
-        openModal={openModal}
-        handleLogout={handleLogout}
-        userRole={userRole}
-      />
-
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 md:ml-64 flex flex-col relative pb-20 md:pb-0">
-
-        {/* HEADER (Desktop: Offset left, Mobile: Full) */}
-        <Header
+      {/* SIDEBAR (Desktop Only) */}
+      {!isClientView && (
+        <Sidebar
           view={view}
           setView={setView}
-          user={user}
-          userRole={userRole}
           openModal={openModal}
           handleLogout={handleLogout}
-          canAccessManagement={canAccessManagement()}
-          canEditProject={canEditProject()}
+          userRole={userRole}
         />
+      )}
+
+      {/* MAIN CONTENT AREA */}
+      <div className={`flex-1 ${!isClientView ? 'md:ml-64' : ''} flex flex-col relative pb-20 md:pb-0`}>
+
+        {/* HEADER (Desktop: Offset left, Mobile: Full) */}
+        {!isClientView && (
+          <Header
+            view={view}
+            setView={setView}
+            user={user}
+            userRole={userRole}
+            openModal={openModal}
+            handleLogout={handleLogout}
+            canAccessManagement={canAccessManagement()}
+            canEditProject={canEditProject()}
+          />
+        )}
 
         {/* CONTENT */}
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
@@ -397,13 +402,15 @@ const App = () => {
         selectedWorkerId={selectedWorkerId}
       />
 
-      {/* MOBILE NAV */}
-      <MobileNav
-        view={view}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        userRole={userRole}
-      />
+      {/* MOBILE BOTTOM NAVIGATION */}
+      {!isClientView && (
+        <MobileNav
+          view={view}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          userRole={userRole}
+        />
+      )}
 
     </div>
   );
