@@ -68,6 +68,7 @@ export type GalleryItem = {
   caption: string;
   date: string;
   uploader: string;
+  progress?: number;
 };
 
 export type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
