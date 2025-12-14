@@ -16,7 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogou
     return (
         <aside className="hidden md:flex flex-col w-64 bg-white border-r fixed inset-y-0 z-20 print:hidden">
             <div className="p-6 border-b flex items-center gap-2 font-bold text-xl text-slate-800">
-                <Building2 className="text-blue-600" /> Kontraktor Pro
+                <Building2 className="text-blue-600" /> Guna Karya
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 <button onClick={() => openModal('newProject')} className="w-full bg-blue-600 text-white p-3 rounded-lg flex items-center gap-2 font-bold hover:bg-blue-700 mb-4">

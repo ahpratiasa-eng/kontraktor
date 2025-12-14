@@ -10,6 +10,7 @@ import DashboardView from './components/DashboardView';
 import ProjectDetailView from './components/ProjectDetailView';
 import ReportView from './components/ReportView';
 import ModalManager from './components/ModalManager';
+import LandingPage from './components/LandingPage';
 
 import {
   signInWithPopup, signOut, onAuthStateChanged
@@ -259,7 +260,7 @@ const App = () => {
       const income = todayTx.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
       const expense = todayTx.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
 
-      const msg = `*Laporan Harian Internal: ${activeProject.name}*\n📅 ${today}\n\n👷 Absensi: ${presentCount} Tukang\n\n📦 Material:\n${matText}\n\n💰 Cashflow Hari Ini:\nMasuk: ${formatRupiah(income)}\nKeluar: ${formatRupiah(expense)}\n\n📍 Lokasi: https://maps.google.com/?q=${evidenceLocation}\n\n_Laporan via Kontraktor Pro_`;
+      const msg = `*Laporan Harian Internal: ${activeProject.name}*\n📅 ${today}\n\n👷 Absensi: ${presentCount} Tukang\n\n📦 Material:\n${matText}\n\n💰 Cashflow Hari Ini:\nMasuk: ${formatRupiah(income)}\nKeluar: ${formatRupiah(expense)}\n\n📍 Lokasi: https://maps.google.com/?q=${evidenceLocation}\n\n_Laporan via Guna Karya_`;
 
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
     }
@@ -307,7 +308,7 @@ const App = () => {
   const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const start = new Date(); start.setMonth(start.getMonth() - 6); const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; }; const demo: any = { name: "Rumah Mewah 2 Lantai (Full Demo)", client: "Bpk Sultan", location: "PIK 2", status: 'Selesai', budgetLimit: 0, startDate: d(-30), endDate: d(30), rabItems: [{ id: 1, category: 'A. PERSIAPAN', name: 'Pembersihan Lahan', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false }], transactions: [], workers: [], materials: [], materialLogs: [], taskLogs: [], attendanceLogs: [], attendanceEvidences: [] }; await addDoc(collection(db, 'app_data', appId, 'projects'), demo); setIsSyncing(false); };
 
 
-  if (!user && authStatus !== 'loading') return <div className="h-screen flex items-center justify-center"><button onClick={handleLogin} className="bg-blue-600 text-white p-4 rounded-xl font-bold">Login Google</button></div>;
+  if (!user && authStatus !== 'loading') return <LandingPage onLogin={handleLogin} />;
   if (authStatus === 'loading') return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   return (
