@@ -1,4 +1,4 @@
-import { Project, Transaction, GroupedTransaction } from '../types';
+import type { Project, Transaction, GroupedTransaction } from '../types';
 
 export const formatNumber = (num: number | string) => {
   if (!num) return '';
@@ -82,8 +82,35 @@ export const getStats = (p: Project) => {
     const totalDuration = end - start;
     let timeProgress = totalDuration > 0 ? Math.min(100, Math.max(0, ((now - start) / totalDuration) * 100)) : 0;
     
-    // Generate S-Curve logic (Simplified for brevity, copy full logic from App.tsx if needed)
-    const points: string[] = ["0,100", `${timeProgress},${100-weightedProgress}`];
+    const uniqueDates = Array.from(new Set((p.taskLogs || []).map(l => l.date))).sort();
+    if (!uniqueDates.includes(p.startDate.split('T')[0])) uniqueDates.unshift(p.startDate.split('T')[0]);
+    const today = new Date().toISOString().split('T')[0];
+    if (!uniqueDates.includes(today)) uniqueDates.push(today);
     
+    const points: string[] = [];
+    const taskProgressState: {[taskId: number]: number} = {};
+    (p.rabItems || []).forEach(t => taskProgressState[t.id] = 0);
+    
+    uniqueDates.forEach(dateStr => {
+      const dateVal = new Date(dateStr).getTime();
+      const logsUntilNow = (p.taskLogs || []).filter(l => new Date(l.date).getTime() <= dateVal);
+      logsUntilNow.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(log => { taskProgressState[log.taskId] = log.newProgress; });
+      
+      let totalProg = 0;
+      if (totalRAB > 0) {
+        (p.rabItems || []).forEach(item => {
+          const currentProg = taskProgressState[item.id] || 0;
+          const itemTotal = item.volume * item.unitPrice;
+          const itemWeight = (itemTotal / totalRAB) * 100;
+          totalProg += (currentProg * itemWeight) / 100;
+        });
+      }
+      
+      let x = ((dateVal - start) / totalDuration) * 100;
+      x = Math.max(0, Math.min(100, x));
+      let y = 100 - totalProg; 
+      points.push(`${x},${y}`);
+    });
+
     return { inc, exp, prog: weightedProgress, leak: 0, timeProgress, curvePoints: points.join(" "), totalRAB };
 };

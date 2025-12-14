@@ -1,12 +1,13 @@
-import React from 'react';
 import { TrendingUp } from 'lucide-react';
-import { Project } from '../types';
+import type { Project } from '../types';
 
 const SCurveChart = ({ stats, project, compact = false }: { stats: any, project: Project, compact?: boolean }) => {
   const getAxisDates = () => {
     if (!project.startDate || !project.endDate) return [];
     const start = new Date(project.startDate);
-    const diffDays = Math.ceil(Math.abs(new Date(project.endDate).getTime() - start.getTime()) / (1000 * 60 * 60 * 24)); 
+    const end = new Date(project.endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
     const points = [0, 0.25, 0.5, 0.75, 1];
     return points.map(p => {
       const d = new Date(start.getTime() + (diffDays * p * 24 * 60 * 60 * 1000));

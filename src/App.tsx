@@ -3,11 +3,11 @@ import {
   LayoutDashboard, Wallet, Package, Users, TrendingUp, 
   Plus, Trash2, ArrowLeft, Building2, 
   Loader2, RefreshCw, X, Calendar, FileText, 
-  Banknote, Edit, Settings, ChevronDown, ChevronUp, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
+  Banknote, Edit, Settings, LogOut, LogIn, Lock, ShieldCheck, UserPlus,
   History, AlertTriangle, Camera, ExternalLink, Image as ImageIcon, CheckCircle, Printer, RotateCcw, Sparkles
 } from 'lucide-react';
 
-import { getAuth, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 
 import { 
@@ -15,11 +15,18 @@ import {
   deleteDoc, onSnapshot, query, getDoc 
 } from 'firebase/firestore';
 
+// --- IMPORTS DARI FILE TERPISAH (MODULAR) ---
 import { auth, db, googleProvider, appId } from './lib/firebase';
-import type { Project, AppUser, RABItem, Transaction, Material, MaterialLog, Worker, Task, AttendanceLog, AttendanceEvidence, TaskLog, GroupedTransaction, UserRole } from './types';
-import { formatNumber, parseNumber, formatRupiah, getGroupedTransactions, calculateProjectHealth, getStats } from './utils/helpers';
-import SCurveChart from './components/SCurveChart';
-import { NumberInput, TransactionGroup } from './components/UIComponents';
+import type { 
+  Project, AppUser, RABItem, Transaction, Material, 
+  MaterialLog, Worker, AttendanceLog, AttendanceEvidence, 
+  TaskLog, UserRole 
+} from './types'; // Pastikan file types/index.ts sudah ada
+import { 
+  formatRupiah, getGroupedTransactions, calculateProjectHealth, getStats 
+} from './utils/helpers'; // Pastikan file utils/helpers.ts sudah ada
+import SCurveChart from './components/SCurveChart'; // Pastikan komponen ini ada
+import { NumberInput, TransactionGroup } from './components/UIComponents'; // Pastikan komponen ini ada
 
 const App = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -35,6 +42,7 @@ const App = () => {
   const [modalType, setModalType] = useState<any>(null);
   const [txType, setTxType] = useState<'expense' | 'income'>('expense');
   const [loginError, setLoginError] = useState('');
+  
   const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
 
   // Input States
@@ -65,9 +73,18 @@ const App = () => {
   useEffect(() => { if (user) return onSnapshot(query(collection(db, 'app_data', appId, 'projects')), (s) => { const l = s.docs.map(d => { const x = d.data(); return { id: d.id, ...x, rabItems: Array.isArray(x.rabItems) ? x.rabItems : [], transactions: x.transactions || [], materials: x.materials || [], workers: x.workers || [], attendanceLogs: x.attendanceLogs || [], isDeleted: x.isDeleted || false } as Project; }); l.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()); setProjects(l); }); }, [user]);
 
   const activeProject = projects.find(p => p.id === activeProjectId);
-  const rabGroups = getRABGroups();
+  const rabGroups = activeProject ? {} : {}; // Placeholder, logic moved inside render or helper if needed, but usually we define logic here.
+  
+  // Re-implement getRABGroups locally or import from helper if generic. Since it depends on activeProject state, lets keep it simple or use memo.
+  const getActiveRABGroups = () => { 
+      if (!activeProject || !activeProject.rabItems) return {}; 
+      const groups: {[key: string]: RABItem[]} = {}; 
+      activeProject.rabItems.forEach(item => { if(!groups[item.category]) groups[item.category] = []; groups[item.category].push(item); }); 
+      return groups; 
+  };
+  const activeRabGroups = getActiveRABGroups();
 
-  // Helper Functions inside App (Handlers that use state)
+  // Helper Functions
   const updateProject = async (data: Partial<Project>) => { if (!user || !activeProjectId) return; setIsSyncing(true); try { await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data); } catch(e) { alert("Gagal simpan."); } setIsSyncing(false); };
   const handleLogin = async () => { setLoginError(''); try { await signInWithPopup(auth, googleProvider); } catch (e) { setLoginError("Login gagal."); } };
   const handleLogout = async () => { if(confirm("Keluar?")) await signOut(auth); setProjects([]); setView('project-list'); };
@@ -95,51 +112,21 @@ const App = () => {
   const handleRestoreProject = async (p: Project) => { try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: false }); } catch(e) { alert("Gagal restore."); } };
   const handlePermanentDeleteProject = async (p: Project) => { if(confirm(`PERINGATAN: Proyek "${p.name}" akan dihapus SELAMANYA dan tidak bisa dikembalikan. Lanjutkan?`)) { try { await deleteDoc(doc(db, 'app_data', appId, 'projects', p.id)); } catch(e) { alert("Gagal hapus permanen."); } } };
   const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
-  const toggleReportGroup = (groupId: string) => { setExpandedReportIds(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
+  
   const handleGetLocation = () => { if (!navigator.geolocation) return alert("Browser tidak support GPS"); setIsGettingLoc(true); navigator.geolocation.getCurrentPosition((pos) => { setEvidenceLocation(`${pos.coords.latitude},${pos.coords.longitude}`); setIsGettingLoc(false); }, (err) => { alert("Gagal ambil lokasi."); setIsGettingLoc(false); }, { enableHighAccuracy: true }); };
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target?.result as string; img.onload = () => { const canvas = document.createElement('canvas'); let width = img.width; let height = img.height; const MAX_WIDTH = 800; const MAX_HEIGHT = 800; if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, width, height); const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); setEvidencePhoto(compressedDataUrl); handleGetLocation(); }; }; };
   const saveAttendanceWithEvidence = () => { if(!activeProject) return; if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; } if (!evidenceLocation) { alert("Lokasi wajib terdeteksi!"); return; } const newLogs: any[] = []; Object.keys(attendanceData).forEach(wId => { newLogs.push({ id: Date.now() + Math.random(), date: attendanceDate, workerId: Number(wId), status: attendanceData[Number(wId)].status, note: '' }); }); let newEvidences = activeProject.attendanceEvidences || []; if (evidencePhoto || evidenceLocation) { newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: evidencePhoto, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences]; } updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences }); setShowModal(false); };
+  
+  // Local implementation of logic relying on activeProject
+  const getFilteredAttendance = () => { if (!activeProject || !activeProject.attendanceLogs) return []; const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999); const filteredLogs = activeProject.attendanceLogs.filter(l => { const d = new Date(l.date); return d >= start && d <= end; }); const workerStats: {[key: number]: {name: string, role: string, unit: string, hadir: number, lembur: number, setengah: number, absen: number, totalCost: number}} = {}; activeProject.workers.forEach(w => { workerStats[w.id] = { name: w.name, role: w.role, unit: w.wageUnit || 'Harian', hadir: 0, lembur: 0, setengah: 0, absen: 0, totalCost: 0 }; }); filteredLogs.forEach(log => { if (workerStats[log.workerId]) { const worker = activeProject.workers.find(w => w.id === log.workerId); let dailyRate = 0; if (worker) { if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; else if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; else dailyRate = worker.mandorRate; } if (log.status === 'Hadir') { workerStats[log.workerId].hadir++; workerStats[log.workerId].totalCost += dailyRate; } else if (log.status === 'Lembur') { workerStats[log.workerId].lembur++; workerStats[log.workerId].totalCost += (dailyRate * 1.5); } else if (log.status === 'Setengah') { workerStats[log.workerId].setengah++; workerStats[log.workerId].totalCost += (dailyRate * 0.5); } else if (log.status === 'Absen') { workerStats[log.workerId].absen++; } } }); return Object.values(workerStats); };
   const getFilteredEvidence = () => { if (!activeProject || !activeProject.attendanceEvidences) return []; const start = new Date(filterStartDate); start.setHours(0,0,0,0); const end = new Date(filterEndDate); end.setHours(23,59,59,999); return activeProject.attendanceEvidences.filter(e => { const d = new Date(e.date); return d >= start && d <= end; }); };
   const calculateTotalDays = (logs: AttendanceLog[], workerId: number) => { if(!logs) return 0; return logs.filter(l => l.workerId === workerId).reduce((acc, curr) => { if (curr.status === 'Hadir') return acc + 1; if (curr.status === 'Setengah') return acc + 0.5; if (curr.status === 'Lembur') return acc + 1.5; return acc; }, 0); };
   const calculateWorkerFinancials = (p: Project, workerId: number) => { const worker = p.workers.find(w => w.id === workerId); if (!worker) return { totalDue: 0, totalPaid: 0, balance: 0 }; const days = calculateTotalDays(p.attendanceLogs, workerId); let dailyRate = worker.mandorRate; if (worker.wageUnit === 'Mingguan') dailyRate = worker.mandorRate / 7; if (worker.wageUnit === 'Bulanan') dailyRate = worker.mandorRate / 30; const totalDue = days * dailyRate; const totalPaid = (p.transactions || []).filter(t => t.workerId === workerId && t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0); return { totalDue, totalPaid, balance: totalDue - totalPaid }; };
-  const getRABGroups = () => { if (!activeProject || !activeProject.rabItems) return {}; const groups: {[key: string]: RABItem[]} = {}; activeProject.rabItems.forEach(item => { if(!groups[item.category]) groups[item.category] = []; groups[item.category].push(item); }); return groups; };
-  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); 
-    const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; };
-    const rabDemo: RABItem[] = [
-        { id: 1, category: 'A. PEKERJAAN PERSIAPAN', name: 'Mobilisasi & Demobilisasi', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false },
-        { id: 2, category: 'A. PEKERJAAN PERSIAPAN', name: 'Direksi Keet & Gudang', unit: 'ls', volume: 1, unitPrice: 20000000, progress: 100, isAddendum: false },
-        { id: 3, category: 'A. PEKERJAAN PERSIAPAN', name: 'Pagar Sementara & Air Kerja', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false },
-        { id: 4, category: 'B. PEKERJAAN STRUKTUR', name: 'Galian & Pondasi', unit: 'm3', volume: 50, unitPrice: 2000000, progress: 100, isAddendum: false },
-        { id: 5, category: 'B. PEKERJAAN STRUKTUR', name: 'Beton Bertulang', unit: 'ls', volume: 1, unitPrice: 250000000, progress: 100, isAddendum: false },
-        { id: 6, category: 'B. PEKERJAAN STRUKTUR', name: 'Rangka Atap Baja Ringan', unit: 'ls', volume: 1, unitPrice: 100000000, progress: 100, isAddendum: false },
-        { id: 7, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Pasangan Dinding Bata & Plester', unit: 'm2', volume: 300, unitPrice: 500000, progress: 100, isAddendum: false },
-        { id: 8, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Lantai Granit 60x60', unit: 'm2', volume: 200, unitPrice: 500000, progress: 100, isAddendum: false },
-        { id: 9, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Plafon Gypsum & List', unit: 'm2', volume: 150, unitPrice: 333333, progress: 100, isAddendum: false },
-        { id: 10, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Pengecatan Dinding & Plafon', unit: 'ls', volume: 1, unitPrice: 50000000, progress: 100, isAddendum: false },
-        { id: 11, category: 'D. PEKERJAAN MEP', name: 'Instalasi Listrik & Titik Lampu', unit: 'titik', volume: 50, unitPrice: 1500000, progress: 100, isAddendum: false },
-        { id: 12, category: 'D. PEKERJAAN MEP', name: 'Instalasi Air Bersih & Kotor', unit: 'ls', volume: 1, unitPrice: 75000000, progress: 100, isAddendum: false },
-    ];
-    const demo: Omit<Project, 'id'> = { name: "Rumah Mewah 1 Milyar (Selesai)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 0, startDate: start.toISOString(), endDate: end.toISOString(), 
-    rabItems: rabDemo,
-    transactions: [
-      { id: 101, date: d(0), category: 'Termin', description: 'DP 30%', amount: 300000000, type: 'income' },
-      { id: 102, date: d(2), category: 'Termin', description: 'Termin 2 (40%)', amount: 400000000, type: 'income' },
-      { id: 103, date: d(4), category: 'Termin', description: 'Termin 3 (25%)', amount: 250000000, type: 'income' },
-      { id: 104, date: d(6), category: 'Termin', description: 'Retensi (5%)', amount: 50000000, type: 'income' },
-      { id: 201, date: d(0), category: 'Material', description: 'Belanja Awal Bahan Alam', amount: 200000000, type: 'expense' },
-      { id: 202, date: d(1), category: 'Upah Tukang', description: 'Gaji Bulan 1', amount: 100000000, type: 'expense' },
-      { id: 203, date: d(3), category: 'Material', description: 'Granit & Cat', amount: 300000000, type: 'expense' },
-      { id: 204, date: d(6), category: 'Upah Tukang', description: 'Pelunasan Gaji', amount: 150000000, type: 'expense' },
-    ], 
-    taskLogs: [
-        {id:1, date:d(0), taskId:1, previousProgress:0, newProgress:100, note:'Start'},
-        {id:2, date:d(1), taskId:4, previousProgress:0, newProgress:100, note:'Progress'},
-        {id:3, date:d(2), taskId:5, previousProgress:0, newProgress:100, note:'Progress'},
-        {id:4, date:d(3), taskId:7, previousProgress:0, newProgress:100, note:'Progress'},
-        {id:5, date:d(4), taskId:8, previousProgress:0, newProgress:100, note:'Finish'}
-    ],
-    materials: [], materialLogs: [], workers: [], tasks: [], attendanceLogs: [], attendanceEvidences: [] }; try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); } };
+  
+  const createItem = (field: string, newItem: any) => { if(!activeProject) return; updateProject({ [field]: [...(activeProject as any)[field], newItem] }); setShowModal(false); }
+  const openModal = (type: any) => { setModalType(type); setShowModal(true); };
 
+  // --- GEMINI AI INTEGRATION ---
   const handleGenerateRAB = async () => {
     if (!aiPrompt) return alert("Masukkan deskripsi proyek dulu!");
     setIsGeneratingAI(true);
@@ -192,7 +179,43 @@ const App = () => {
     }
   };
 
-  const openModal = (type: any) => { setModalType(type); setShowModal(true); };
+  // 100% FINISHED DEMO DATA FOR NEW USER (Click Button)
+  const loadDemoData = async () => { if (!user) return; setIsSyncing(true); const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 6); 
+    const d = (m: number) => { const x = new Date(start); x.setMonth(x.getMonth() + m); return x.toISOString().split('T')[0]; };
+    const rabDemo: RABItem[] = [
+        { id: 1, category: 'A. PEKERJAAN PERSIAPAN', name: 'Mobilisasi & Demobilisasi', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false },
+        { id: 2, category: 'A. PEKERJAAN PERSIAPAN', name: 'Direksi Keet & Gudang', unit: 'ls', volume: 1, unitPrice: 20000000, progress: 100, isAddendum: false },
+        { id: 3, category: 'A. PEKERJAAN PERSIAPAN', name: 'Pagar Sementara & Air Kerja', unit: 'ls', volume: 1, unitPrice: 15000000, progress: 100, isAddendum: false },
+        { id: 4, category: 'B. PEKERJAAN STRUKTUR', name: 'Galian & Pondasi', unit: 'm3', volume: 50, unitPrice: 2000000, progress: 100, isAddendum: false },
+        { id: 5, category: 'B. PEKERJAAN STRUKTUR', name: 'Beton Bertulang', unit: 'ls', volume: 1, unitPrice: 250000000, progress: 100, isAddendum: false },
+        { id: 6, category: 'B. PEKERJAAN STRUKTUR', name: 'Rangka Atap Baja Ringan', unit: 'ls', volume: 1, unitPrice: 100000000, progress: 100, isAddendum: false },
+        { id: 7, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Pasangan Dinding Bata & Plester', unit: 'm2', volume: 300, unitPrice: 500000, progress: 100, isAddendum: false },
+        { id: 8, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Lantai Granit 60x60', unit: 'm2', volume: 200, unitPrice: 500000, progress: 100, isAddendum: false },
+        { id: 9, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Plafon Gypsum & List', unit: 'm2', volume: 150, unitPrice: 333333, progress: 100, isAddendum: false },
+        { id: 10, category: 'C. PEKERJAAN ARSITEKTUR', name: 'Pengecatan Dinding & Plafon', unit: 'ls', volume: 1, unitPrice: 50000000, progress: 100, isAddendum: false },
+        { id: 11, category: 'D. PEKERJAAN MEP', name: 'Instalasi Listrik & Titik Lampu', unit: 'titik', volume: 50, unitPrice: 1500000, progress: 100, isAddendum: false },
+        { id: 12, category: 'D. PEKERJAAN MEP', name: 'Instalasi Air Bersih & Kotor', unit: 'ls', volume: 1, unitPrice: 75000000, progress: 100, isAddendum: false },
+    ];
+    const demo: Omit<Project, 'id'> = { name: "Rumah Mewah 1 Milyar (Selesai)", client: "Bpk Sultan", location: "Pondok Indah", status: 'Selesai', budgetLimit: 0, startDate: start.toISOString(), endDate: end.toISOString(), 
+    rabItems: rabDemo,
+    transactions: [
+      { id: 101, date: d(0), category: 'Termin', description: 'DP 30%', amount: 300000000, type: 'income' },
+      { id: 102, date: d(2), category: 'Termin', description: 'Termin 2 (40%)', amount: 400000000, type: 'income' },
+      { id: 103, date: d(4), category: 'Termin', description: 'Termin 3 (25%)', amount: 250000000, type: 'income' },
+      { id: 104, date: d(6), category: 'Termin', description: 'Retensi (5%)', amount: 50000000, type: 'income' },
+      { id: 201, date: d(0), category: 'Material', description: 'Belanja Awal Bahan Alam', amount: 200000000, type: 'expense' },
+      { id: 202, date: d(1), category: 'Upah Tukang', description: 'Gaji Bulan 1', amount: 100000000, type: 'expense' },
+      { id: 203, date: d(3), category: 'Material', description: 'Granit & Cat', amount: 300000000, type: 'expense' },
+      { id: 204, date: d(6), category: 'Upah Tukang', description: 'Pelunasan Gaji', amount: 150000000, type: 'expense' },
+    ], 
+    taskLogs: [
+        {id:1, date:d(0), taskId:1, previousProgress:0, newProgress:100, note:'Start'},
+        {id:2, date:d(1), taskId:4, previousProgress:0, newProgress:100, note:'Progress'},
+        {id:3, date:d(2), taskId:5, previousProgress:0, newProgress:100, note:'Progress'},
+        {id:4, date:d(3), taskId:7, previousProgress:0, newProgress:100, note:'Progress'},
+        {id:5, date:d(4), taskId:8, previousProgress:0, newProgress:100, note:'Finish'}
+    ],
+    materials: [], materialLogs: [], workers: [], tasks: [], attendanceLogs: [], attendanceEvidences: [] }; try { await addDoc(collection(db, 'app_data', appId, 'projects'), demo); } catch(e) {} finally { setIsSyncing(false); } };
 
   if (!user && authStatus !== 'loading') {
     return (
@@ -211,7 +234,6 @@ const App = () => {
   if (authStatus === 'loading') return <div className="h-screen flex flex-col items-center justify-center text-slate-500"><Loader2 className="animate-spin mb-2"/>Loading System...</div>;
 
   return (
-    // ... (JSX Layout Sama Persis - Paste Bagian Return Anda di Sini, pastikan semua Modal dan Navigasi terhubung)
     <div className="flex min-h-screen bg-slate-100 font-sans text-slate-900">
       <style>{`
         @media print {
@@ -225,15 +247,360 @@ const App = () => {
         }
       `}</style>
       
-      {/* ... (Sidebar & Content sama seperti sebelumnya) */}
+      {/* SIDEBAR (Desktop Only) */}
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r fixed inset-y-0 z-20 print:hidden">
+        <div className="p-6 border-b flex items-center gap-2 font-bold text-xl text-slate-800">
+          <Building2 className="text-blue-600"/> Kontraktor Pro
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+           <button onClick={() => openModal('newProject')} className="w-full bg-blue-600 text-white p-3 rounded-lg flex items-center gap-2 font-bold hover:bg-blue-700 mb-4"><Plus size={20}/> Proyek Baru</button>
+           
+           <button onClick={() => setView('project-list')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'project-list' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+             <LayoutDashboard size={20}/> Dashboard
+           </button>
+           {canAccessManagement() && (
+             <button onClick={() => setView('user-management')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'user-management' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+               <Users size={20}/> User Management
+             </button>
+           )}
+           <button onClick={() => setView('trash-bin')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'trash-bin' ? 'bg-red-50 text-red-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+             <Trash2 size={20}/> Tong Sampah
+           </button>
+        </div>
+        <div className="p-4 border-t">
+           <div className="flex items-center gap-3 mb-4">
+             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">{user?.displayName?.charAt(0)}</div>
+             <div className="overflow-hidden">
+               <p className="text-sm font-bold truncate">{user?.displayName}</p>
+               <p className="text-xs text-slate-500 truncate capitalize">{userRole?.replace('_', ' ')}</p>
+             </div>
+           </div>
+           <button onClick={handleLogout} className="w-full border border-red-200 text-red-600 p-2 rounded-lg text-sm hover:bg-red-50 flex items-center justify-center gap-2"><LogOut size={16}/> Logout</button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 md:ml-64 flex flex-col relative pb-20 md:pb-0">
+        
+        {/* HEADER (Desktop: Offset left, Mobile: Full) */}
+        <header className="bg-white px-4 py-3 sticky top-0 z-10 shadow-sm flex justify-between items-center print:hidden">
+            {view === 'project-list' || view === 'user-management' || view === 'trash-bin' ? (
+            <div className="flex items-center gap-2 font-bold text-slate-800 md:hidden">
+                <Building2 className="text-blue-600"/> 
+                <div className="flex flex-col">
+                <span>Kontraktor App</span>
+                {user && <span className="text-[10px] text-slate-400 font-normal uppercase">{userRole?.replace('_', ' ')}: {user.displayName?.split(' ')[0]}</span>}
+                </div>
+            </div>
+            ) : (
+            <button onClick={() => setView('project-list')} className="text-slate-500 flex items-center gap-1 text-sm"><ArrowLeft size={18}/> Kembali</button>
+            )}
+            
+            <div className="flex items-center gap-2 ml-auto">
+             {/* Show Trash Button in Header only for Mobile/when sidebar hidden and in project list */}
+             <button onClick={() => setView('trash-bin')} className="md:hidden text-slate-400 p-2 hover:text-red-500"><Trash2 size={20}/></button>
+
+            {canAccessManagement() && view === 'project-list' && <button onClick={() => setView('user-management')} className="text-slate-500 p-2 bg-slate-100 rounded-full hover:bg-slate-200 md:hidden"><Settings size={18} /></button>}
+            
+            {view === 'project-list' && canEditProject() && (
+                <button onClick={() => openModal('newProject')} className="bg-blue-600 text-white px-3 py-2 rounded-full shadow flex items-center gap-2 text-sm font-bold md:hidden">
+                    <Plus size={18}/> <span className="hidden sm:inline">Proyek Baru</span>
+                </button>
+            )}
+            
+            <button onClick={handleLogout} className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100 md:hidden"><LogOut size={18} /></button>
+            </div>
+        </header>
+
+        {/* CONTENT */}
+        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+            
+            {/* TRASH BIN VIEW */}
+            {view === 'trash-bin' && (
+                <main className="space-y-4">
+                <div className="flex items-center gap-2 mb-4 md:hidden">
+                    <button onClick={() => setView('project-list')} className="bg-white p-2 rounded-full shadow"><ArrowLeft size={20}/></button>
+                    <h2 className="font-bold text-lg text-slate-800">Tong Sampah</h2>
+                </div>
+                <h2 className="font-bold text-2xl text-slate-800 mb-6 hidden md:block">Tong Sampah Proyek</h2>
+                
+                {projects.filter(p => p.isDeleted).length === 0 && <div className="text-center py-20 text-slate-400 bg-white rounded-xl border border-dashed">Tong sampah kosong.</div>}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {projects.filter(p => p.isDeleted).map(p => (
+                    <div key={p.id} className="bg-red-50 p-6 rounded-xl border border-red-100 flex flex-col justify-between h-full">
+                        <div className="mb-4">
+                            <h3 className="font-bold text-lg text-slate-800">{p.name}</h3>
+                            <p className="text-sm text-slate-500">{p.client}</p>
+                        </div>
+                        <div className="flex gap-2 mt-auto">
+                        <button onClick={() => handleRestoreProject(p)} className="flex-1 bg-green-100 text-green-700 p-2 rounded-lg text-sm font-bold hover:bg-green-200 flex items-center justify-center gap-2"><RotateCcw size={16}/> Pulihkan</button>
+                        {canAccessManagement() && <button onClick={() => handlePermanentDeleteProject(p)} className="flex-1 bg-red-200 text-red-800 p-2 rounded-lg text-sm font-bold hover:bg-red-300 flex items-center justify-center gap-2"><Trash2 size={16}/> Hapus</button>}
+                        </div>
+                    </div>
+                    ))}
+                </div>
+                </main>
+            )}
+
+            {/* USER MANAGEMENT VIEW */}
+            {view === 'user-management' && canAccessManagement() && (
+                <main className="space-y-6">
+                    <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 className="font-bold text-2xl flex items-center gap-2"><ShieldCheck size={28}/> Kelola Akses Pengguna</h2>
+                            <p className="text-blue-100 mt-2">Atur siapa saja yang dapat mengakses aplikasi ini.</p>
+                        </div>
+                        <button onClick={() => openModal('addUser')} className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-50 shadow-md transition-transform hover:scale-105">
+                            <UserPlus size={20}/> Tambah User
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {appUsers.map((u) => (
+                        <div key={u.email} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold text-lg mb-2">{u.name.charAt(0)}</div>
+                                    <p className="font-bold text-lg text-slate-800">{u.name}</p>
+                                    <p className="text-sm text-slate-500">{u.email}</p>
+                                </div>
+                                {u.email !== user?.email && <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={20}/></button>}
+                            </div>
+                            <span className={`self-start text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${u.role === 'super_admin' ? 'bg-purple-100 text-purple-700' : u.role === 'kontraktor' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>{u.role.replace('_', ' ')}</span>
+                        </div>
+                        ))}
+                    </div>
+                </main>
+            )}
+
+            {/* PROJECT LIST VIEW */}
+            {view === 'project-list' && (
+                <main className="space-y-6">
+                    {/* Welcome Banner for Desktop */}
+                    <div className="hidden md:block mb-8">
+                        <h1 className="text-3xl font-bold text-slate-800">Dashboard Proyek</h1>
+                        <p className="text-slate-500">Selamat datang kembali, {user?.displayName}</p>
+                    </div>
+
+                    {projects.filter(p => !p.isDeleted).length === 0 && <div className="text-center py-20 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 bg-slate-50"><p className="mb-4">Belum ada proyek aktif.</p><button onClick={loadDemoData} disabled={isSyncing} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-green-700 shadow-lg flex items-center gap-2 mx-auto transition-transform hover:scale-105">{isSyncing ? <Loader2 className="animate-spin"/> : <RefreshCw size={18}/>} Muat Data Demo 1 Milyar</button></div>}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {projects.filter(p => !p.isDeleted).map(p => {
+                            const health = calculateProjectHealth(p);
+                            return (
+                            <div key={p.id} onClick={() => { setActiveProjectId(p.id); setView('project-detail'); }} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all group relative overflow-hidden">
+                                {health.isCritical && <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-3 py-1 rounded-bl-xl font-bold flex items-center gap-1 shadow-sm"><AlertTriangle size={12}/> PERHATIAN</div>}
+                                <div className="flex justify-between items-start mb-4"><div><h3 className="font-bold text-xl text-slate-800 group-hover:text-blue-600 transition-colors">{p.name}</h3><p className="text-sm text-slate-500 flex items-center gap-1 mt-1"><Users size={14}/> {p.client}</p></div></div>
+                                <div className="space-y-2"><div className="flex justify-between text-xs text-slate-600"><span>Progress Fisik</span><span className="font-bold">{getStats(p).prog.toFixed(0)}%</span></div><div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-1000 ${health.isCritical ? 'bg-red-500' : 'bg-blue-600'}`} style={{ width: `${getStats(p).prog}%` }}></div></div></div>
+                                {health.issues.length > 0 && <div className="mt-3 flex flex-wrap gap-1">{health.issues.map(i => <span key={i} className="text-[10px] bg-red-50 text-red-600 px-2 py-1 rounded border border-red-100">{i}</span>)}</div>}
+                                <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center"><div className="text-xs text-slate-400">Update: {new Date().toLocaleDateString('id-ID')}</div>{canEditProject() && <button onClick={(e) => {e.stopPropagation(); handleSoftDeleteProject(p); }} className="text-slate-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={18}/></button>}</div>
+                            </div>
+                        )})}
+                    </div>
+                </main>
+            )}
+
+            {/* PROJECT DETAIL VIEW */}
+            {view === 'project-detail' && activeProject && (
+                <div className="space-y-6">
+                     {/* TAB NAV (TOP FOR RAB) */}
+                    {activeTab === 'progress' && (
+                        <div className="flex items-center gap-2 mb-4 bg-slate-200 p-1 rounded-lg w-full md:w-auto md:inline-flex">
+                            <button onClick={() => setRabViewMode('client')} className={`flex-1 md:flex-none px-4 text-xs font-bold py-2 rounded-md transition ${rabViewMode === 'client' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}>View Client</button>
+                            <button onClick={() => setRabViewMode('internal')} className={`flex-1 md:flex-none px-4 text-xs font-bold py-2 rounded-md transition ${rabViewMode === 'internal' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}>Internal RAB</button>
+                        </div>
+                    )}
+
+                    {activeTab === 'dashboard' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Left Column: Stats & Actions */}
+                            <div className="lg:col-span-1 space-y-6">
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                                    <h2 className="text-xl font-bold text-slate-800 mb-1">{activeProject.name}</h2>
+                                    <p className="text-sm text-slate-500 mb-6">{activeProject.location}</p>
+                                    
+                                    {userRole === 'kontraktor' && <button onClick={() => openModal('editProject')} className="w-full mb-4 border border-slate-200 text-blue-600 p-2 rounded-lg font-bold hover:bg-blue-50 flex items-center justify-center gap-2"><Settings size={18}/> Pengaturan Proyek</button>}
+                                    
+                                    {canSeeMoney() && (
+                                        <button onClick={() => setView('report-view')} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2 hover:bg-blue-700 shadow-lg transition-transform hover:scale-105"><FileText size={20}/> Lihat Laporan Detail</button>
+                                    )}
+                                </div>
+
+                                {canSeeMoney() && (
+                                    <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-2xl shadow-lg">
+                                        <p className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-2">Saldo Kas Proyek</p>
+                                        <h2 className="text-4xl font-bold">{formatRupiah(getStats(activeProject).inc - getStats(activeProject).exp)}</h2>
+                                        <div className="mt-4 flex gap-4 text-xs opacity-80">
+                                            <div>Masuk: {formatRupiah(getStats(activeProject).inc)}</div>
+                                            <div>Keluar: {formatRupiah(getStats(activeProject).exp)}</div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Right Column: Chart */}
+                            <div className="lg:col-span-2">
+                                <SCurveChart stats={getStats(activeProject)} project={activeProject} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB RAB & CURVE S */}
+                    {activeTab === 'progress' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-3">
+                                <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
+                            </div>
+                            
+                            <div className="lg:col-span-3">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-lg text-slate-700">Rincian Pekerjaan (RAB)</h3>
+                                    <div className="flex gap-2">
+                                        {/* AI BUTTON */}
+                                        {canEditProject() && (
+                                            <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1">
+                                                <Sparkles size={14}/> Auto RAB
+                                            </button>
+                                        )}
+                                        {canEditProject() && <button onClick={handleAddCCO} className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-bold border border-orange-200 hover:bg-orange-200">+ CCO</button>}
+                                        {canEditProject() && <button onClick={() => { setSelectedRabItem(null); setModalType('newRAB'); setShowModal(true); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-blue-700 shadow">+ Item Baru</button>}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 pb-20">
+                                    {Object.keys(rabGroups).sort().map(category => (
+                                        <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                                        <div className="bg-slate-50 p-4 font-bold text-sm text-slate-700 border-b flex justify-between">
+                                            <span>{category}</span>
+                                        </div>
+                                        
+                                        {/* INTERNAL VIEW */}
+                                        {rabViewMode === 'internal' && (
+                                            <div className="divide-y divide-slate-100">
+                                            {rabGroups[category].map(item => (
+                                                <div key={item.id} className={`p-4 text-sm hover:bg-slate-50 transition-colors ${item.isAddendum ? 'bg-orange-50' : ''}`}>
+                                                <div className="flex justify-between mb-2">
+                                                    <span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span>
+                                                    <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span>
+                                                </div>
+                                                <div className="flex justify-between text-xs text-slate-500 mb-3">
+                                                    <span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span>
+                                                    <span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                                                    <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div>
+                                                </div>
+                                                {canEditProject() && (
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-200">Update Fisik</button>
+                                                        <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200"><History size={14}/></button>
+                                                        <button onClick={() => handleEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg hover:bg-yellow-200"><Edit size={14}/></button>
+                                                        <button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-200"><Trash2 size={14}/></button>
+                                                    </div>
+                                                )}
+                                                </div>
+                                            ))}
+                                            </div>
+                                        )}
+
+                                        {/* CLIENT VIEW */}
+                                        {rabViewMode === 'client' && (
+                                            <div className="divide-y divide-slate-100">
+                                            {rabGroups[category].map(item => (
+                                                <div key={item.id} className="p-4 text-sm flex justify-between items-center hover:bg-slate-50">
+                                                <div>
+                                                    <div className="font-bold text-slate-800">{item.name}</div>
+                                                    <div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div>
+                                                </div>
+                                                </div>
+                                            ))}
+                                            <div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">
+                                                Subtotal: {formatRupiah(rabGroups[category].reduce((a,b)=>a+(b.volume*b.unitPrice),0))}
+                                            </div>
+                                            </div>
+                                        )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Other Tabs content adapted for responsive layout */}
+                    {activeTab === 'finance' && canAccessFinance() && (
+                        <div className="max-w-2xl mx-auto">
+                           <div className="bg-white p-6 rounded-2xl border shadow-sm mb-6">
+                                <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-xl">
+                                    <button onClick={() => setTxType('expense')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${txType === 'expense' ? 'bg-white shadow text-red-600' : 'text-slate-500 hover:text-slate-700'}`}>Pengeluaran</button>
+                                    <button onClick={() => setTxType('income')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${txType === 'income' ? 'bg-white shadow text-green-600' : 'text-slate-500 hover:text-slate-700'}`}>Pemasukan</button>
+                                </div>
+                                <form onSubmit={handleTransaction} className="space-y-4">
+                                    <select name="cat" className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">{txType === 'expense' ? <><option>Material</option><option>Upah Tukang</option><option>Operasional</option></> : <option>Termin/DP</option>}</select>
+                                    <input required name="desc" placeholder="Keterangan Transaksi" className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"/>
+                                    <div className="relative"><NumberInput className="w-full p-3 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nominal (Rp)" value={amount} onChange={setAmount} /></div>
+                                    <button className={`w-full text-white p-3 rounded-xl font-bold shadow-lg transition-transform hover:scale-[1.02] ${txType === 'expense' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}>Simpan Transaksi</button>
+                                </form>
+                           </div>
+                           <div className="space-y-3">{getGroupedTransactions(activeProject.transactions).map(group => (<TransactionGroup key={group.id} group={group} isExpanded={expandedGroups[group.id]} onToggle={() => toggleGroup(group.id)} />))}</div>
+                        </div>
+                    )}
+
+                    {activeTab === 'workers' && canAccessWorkers() && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div>
+                                <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-4 rounded-2xl shadow-lg font-bold flex justify-center items-center gap-2 hover:bg-blue-700 transition-all mb-6"><Calendar size={20} /> Isi Absensi Hari Ini</button>
+                                <div className="bg-white p-6 rounded-2xl border shadow-sm">
+                                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><FileText size={20}/> Rekap & Filter</h3>
+                                    <div className="flex gap-2 mb-4 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                        <div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1 font-bold uppercase">Dari</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border rounded-lg p-2 text-xs font-bold" /></div>
+                                        <div className="flex items-center text-slate-400">-</div>
+                                        <div className="flex-1"><label className="text-[10px] text-slate-400 block mb-1 font-bold uppercase">Sampai</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border rounded-lg p-2 text-xs font-bold" /></div>
+                                    </div>
+                                    <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="border-b bg-slate-50 text-slate-500"><th className="p-3 text-left">Nama</th><th className="p-3 text-center">Hadir</th><th className="p-3 text-center">Lembur</th>{canSeeMoney() && <th className="p-3 text-right">Est. Upah</th>}</tr></thead><tbody>{getFilteredAttendance().map((stat: any, idx) => (<tr key={idx} className="border-b last:border-0 hover:bg-slate-50 transition-colors"><td className="p-3 font-medium">{stat.name} <span className="text-[9px] text-slate-400 block">{stat.role} • {stat.unit}</span></td><td className="p-3 text-center font-bold text-green-600">{stat.hadir}</td><td className="p-3 text-center font-bold text-blue-600">{stat.lembur}</td>{canSeeMoney() && <td className="p-3 text-right font-bold">{formatRupiah(stat.totalCost)}</td>}</tr>))}{getFilteredAttendance().length === 0 && <tr><td colSpan={canSeeMoney() ? 4 : 3} className="p-6 text-center text-slate-400 italic">Tidak ada data di periode ini.</td></tr>}</tbody></table></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-lg text-slate-700">Daftar Tim</h3>
+                                    <button onClick={() => openModal('newWorker')} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm hover:bg-slate-50 shadow-sm">+ Personil Baru</button>
+                                </div>
+                                <div className="space-y-3">
+                                    {(activeProject.workers || []).map(w => { const f = calculateWorkerFinancials(activeProject, w.id); return (<div key={w.id} className="bg-white p-5 rounded-2xl border shadow-sm text-sm group hover:shadow-md transition-all"><div className="flex justify-between items-start mb-3 border-b border-slate-100 pb-3"><div><p className="font-bold text-base text-slate-800">{w.name}</p><p className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md inline-block mt-1">{w.role} ({w.wageUnit})</p></div><div className="text-right"><p className="font-bold text-2xl text-blue-600">{calculateTotalDays(activeProject.attendanceLogs, w.id)}</p><p className="text-[10px] text-slate-400 uppercase tracking-wide">Total Hari</p></div></div><div className="flex justify-between items-center">{canSeeMoney() && <div><p className="text-[10px] text-slate-500 uppercase">Sisa Hutang</p><p className={`font-bold text-lg ${f.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatRupiah(f.balance)}</p></div>}<div className="flex gap-2 ml-auto">{canSeeMoney() && f.balance > 0 && <button onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-green-700 shadow-sm"><Banknote size={14}/> Bayar</button>}{canAccessWorkers() && (<><button onClick={() => handleEditWorker(w)} className="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-100"><Edit size={16}/></button><button onClick={() => handleDeleteWorker(w)} className="bg-red-50 text-red-600 p-2 rounded-lg hover:bg-red-100"><Trash2 size={16}/></button></>)}</div></div></div>)})}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Similar responsive grid structure for LOGISTICS */}
+                    {activeTab === 'logistics' && (
+                        <div className="max-w-4xl mx-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-xl text-slate-700">Stok Material</h3>
+                                <button onClick={() => openModal('newMaterial')} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 shadow-md">+ Material Baru</button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {(activeProject.materials || []).map(m => (<div key={m.id} className="bg-white p-5 rounded-2xl border shadow-sm relative overflow-hidden group hover:shadow-md transition-all">{m.stock <= m.minStock && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-3 py-1 rounded-bl-xl font-bold flex items-center gap-1 shadow-sm"><AlertTriangle size={10}/> STOK MENIPIS</div>}<div className="flex justify-between items-start mb-4"><div><div className="font-bold text-slate-800 text-lg mb-1">{m.name}</div><div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded inline-block">Min: {m.minStock} {m.unit}</div></div><div className="text-right"><div className={`text-3xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div><div className="text-xs text-slate-400 uppercase font-bold tracking-wider">{m.unit}</div></div></div><div className="flex gap-2 border-t pt-4"><button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-100 flex items-center justify-center gap-2 border border-slate-200 transition-colors"><Edit size={14} /> Update Stok</button><button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-white text-slate-500 rounded-lg hover:bg-slate-50 border border-slate-200 shadow-sm"><History size={18}/></button></div></div>))}
+                                {(activeProject.materials || []).length === 0 && <div className="col-span-full text-center p-12 text-slate-400 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50">Belum ada data material.</div>}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+      </div>
       
-      {/* Pastikan Modal ada di sini: */}
+      {/* MODAL WRAPPER */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in print:hidden">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
-             <div className="p-4 border-b flex justify-between bg-slate-50 sticky top-0"><h3 className="font-bold">Input Data</h3><button onClick={() => setShowModal(false)}><X size={20}/></button></div>
-             <div className="p-4 space-y-3">
-               {/* SEMUA LOGIKA MODAL MASUKKAN KEMBALI DI SINI SEPERTI KODE SEBELUMNYA */}
+            <div className="p-4 border-b flex justify-between bg-slate-50 sticky top-0"><h3 className="font-bold">Input Data</h3><button onClick={() => setShowModal(false)}><X size={20}/></button></div>
+            <div className="p-4 space-y-3">
+               {/* ALL MODAL CONTENTS RENDERED HERE (Reused from previous code block for brevity but fully included in file) */}
                {modalType === 'newProject' && <><input className="w-full p-2 border rounded" placeholder="Nama Proyek" value={inputName} onChange={e => setInputName(e.target.value)} /><button onClick={() => { addDoc(collection(db, 'app_data', appId, 'projects'), { name: inputName, client: 'Client Baru', location: '-', status: 'Berjalan', budgetLimit: 0, startDate: new Date().toISOString(), isDeleted: false, transactions: [], materials: [], workers: [], rabItems: [] }); setShowModal(false); }} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan</button></>}
                {modalType === 'aiRAB' && (
                  <>
@@ -242,15 +609,33 @@ const App = () => {
                    <button onClick={handleGenerateRAB} disabled={isGeneratingAI} className="w-full bg-purple-600 text-white p-3 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-purple-700 disabled:opacity-50">{isGeneratingAI ? <Loader2 className="animate-spin"/> : <Sparkles size={18}/>} {isGeneratingAI ? 'Sedang Membuat...' : 'Generate RAB Otomatis'}</button>
                  </>
                )}
-               {/* ... (Masukkan kembali modal New RAB, Edit Project, Update Progress, Attendance, dll dari kode sebelumnya) ... */}
+               {modalType === 'newRAB' && (<><div className="bg-blue-50 p-2 rounded text-xs text-blue-700 mb-2">Input item pekerjaan baru atau edit CCO.</div><input className="w-full p-2 border rounded" placeholder="Kategori (mis: A. PEKERJAAN PERSIAPAN)" list="categories" value={rabCategory} onChange={e => setRabCategory(e.target.value)} /><datalist id="categories"><option value="A. PEKERJAAN PERSIAPAN"/><option value="B. PEKERJAAN STRUKTUR"/><option value="C. PEKERJAAN ARSITEKTUR"/><option value="D. PEKERJAAN MEP"/></datalist><input className="w-full p-2 border rounded" placeholder="Uraian Pekerjaan" value={rabItemName} onChange={e => setRabItemName(e.target.value)} /><div className="flex gap-2"><input className="w-20 p-2 border rounded" placeholder="Satuan" value={rabUnit} onChange={e => setRabUnit(e.target.value)} /><div className="flex-1"><label className="text-xs text-slate-500">Volume</label><NumberInput className="w-full p-2 border rounded" value={rabVol} onChange={setRabVol} /></div></div><div className="mt-2"><label className="text-xs text-slate-500">Harga Satuan (Rp)</label><NumberInput className="w-full p-2 border rounded" value={rabPrice} onChange={setRabPrice} /></div><div className="text-right font-bold text-lg mb-2 mt-2">Total: {formatRupiah(rabVol * rabPrice)}</div><button onClick={handleSaveRAB} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Simpan ke RAB</button></>)}
+               {modalType === 'editProject' && <><input className="w-full p-2 border rounded" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" value={inputClient} onChange={e => setInputClient(e.target.value)} /><div className="mt-2"><label className="text-xs text-slate-500">Nilai Kontrak (Budget)</label><NumberInput className="w-full p-2 border rounded" value={inputBudget} onChange={setInputBudget} /></div><input type="date" className="w-full p-2 border rounded mt-2" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /><input type="date" className="w-full p-2 border rounded mt-2" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /><button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-2 rounded font-bold mt-2">Simpan</button></>}
+               {modalType === 'updateProgress' && selectedRabItem && (<><h4 className="font-bold text-slate-700">{selectedRabItem.name}</h4><div className="flex items-center gap-2 my-4"><input type="range" min="0" max="100" value={progressInput} onChange={e => setProgressInput(Number(e.target.value))} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" /><span className="font-bold text-blue-600 w-12 text-right">{progressInput}%</span></div><input type="date" className="w-full p-2 border rounded" value={progressDate} onChange={e => setProgressDate(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Catatan Progres" value={progressNote} onChange={e => setProgressNote(e.target.value)} /><button onClick={handleUpdateProgress} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Update Realisasi</button></>)}
+               {modalType === 'taskHistory' && selectedRabItem && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedRabItem.name}</h4><div className="space-y-3">{(activeProject.taskLogs || []).filter(l => l.taskId === selectedRabItem.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between items-center"><span className="font-bold text-slate-700">{log.date}</span><div className="flex items-center gap-2"><span className="text-xs text-slate-400 line-through">{log.previousProgress}%</span><span className="font-bold text-blue-600">{log.newProgress}%</span></div></div><div className="text-slate-500 text-xs mt-1">{log.note || '-'}</div></div>))}{(activeProject.taskLogs || []).filter(l => l.taskId === selectedRabItem.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat progres.</p>}</div></div>)}
+               {modalType === 'newWorker' && (<><input className="w-full p-2 border rounded" placeholder="Nama" value={inputName} onChange={e=>setInputName(e.target.value)}/><div className="flex gap-2"><select className="flex-1 p-2 border rounded" value={inputWorkerRole} onChange={(e) => setInputWorkerRole(e.target.value as any)}><option>Tukang</option><option>Kenek</option><option>Mandor</option></select><select className="flex-1 p-2 border rounded bg-slate-50" value={inputWageUnit} onChange={(e) => setInputWageUnit(e.target.value as any)}><option value="Harian">Per Hari</option><option value="Mingguan">Per Minggu</option><option value="Bulanan">Per Bulan</option></select></div><div className="flex gap-2"><div className="flex-1"><label className="text-xs text-slate-500">Upah Asli ({inputWageUnit})</label><NumberInput className="w-full p-2 border rounded" value={inputRealRate} onChange={setInputRealRate} /></div><div className="flex-1"><label className="text-xs text-slate-500">Upah RAB ({inputWageUnit})</label><NumberInput className="w-full p-2 border rounded" value={inputMandorRate} onChange={setInputMandorRate} /></div></div><button onClick={handleSaveWorker} className="w-full bg-blue-600 text-white p-2 rounded font-bold">{selectedWorkerId ? 'Simpan Perubahan' : 'Simpan'}</button></>)}
+               {modalType === 'stockMovement' && selectedMaterial && (<><h4 className="font-bold text-slate-700">{selectedMaterial.name}</h4><p className="text-xs text-slate-500 mb-2">Stok Saat Ini: {selectedMaterial.stock} {selectedMaterial.unit}</p><div className="flex gap-2 mb-2"><button onClick={() => setStockType('in')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='in' ? 'bg-green-100 border-green-300 text-green-700' : 'border-slate-200'}`}>Masuk (+)</button><button onClick={() => setStockType('out')} className={`flex-1 p-2 rounded text-sm font-bold border ${stockType==='out' ? 'bg-red-100 border-red-300 text-red-700' : 'border-slate-200'}`}>Keluar (-)</button></div><NumberInput className="w-full p-2 border rounded font-bold text-lg" placeholder="Jumlah" value={stockQty} onChange={setStockQty} /><input type="date" className="w-full p-2 border rounded mt-2" value={stockDate} onChange={e => setStockDate(e.target.value)}/><input className="w-full p-2 border rounded" placeholder="Keterangan (Wajib)" value={stockNotes} onChange={e => setStockNotes(e.target.value)}/><button onClick={handleStockMovement} disabled={!stockNotes || stockQty <= 0} className={`w-full text-white p-2 rounded font-bold mt-2 ${!stockNotes || stockQty <= 0 ? 'bg-slate-300' : 'bg-blue-600'}`}>Simpan Riwayat</button></>)}
+               {modalType === 'stockHistory' && selectedMaterial && activeProject && (<div className="max-h-96 overflow-y-auto"><h4 className="font-bold text-slate-700 mb-4">Riwayat: {selectedMaterial.name}</h4><div className="space-y-3">{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (<div key={log.id} className="text-sm border-b pb-2"><div className="flex justify-between"><span className="font-bold text-slate-700">{log.date}</span><span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>{log.type === 'in' ? '+' : '-'}{log.quantity}</span></div><div className="text-slate-500 text-xs mt-1 flex justify-between"><span>{log.notes}</span><span className="italic">{log.actor}</span></div></div>))}{(activeProject.materialLogs || []).filter(l => l.materialId === selectedMaterial.id).length === 0 && <p className="text-center text-slate-400 text-xs">Belum ada riwayat.</p>}</div></div>)}
+               {modalType === 'payWorker' && <><div className="mb-4"><label className="text-xs text-slate-500">Nominal Pembayaran</label><NumberInput className="w-full p-2 border rounded font-bold text-lg" value={paymentAmount} onChange={setPaymentAmount} /></div><button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-2 rounded font-bold">Bayar</button></>}
                {modalType === 'attendance' && activeProject && (<div><input type="date" className="w-full p-2 border rounded font-bold mb-4" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} /><div className="bg-slate-50 p-3 rounded mb-3 border border-blue-100"><h4 className="font-bold text-sm mb-2 text-slate-700 flex items-center gap-2"><Camera size={14}/> Bukti Lapangan (Wajib)</h4><div className="mb-2"><label className={`block w-full border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${evidencePhoto ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-100'}`}><input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />{evidencePhoto ? (<div className="relative"><img src={evidencePhoto} alt="Preview" className="h-32 mx-auto rounded shadow-sm object-cover"/><div className="text-xs text-green-600 font-bold mt-1">Foto Berhasil Diambil & Dikompres</div></div>) : (<div className="text-slate-500 text-xs flex flex-col items-center gap-1"><Camera size={24} className="text-slate-400"/><span>Klik untuk Ambil Foto</span></div>)}</label></div><div className="text-center">{isGettingLoc && <div className="text-xs text-blue-600 flex items-center justify-center gap-1 animate-pulse"><Loader2 size={12} className="animate-spin"/> Sedang mengambil titik lokasi...</div>}{!isGettingLoc && evidenceLocation && <div className="text-xs text-green-600 flex items-center justify-center gap-1 font-bold bg-green-100 py-1 rounded"><CheckCircle size={12}/> Lokasi Terkunci: {evidenceLocation}</div>}{!isGettingLoc && !evidenceLocation && evidencePhoto && <div className="text-xs text-red-500 font-bold">Gagal ambil lokasi. Pastikan GPS aktif!</div>}</div></div><div className="max-h-64 overflow-y-auto space-y-2 mb-4">{activeProject.workers.map(w => (<div key={w.id} className="p-2 border rounded bg-slate-50 text-sm flex justify-between items-center"><span>{w.name}</span><select className="p-1 border rounded bg-white" value={attendanceData[w.id]?.status} onChange={(e) => setAttendanceData({...attendanceData, [w.id]: { ...attendanceData[w.id], status: e.target.value }})}><option value="Hadir">Hadir</option><option value="Setengah">Setengah</option><option value="Lembur">Lembur</option><option value="Absen">Absen</option></select></div>))}</div><button onClick={saveAttendanceWithEvidence} disabled={!evidencePhoto || !evidenceLocation} className={`w-full text-white p-3 rounded font-bold transition-all ${(!evidencePhoto || !evidenceLocation) ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg'}`}>{(!evidencePhoto || !evidenceLocation) ? 'Lengkapi Bukti Dulu' : 'Simpan Absensi'}</button></div>)}
                {modalType === 'addUser' && (<><input className="w-full p-2 border rounded" placeholder="Nama Lengkap" value={inputName} onChange={e => setInputName(e.target.value)} /><input className="w-full p-2 border rounded" placeholder="Email Google" type="email" value={inputEmail} onChange={e => setInputEmail(e.target.value)} /><div className="flex gap-2 items-center"><label className="text-xs w-20">Role</label><select className="flex-1 p-2 border rounded" value={inputRole} onChange={e => setInputRole(e.target.value as UserRole)}><option value="pengawas">Pengawas (Absen & Tukang Only)</option><option value="keuangan">Keuangan (Uang Only)</option><option value="kontraktor">Kontraktor (Project Manager)</option><option value="super_admin">Super Admin (Owner)</option></select></div><button onClick={handleAddUser} className="w-full bg-blue-600 text-white p-2 rounded font-bold">Tambah User</button></>)}
-             </div>
+            </div>
           </div>
         </div>
       )}
-      
-      {/* ... (Sisa JSX Navigation & Content sama seperti sebelumnya) */}
+
+      {/* MOBILE NAV */}
+      {view === 'project-detail' && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t pb-safe z-40 print:hidden">
+           <div className="max-w-md mx-auto flex justify-between px-2">
+             <button onClick={() => setActiveTab('dashboard')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='dashboard'?'text-blue-600':'text-slate-400'}`}><LayoutDashboard size={20}/><span className="text-[10px]">Home</span></button>
+             {canAccessFinance() && <button onClick={() => setActiveTab('finance')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='finance'?'text-blue-600':'text-slate-400'}`}><Wallet size={20}/><span className="text-[10px]">Uang</span></button>}
+             {canAccessWorkers() && <button onClick={() => setActiveTab('workers')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='workers'?'text-blue-600':'text-slate-400'}`}><Users size={20}/><span className="text-[10px]">Tim</span></button>}
+             <button onClick={() => setActiveTab('logistics')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='logistics'?'text-blue-600':'text-slate-400'}`}><Package size={20}/><span className="text-[10px]">Stok</span></button>
+             <button onClick={() => setActiveTab('progress')} className={`p-2 flex-1 flex flex-col items-center ${activeTab==='progress'?'text-blue-600':'text-slate-400'}`}><TrendingUp size={20}/><span className="text-[10px]">Kurva S</span></button>
+           </div>
+        </nav>
+      )}
     </div>
   );
 };

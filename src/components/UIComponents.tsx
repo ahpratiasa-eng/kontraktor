@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Banknote, ChevronUp, ChevronDown } from 'lucide-react';
 import { formatNumber, parseNumber, formatRupiah } from '../utils/helpers';
+import type { GroupedTransaction, Transaction } from '../types';
 
 export const NumberInput = ({ value, onChange, placeholder, className }: { value: number, onChange: (val: number) => void, placeholder?: string, className?: string }) => {
   const [displayValue, setDisplayValue] = useState(formatNumber(value));
@@ -30,7 +31,7 @@ export const NumberInput = ({ value, onChange, placeholder, className }: { value
   );
 };
 
-export const TransactionGroup = ({ group, isExpanded, onToggle }: any) => {
+export const TransactionGroup = ({ group, isExpanded, onToggle }: { group: GroupedTransaction, isExpanded: boolean, onToggle: () => void }) => {
   return (
     <div className="bg-white rounded-xl border shadow-sm mb-2 overflow-hidden transition-all break-inside-avoid">
       <div onClick={onToggle} className="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-50">
@@ -40,7 +41,7 @@ export const TransactionGroup = ({ group, isExpanded, onToggle }: any) => {
         </div>
         <div className="text-right"><div className={`font-bold ${group.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{group.type === 'expense' ? '-' : '+'} {formatRupiah(group.totalAmount)}</div>{isExpanded ? <ChevronUp size={16} className="ml-auto text-slate-400"/> : <ChevronDown size={16} className="ml-auto text-slate-400"/>}</div>
       </div>
-      {isExpanded && (<div className="bg-slate-50 border-t border-slate-100">{group.items.map((t: any, idx: number) => (<div key={t.id} className={`p-3 flex justify-between items-center text-sm ${idx !== group.items.length - 1 ? 'border-b border-slate-100' : ''}`}><div className="flex-1"><span className="text-slate-700">{t.description}</span></div><div className="flex items-center gap-3"><span className="font-medium text-slate-600">{formatRupiah(t.amount)}</span></div></div>))}</div>)}
+      {isExpanded && (<div className="bg-slate-50 border-t border-slate-100">{group.items.map((t: Transaction, idx: number) => (<div key={t.id} className={`p-3 flex justify-between items-center text-sm ${idx !== group.items.length - 1 ? 'border-b border-slate-100' : ''}`}><div className="flex-1"><span className="text-slate-700">{t.description}</span></div><div className="flex items-center gap-3"><span className="font-medium text-slate-600">{formatRupiah(t.amount)}</span></div></div>))}</div>)}
     </div>
   );
 };
