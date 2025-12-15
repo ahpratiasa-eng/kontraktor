@@ -287,6 +287,17 @@ const App = () => {
     return defaultAHSData as AHSItem[];
   };
 
+  const handleResetAHSToDefault = async () => {
+    try {
+      const defaultData = getDefaultAHSData();
+      await saveAhsItems(defaultData);
+      alert('Library AHS berhasil direset ke data bawaan!');
+    } catch (e) {
+      console.error('Failed to reset AHS:', e);
+      alert('Gagal reset Library AHS');
+    }
+  };
+
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
 
   // Helper Functions inside App
@@ -1062,6 +1073,7 @@ const App = () => {
                 onSave={saveAhsItems}
                 resources={pricingResources}
                 onSaveResources={saveResources}
+                onResetToDefault={handleResetAHSToDefault}
               />
             </main>
           )}

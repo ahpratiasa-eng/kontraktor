@@ -16,12 +16,14 @@ interface AHSLibraryViewProps {
     resources: PricingResource[];
     onSaveResources: (items: PricingResource[]) => void;
 
+    onResetToDefault?: () => void;
+
     onSelectForRAB?: (item: AHSItem) => void;
     isSelectMode?: boolean;
 }
 
 const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
-    ahsItems, onSave, resources, onSaveResources, onSelectForRAB, isSelectMode = false
+    ahsItems, onSave, resources, onSaveResources, onResetToDefault, onSelectForRAB, isSelectMode = false
 }) => {
     const [activeTab, setActiveTab] = useState<'ahs' | 'resources'>('ahs');
     const [searchQuery, setSearchQuery] = useState('');
@@ -358,6 +360,9 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
                     {(activeTab === 'ahs' ? ahsCategories : resCategories).map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
                 <button onClick={activeTab === 'ahs' ? handleAddNewAHS : handleAddNewResource} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 whitespace-nowrap"><Plus size={18} /> Tambah {activeTab === 'ahs' ? 'AHS' : 'Item'}</button>
+                {activeTab === 'ahs' && onResetToDefault && (
+                    <button onClick={() => { if (confirm('Reset Library AHS ke data bawaan? Semua perubahan custom akan hilang.')) onResetToDefault(); }} className="bg-orange-500 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-orange-600 whitespace-nowrap"><RefreshCw size={18} /> Reset Default</button>
+                )}
             </div>
 
             {/* AHS TAB CONTENT */}
