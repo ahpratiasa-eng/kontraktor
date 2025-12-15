@@ -38,6 +38,10 @@ interface ProjectDetailViewProps {
     canAccessWorkers: boolean;
     canSeeMoney: boolean;
     canEditProject: boolean;
+    // Pengawas-specific restrictions (mencegah kecurangan)
+    canViewKurvaS?: boolean;            // Pengawas tidak bisa lihat Kurva S
+    canViewInternalRAB?: boolean;       // Pengawas tidak bisa lihat detail RAB internal
+    canAddWorkers?: boolean;            // Pengawas tidak bisa tambah tukang sendiri
     setActiveTab: (tab: string) => void;
     prepareEditProject: () => void;
     prepareEditRABItem: (item: RABItem) => void;
@@ -52,6 +56,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
+    canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
     setActiveTab, prepareEditProject, prepareEditRABItem, isClientView, handleReportToOwner,
     ahsItems
 }) => {
@@ -211,7 +216,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
     const tabs = [
         { id: 'dashboard', label: 'Ringkasan', icon: <FileText size={18} /> },
-        { id: 'progress', label: 'Kurva S & RAB', icon: <Sparkles size={18} /> },
+        // Pengawas tidak bisa lihat Kurva S (mencegah manipulasi data)
+        ...(canViewKurvaS ? [{ id: 'progress', label: 'Kurva S & RAB', icon: <Sparkles size={18} /> }] : []),
         ...(!isClientView && canAccessFinance ? [{ id: 'finance', label: 'Keuangan', icon: <Banknote size={18} /> }] : []),
         ...(!isClientView && canAccessWorkers ? [{ id: 'workers', label: 'Tim & Absensi', icon: <ImageIcon size={18} /> }] : []),
         ...(!isClientView ? [{ id: 'logistics', label: 'Logistik', icon: <History size={18} /> }] : []),
@@ -233,7 +239,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     </button>
                 ))}
             </div>
-            {activeTab === 'progress' && !isClientView && (
+            {/* RAB View Mode Toggle - Pengawas tidak bisa lihat Internal RAB */}
+            {activeTab === 'progress' && !isClientView && canViewInternalRAB && (
                 <div className="flex items-center gap-2 mb-4 bg-slate-200 p-1 rounded-lg w-full md:w-auto md:inline-flex">
                     <button onClick={() => setRabViewMode('client')} className={`flex-1 md:flex-none px-4 text-xs font-bold py-2 rounded-md transition ${rabViewMode === 'client' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}>View Client</button>
                     <button onClick={() => setRabViewMode('internal')} className={`flex-1 md:flex-none px-4 text-xs font-bold py-2 rounded-md transition ${rabViewMode === 'internal' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}>Internal RAB</button>
@@ -508,7 +515,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         </div>
                     </div>
                     <div>
-                        <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg text-slate-700">Tim</h3><button onClick={() => openModal('newWorker')} className="bg-white border px-4 py-2 rounded-xl text-sm font-bold shadow-sm">+ Baru</button></div>
+                        {/* Tim Header - Pengawas tidak bisa menambah tukang (mencegah curang) */}
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg text-slate-700">Tim</h3>
+                            {canAddWorkers && <button onClick={() => openModal('newWorker')} className="bg-white border px-4 py-2 rounded-xl text-sm font-bold shadow-sm">+ Baru</button>}
+                        </div>
                         <div className="space-y-3">
                             {(activeProject.workers || []).map(w => {
                                 const f = calculateWorkerFinancials(activeProject, w.id);

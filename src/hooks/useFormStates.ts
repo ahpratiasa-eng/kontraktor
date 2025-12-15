@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { RABItem, Material, Worker, UserRole } from '../types';
+import type { RABItem, Material, UserRole } from '../types';
 
 /**
  * Central form state management hook

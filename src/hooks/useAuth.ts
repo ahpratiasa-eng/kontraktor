@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, collection, query } from 'firebase/firestore';
-import { auth, db, googleProvider, appId, signInAnonymously } from '../lib/firebase';
+import { auth, db, googleProvider, signInAnonymously } from '../lib/firebase';
 import type { UserRole, AppUser } from '../types';
 
 export const useAuth = () => {
@@ -99,6 +99,11 @@ export const useAuth = () => {
     const canEditProject = () => ['super_admin', 'kontraktor'].includes(userRole || '');
     const canSeeMoney = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
 
+    // Pengawas restrictions - mencegah kecurangan
+    const canViewKurvaS = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
+    const canViewInternalRAB = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
+    const canAddWorkers = () => ['super_admin', 'kontraktor'].includes(userRole || ''); // Pengawas ga boleh tambah tukang
+
     return {
         user,
         userRole,
@@ -112,6 +117,9 @@ export const useAuth = () => {
         canAccessManagement,
         canEditProject,
         canSeeMoney,
+        canViewKurvaS,
+        canViewInternalRAB,
+        canAddWorkers,
         setIsClientView,
     };
 };

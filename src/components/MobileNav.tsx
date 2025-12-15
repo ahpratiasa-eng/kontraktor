@@ -8,9 +8,10 @@ interface MobileNavProps {
     setActiveTab: (tab: string) => void;
     userRole: UserRole | null;
     isClientView?: boolean;
+    canViewKurvaS?: boolean; // Pengawas tidak bisa lihat Kurva S
 }
 
-const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, userRole, isClientView }) => {
+const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, userRole, isClientView, canViewKurvaS = true }) => {
     if (view !== 'project-detail') return null;
 
     const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
@@ -35,7 +36,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, us
         );
     }
 
-    // Regular View: Full navigation
+    // Regular View: Full navigation (with Kurva S restriction for pengawas)
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t pb-safe z-40 print:hidden">
             <div className="max-w-md mx-auto flex justify-between px-2">
@@ -55,12 +56,16 @@ const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, us
                 <button onClick={() => setActiveTab('logistics')} className={`p-2 flex-1 flex flex-col items-center ${activeTab === 'logistics' ? 'text-blue-600' : 'text-slate-400'}`}>
                     <Package size={20} /><span className="text-[10px]">Stok</span>
                 </button>
-                <button onClick={() => setActiveTab('progress')} className={`p-2 flex-1 flex flex-col items-center ${activeTab === 'progress' ? 'text-blue-600' : 'text-slate-400'}`}>
-                    <TrendingUp size={20} /><span className="text-[10px]">Kurva S</span>
-                </button>
+                {/* Pengawas tidak bisa lihat Kurva S - mencegah manipulasi data */}
+                {canViewKurvaS && (
+                    <button onClick={() => setActiveTab('progress')} className={`p-2 flex-1 flex flex-col items-center ${activeTab === 'progress' ? 'text-blue-600' : 'text-slate-400'}`}>
+                        <TrendingUp size={20} /><span className="text-[10px]">Kurva S</span>
+                    </button>
+                )}
             </div>
         </nav>
     );
 };
 
 export default MobileNav;
+

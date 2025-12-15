@@ -122,6 +122,11 @@ const App = () => {
   const canAccessWorkers = () => ['super_admin', 'kontraktor', 'pengawas'].includes(userRole || '');
   const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
 
+  // Pengawas-specific restrictions (mencegah kecurangan)
+  const canViewKurvaS = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
+  const canViewInternalRAB = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
+  const canAddWorkers = () => ['super_admin', 'kontraktor'].includes(userRole || ''); // Pengawas ga boleh tambah tukang
+
   // Effects
   // Effects
   useEffect(() => {
@@ -1110,6 +1115,9 @@ const App = () => {
               canAccessWorkers={canAccessWorkers()}
               canSeeMoney={canSeeMoney()}
               canEditProject={canEditProject()}
+              canViewKurvaS={canViewKurvaS()}
+              canViewInternalRAB={canViewInternalRAB()}
+              canAddWorkers={canAddWorkers()}
               prepareEditProject={prepareEditProject}
               prepareEditRABItem={prepareEditRABItem}
               activeProject={activeProject}
@@ -1155,6 +1163,7 @@ const App = () => {
               activeProject={activeProject}
               setView={setView}
               isClientView={isClientView}
+              canViewInternalRAB={canViewInternalRAB()}
             />
           )}
         </div>
@@ -1243,6 +1252,7 @@ const App = () => {
         setActiveTab={setActiveTab}
         userRole={userRole}
         isClientView={isClientView}
+        canViewKurvaS={canViewKurvaS()}
       />
 
     </div>

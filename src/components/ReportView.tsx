@@ -8,15 +8,16 @@ interface ReportViewProps {
     activeProject: Project;
     setView: (view: any) => void;
     isClientView?: boolean;
+    canViewInternalRAB?: boolean; // Pengawas tidak bisa lihat laporan internal
 }
 
-const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClientView }) => {
+const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClientView, canViewInternalRAB = true }) => {
     const [rabViewMode, setRabViewMode] = useState<'client' | 'internal'>('client');
 
-    // Enforce Client View
+    // Enforce Client View (pengawas & client)
     React.useEffect(() => {
-        if (isClientView) setRabViewMode('client');
-    }, [isClientView]);
+        if (isClientView || !canViewInternalRAB) setRabViewMode('client');
+    }, [isClientView, canViewInternalRAB]);
     const rabGroups = getRABGroups(activeProject);
     const stats = getStats(activeProject);
     const today = new Date().toLocaleDateString('id-ID', { dateStyle: 'full' });
@@ -33,7 +34,8 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClien
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {!isClientView && (
+                    {/* Pengawas tidak bisa lihat laporan internal */}
+                    {!isClientView && canViewInternalRAB && (
                         <div className="bg-slate-700 p-1 rounded flex text-xs">
                             <button
                                 onClick={() => setRabViewMode('client')}
