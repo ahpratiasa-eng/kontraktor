@@ -154,7 +154,7 @@ export type PricingResource = {
 
 // Helper: Calculate total price dari AHS Item
 export const calculateAHSTotal = (item: AHSItem): number => {
-  return item.components.reduce((sum, comp) => sum + (comp.coefficient * comp.unitPrice), 0);
+  return Math.round(item.components.reduce((sum, comp) => sum + (comp.coefficient * comp.unitPrice), 0));
 };
 
 // Helper: Calculate subtotal per type

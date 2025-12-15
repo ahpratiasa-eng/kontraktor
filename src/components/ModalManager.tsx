@@ -308,7 +308,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                     <input className="w-full p-3 border rounded-xl" placeholder="Nama Item / Uraian Pekerjaan" value={rabItemName} onChange={e => setRabItemName(e.target.value)} />
                                     <div className="flex gap-2">
                                         <input className="w-24 p-3 border rounded-xl text-center" placeholder="Satuan" value={rabUnit} onChange={e => setRabUnit(e.target.value)} />
-                                        <NumberInput className="flex-1 p-3 border rounded-xl" placeholder="Volume" value={rabVol} onChange={setRabVol} />
+                                        <input type="number" step="0.01" className="flex-1 p-3 border rounded-xl" placeholder="Volume" value={rabVol || ''} onChange={e => setRabVol(parseFloat(e.target.value) || 0)} />
                                     </div>
                                     <NumberInput className="w-full p-3 border rounded-xl" placeholder="Harga Satuan (Rp)" value={rabPrice} onChange={setRabPrice} />
                                     <button onClick={handleSaveRAB} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">Simpan Item</button>
