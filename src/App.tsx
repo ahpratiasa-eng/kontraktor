@@ -239,8 +239,28 @@ const App = () => {
   const handleUpdateProgress = () => { if (!activeProject || !selectedRabItem) return; const updatedRAB = activeProject.rabItems.map((item: RABItem) => item.id === selectedRabItem.id ? { ...item, progress: progressInput } : item); const newLog: TaskLog = { id: Date.now(), date: progressDate, taskId: selectedRabItem.id, previousProgress: selectedRabItem.progress, newProgress: progressInput, note: progressNote }; updateProject({ rabItems: updatedRAB, taskLogs: [newLog, ...(activeProject.taskLogs || [])] }); setShowModal(false); };
   const handleSaveProject = () => {
     if (!activeProject) {
-      // Create new project
-      const newP: any = { name: inputName, client: inputClient, location: inputLocation, ownerPhone: inputOwnerPhone, budgetLimit: inputBudget, startDate: inputStartDate, endDate: inputEndDate, status: 'Berjalan', rabItems: [], transactions: [] };
+      // Create new project with all required fields
+      const newP: any = {
+        name: inputName,
+        client: inputClient,
+        location: inputLocation,
+        ownerPhone: inputOwnerPhone,
+        budgetLimit: inputBudget,
+        startDate: inputStartDate,
+        endDate: inputEndDate,
+        status: 'Berjalan',
+        rabItems: [],
+        transactions: [],
+        workers: [],
+        materials: [],
+        materialLogs: [],
+        tasks: [],
+        attendanceLogs: [],
+        attendanceEvidences: [],
+        taskLogs: [],
+        galleryItems: [],
+        isDeleted: false
+      };
       addDoc(collection(db, 'app_data', appId, 'projects'), newP);
       setShowModal(false);
     } else {
