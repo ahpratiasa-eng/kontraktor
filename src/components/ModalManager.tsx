@@ -98,7 +98,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
     // State for AHS picker in RAB modal
     const [showAhsPicker, setShowAhsPicker] = useState(false);
     const [ahsSearch, setAhsSearch] = useState('');
-    const { selectedAhsId, setSelectedAhsId } = props;
+    const { setSelectedAhsId } = props;
 
     const handleSelectAHS = (ahs: AHSItem) => {
         setRabCategory(ahs.category);
