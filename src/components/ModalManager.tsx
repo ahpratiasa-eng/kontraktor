@@ -1,8 +1,10 @@
-import React from 'react';
-import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package } from 'lucide-react';
 import { NumberInput } from './UIComponents';
 import * as XLSX from 'xlsx';
-import type { UserRole, Material, RABItem, Project } from '../types';
+import type { UserRole, Material, RABItem, Project, AHSItem } from '../types';
+import { calculateAHSTotal } from '../types';
+import { formatRupiah } from '../utils/helpers';
 
 interface ModalManagerProps {
     modalType: string | null;
@@ -69,6 +71,9 @@ interface ModalManagerProps {
     activeProject: Project | null;
     selectedRabItem: RABItem | null;
     selectedWorkerId: number | null;
+
+    // AHS Integration
+    ahsItems: AHSItem[];
 }
 
 const ModalManager: React.FC<ModalManagerProps> = (props) => {
@@ -84,8 +89,28 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         inputEmail, setInputEmail, inputRole, setInputRole,
         aiPrompt, setAiPrompt, isGeneratingAI,
         attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, evidenceLocation, handlePhotoUpload, isGettingLoc,
-        activeProject, selectedRabItem, selectedWorkerId
+        activeProject, selectedRabItem, selectedWorkerId,
+        ahsItems
     } = props;
+
+    // State for AHS picker in RAB modal
+    const [showAhsPicker, setShowAhsPicker] = useState(false);
+    const [ahsSearch, setAhsSearch] = useState('');
+
+    const handleSelectAHS = (ahs: AHSItem) => {
+        setRabCategory(ahs.category);
+        setRabItemName(ahs.name);
+        setRabUnit(ahs.unit);
+        setRabPrice(calculateAHSTotal(ahs));
+        setShowAhsPicker(false);
+        setAhsSearch('');
+    };
+
+    const filteredAHS = ahsItems.filter(item =>
+        item.name.toLowerCase().includes(ahsSearch.toLowerCase()) ||
+        item.code.toLowerCase().includes(ahsSearch.toLowerCase()) ||
+        item.category.toLowerCase().includes(ahsSearch.toLowerCase())
+    );
 
     const downloadTemplate = () => {
         const ws = XLSX.utils.json_to_sheet([
@@ -156,55 +181,122 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
 
                     {modalType === 'newRAB' && (
                         <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-4">{selectedRabItem ? 'Edit Item RAB' : 'Tambah Item RAB'}</h3>
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold ml-1">Kategori Pekerjaan</label>
-                                {/* Get existing categories from project */}
-                                {(() => {
-                                    const existingCategories = activeProject?.rabItems
-                                        ? [...new Set(activeProject.rabItems.map(item => item.category))].sort()
-                                        : [];
-                                    return (
-                                        <div className="relative">
-                                            <select
-                                                className="w-full p-3 border rounded-xl bg-white appearance-none pr-10"
-                                                value={existingCategories.includes(rabCategory) ? rabCategory : '_custom'}
-                                                onChange={e => {
-                                                    if (e.target.value !== '_custom') {
-                                                        setRabCategory(e.target.value);
-                                                    }
-                                                }}
-                                            >
-                                                <option value="_custom">-- Ketik Kategori Baru --</option>
-                                                {existingCategories.map((cat, idx) => (
-                                                    <option key={idx} value={cat}>{cat}</option>
-                                                ))}
-                                            </select>
-                                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                                                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-                                {/* Show text input if custom or editing */}
-                                {(!activeProject?.rabItems?.some(item => item.category === rabCategory) || rabCategory === '' || rabCategory === '_custom') && (
-                                    <input
-                                        className="w-full p-3 border rounded-xl mt-2"
-                                        placeholder="Contoh: A. PERSIAPAN"
-                                        value={rabCategory === '_custom' ? '' : rabCategory}
-                                        onChange={e => setRabCategory(e.target.value)}
-                                    />
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-xl">{selectedRabItem ? 'Edit Item RAB' : 'Tambah Item RAB'}</h3>
+                                {!selectedRabItem && ahsItems.length > 0 && (
+                                    <button
+                                        onClick={() => setShowAhsPicker(!showAhsPicker)}
+                                        className={`text-sm px-3 py-2 rounded-lg font-bold flex items-center gap-1 ${showAhsPicker ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600 border border-blue-200'}`}
+                                    >
+                                        <Package size={14} />
+                                        {showAhsPicker ? 'Input Manual' : 'Pilih dari AHS'}
+                                    </button>
                                 )}
                             </div>
-                            <input className="w-full p-3 border rounded-xl" placeholder="Nama Item / Uraian Pekerjaan" value={rabItemName} onChange={e => setRabItemName(e.target.value)} />
-                            <div className="flex gap-2">
-                                <input className="w-24 p-3 border rounded-xl text-center" placeholder="Satuan" value={rabUnit} onChange={e => setRabUnit(e.target.value)} />
-                                <NumberInput className="flex-1 p-3 border rounded-xl" placeholder="Volume" value={rabVol} onChange={setRabVol} />
-                            </div>
-                            <NumberInput className="w-full p-3 border rounded-xl" placeholder="Harga Satuan (Rp)" value={rabPrice} onChange={setRabPrice} />
-                            <button onClick={handleSaveRAB} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">Simpan Item</button>
+
+                            {/* AHS Picker */}
+                            {showAhsPicker && !selectedRabItem && (
+                                <div className="border rounded-xl overflow-hidden">
+                                    <div className="bg-blue-50 p-3 border-b">
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                            <input
+                                                type="text"
+                                                placeholder="Cari item AHS..."
+                                                className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm"
+                                                value={ahsSearch}
+                                                onChange={e => setAhsSearch(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto divide-y">
+                                        {filteredAHS.length === 0 ? (
+                                            <div className="p-4 text-center text-slate-400 text-sm">
+                                                Tidak ada item AHS ditemukan
+                                            </div>
+                                        ) : (
+                                            filteredAHS.slice(0, 10).map(ahs => (
+                                                <button
+                                                    key={ahs.id}
+                                                    onClick={() => handleSelectAHS(ahs)}
+                                                    className="w-full p-3 text-left hover:bg-blue-50 transition-colors"
+                                                >
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div>
+                                                            <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded font-mono mr-2">{ahs.code}</span>
+                                                            <span className="font-bold text-sm">{ahs.name}</span>
+                                                            <div className="text-xs text-slate-500 mt-0.5">{ahs.category}</div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="font-bold text-blue-600 text-sm">{formatRupiah(calculateAHSTotal(ahs))}</div>
+                                                            <div className="text-xs text-slate-400">/{ahs.unit}</div>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                    {filteredAHS.length > 10 && (
+                                        <div className="p-2 bg-slate-50 text-center text-xs text-slate-500 border-t">
+                                            Menampilkan 10 dari {filteredAHS.length} item. Gunakan pencarian untuk filter.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Manual Input Form */}
+                            {(!showAhsPicker || selectedRabItem) && (
+                                <>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold ml-1">Kategori Pekerjaan</label>
+                                        {/* Get existing categories from project */}
+                                        {(() => {
+                                            const existingCategories = activeProject?.rabItems
+                                                ? [...new Set(activeProject.rabItems.map(item => item.category))].sort()
+                                                : [];
+                                            return (
+                                                <div className="relative">
+                                                    <select
+                                                        className="w-full p-3 border rounded-xl bg-white appearance-none pr-10"
+                                                        value={existingCategories.includes(rabCategory) ? rabCategory : '_custom'}
+                                                        onChange={e => {
+                                                            if (e.target.value !== '_custom') {
+                                                                setRabCategory(e.target.value);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <option value="_custom">-- Ketik Kategori Baru --</option>
+                                                        {existingCategories.map((cat, idx) => (
+                                                            <option key={idx} value={cat}>{cat}</option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                        {/* Show text input if custom or editing */}
+                                        {(!activeProject?.rabItems?.some(item => item.category === rabCategory) || rabCategory === '' || rabCategory === '_custom') && (
+                                            <input
+                                                className="w-full p-3 border rounded-xl mt-2"
+                                                placeholder="Contoh: A. PERSIAPAN"
+                                                value={rabCategory === '_custom' ? '' : rabCategory}
+                                                onChange={e => setRabCategory(e.target.value)}
+                                            />
+                                        )}
+                                    </div>
+                                    <input className="w-full p-3 border rounded-xl" placeholder="Nama Item / Uraian Pekerjaan" value={rabItemName} onChange={e => setRabItemName(e.target.value)} />
+                                    <div className="flex gap-2">
+                                        <input className="w-24 p-3 border rounded-xl text-center" placeholder="Satuan" value={rabUnit} onChange={e => setRabUnit(e.target.value)} />
+                                        <NumberInput className="flex-1 p-3 border rounded-xl" placeholder="Volume" value={rabVol} onChange={setRabVol} />
+                                    </div>
+                                    <NumberInput className="w-full p-3 border rounded-xl" placeholder="Harga Satuan (Rp)" value={rabPrice} onChange={setRabPrice} />
+                                    <button onClick={handleSaveRAB} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">Simpan Item</button>
+                                </>
+                            )}
                         </div>
                     )}
 

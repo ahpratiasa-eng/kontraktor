@@ -1091,6 +1091,7 @@ const App = () => {
         activeProject={activeProject}
         selectedRabItem={selectedRabItem}
         selectedWorkerId={selectedWorkerId}
+        ahsItems={ahsItems}
       />
 
       {/* LANDING PAGE EDITOR MODAL */}
