@@ -22,7 +22,7 @@ import {
   deleteDoc, onSnapshot, query, setDoc, getDoc
 } from 'firebase/firestore';
 
-import { auth, db, googleProvider, appId } from './lib/firebase';
+import { auth, db, googleProvider, appId, signInAnonymously } from './lib/firebase';
 import type {
   Project, AppUser, RABItem, Transaction, Material,
   MaterialLog, Worker, TaskLog, UserRole, LandingPageConfig
@@ -116,26 +116,31 @@ const App = () => {
     const mode = params.get('mode');
 
     if (pId && mode === 'client') {
-      // Simulate Client Login
+      // Set up client view mode
       setActiveProjectId(pId);
       setView('project-detail');
       setIsClientView(true);
-      // We can't set userRole to 'client_guest' seamlessly without auth, 
-      // but we can enforce read-only by bypassing auth check or setting a dummy user.
-      // For now, let's just set the view and hopefully the logic handles null user.
-      // Actually, many checks rely on 'user'. We might need a dummy user.
-      setUser({ uid: 'guest', email: 'client@guest.com', displayName: 'Tamu Klien' } as any);
-      setUserRole('client_guest'); // Safe role for client
-      // Better: Create a new role 'client_guest' in types and handle it.
-      // But types are in index.ts. 
-      // Let's just set userRole to null (public? no) or 'keuangan'? No.
-      // Let's stick to the requested "Client Portal" as a SHAREABLE LINK feature.
-      // If the user is NOT logged in, they can't access firebase data due to rules?
-      // Assuming rules allow read for public or we use this just for logged in users?
-      // The request implies a public link.
-      // If Firebase rules block it, we can't do it easily.
-      // Let's assume for now we just switch view if logged in.
-      // If strictly public, we'd need Anonymouse Auth.
+
+      // Use Firebase Anonymous Auth for client portal
+      // This allows Firebase to recognize the user for security rules
+      signInAnonymously(auth)
+        .then((userCredential) => {
+          setUser({
+            uid: userCredential.user.uid,
+            email: 'client@guest.com',
+            displayName: 'Tamu Klien',
+            isAnonymous: true
+          } as any);
+          setUserRole('client_guest');
+          setAuthStatus('connected');
+        })
+        .catch((error) => {
+          console.error('Anonymous auth failed:', error);
+          // Fallback to dummy user if anonymous auth fails
+          setUser({ uid: 'guest', email: 'client@guest.com', displayName: 'Tamu Klien' } as any);
+          setUserRole('client_guest');
+          setAuthStatus('connected');
+        });
     }
   }, []);
 
@@ -549,6 +554,18 @@ const App = () => {
               handleDeleteWorker={handleDeleteWorker}
               handleReportToOwner={handleReportToOwner}
             />
+          )}
+
+          {/* Client View Loading/Error State */}
+          {view === 'project-detail' && !activeProject && isClientView && (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
+              <h2 className="text-xl font-bold text-slate-800 mb-2">Memuat Data Proyek...</h2>
+              <p className="text-slate-500 max-w-md">
+                Mohon tunggu sebentar. Jika halaman ini tidak berubah dalam beberapa detik,
+                link proyek mungkin tidak valid atau sudah kadaluarsa.
+              </p>
+            </div>
           )}
 
 
