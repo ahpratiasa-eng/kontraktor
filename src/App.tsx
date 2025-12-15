@@ -646,14 +646,13 @@ const App = () => {
       )}
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      {!isClientView && (
-        <MobileNav
-          view={view}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          userRole={userRole}
-        />
-      )}
+      <MobileNav
+        view={view}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        userRole={userRole}
+        isClientView={isClientView}
+      />
 
     </div>
   );
