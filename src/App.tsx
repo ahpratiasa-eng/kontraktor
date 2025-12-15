@@ -485,23 +485,91 @@ const App = () => {
     setShowModal(true);
   };
 
+  const generateOfflineRAB = (prompt: string) => {
+    const p = prompt.toLowerCase();
+    const items = [];
+
+    // 1. Detect Dimensions (e.g. 6x10)
+    let width = 6, length = 10;
+    const dimMatch = p.match(/(\d+)\s*x\s*(\d+)/);
+    if (dimMatch) { width = parseInt(dimMatch[1]); length = parseInt(dimMatch[2]); }
+    const area = width * length;
+
+    // 2. Detect Floors
+    let floors = 1;
+    if (p.includes('lantai 2') || p.includes('2 lantai')) floors = 2;
+    if (p.includes('lantai 3') || p.includes('3 lantai')) floors = 3;
+
+    const totalArea = area * floors;
+    const keliling = (width + length) * 2;
+    const wallHeight = floors * 3.5;
+    const wallArea = keliling * wallHeight;
+
+    // 3. Generate Basic Items
+    items.push({ category: 'A. PERSIAPAN', name: 'Pembersihan Lahan', unit: 'm2', volume: area, unitPrice: 15000 });
+    items.push({ category: 'A. PERSIAPAN', name: 'Pemasangan Bowplank', unit: 'm1', volume: keliling + 4, unitPrice: 45000 });
+    items.push({ category: 'B. TANAH & PONDASI', name: 'Galian Tanah Pondasi', unit: 'm3', volume: keliling * 0.6, unitPrice: 85000 });
+    items.push({ category: 'B. TANAH & PONDASI', name: 'Pondasi Batu Kali', unit: 'm3', volume: keliling * 0.25, unitPrice: 950000 });
+    items.push({ category: 'C. BETON', name: 'Sloof 15/20', unit: 'm3', volume: keliling * 0.03, unitPrice: 3500000 });
+    if (floors > 1) {
+      items.push({ category: 'C. BETON', name: 'Plat Lantai Beton', unit: 'm3', volume: (area * 0.12), unitPrice: 3800000 });
+      items.push({ category: 'C. BETON', name: 'Kolom Praktis', unit: 'm3', volume: (floors * 12 * 3.5 * 0.02), unitPrice: 3500000 });
+    }
+    items.push({ category: 'D. DINDING', name: 'Pasangan Bata Merah', unit: 'm2', volume: wallArea * 0.85, unitPrice: 125000 });
+    items.push({ category: 'D. DINDING', name: 'Plesteran Dinding', unit: 'm2', volume: wallArea * 1.7, unitPrice: 65000 });
+    items.push({ category: 'D. DINDING', name: 'Acian Dinding', unit: 'm2', volume: wallArea * 1.7, unitPrice: 35000 });
+    items.push({ category: 'E. LANTAI', name: 'Pasang Keramik 60x60', unit: 'm2', volume: totalArea, unitPrice: 200000 });
+    items.push({ category: 'F. PLAFOND', name: 'Plafond Gypsum', unit: 'm2', volume: totalArea, unitPrice: 95000 });
+    items.push({ category: 'G. PENGECATAN', name: 'Cat Dinding', unit: 'm2', volume: wallArea * 1.7, unitPrice: 25000 });
+    items.push({ category: 'H. INSTALASI', name: 'Titik Lampu & Saklar', unit: 'titik', volume: 10 * floors, unitPrice: 250000 });
+
+    return items;
+  };
+
   const handleGenerateRAB = async () => {
     if (!aiPrompt) return alert("Masukkan deskripsi proyek dulu!");
     setIsGeneratingAI(true);
+
+    // Fallback Logic
+    const runOffline = () => {
+      const items = generateOfflineRAB(aiPrompt);
+      const newItems = items.map((i: any) => ({ ...i, id: Date.now() + Math.random(), progress: 0, isAddendum: false }));
+      if (activeProject) {
+        updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
+        alert(`Mode Estimasi Cepat: Berhasil membuat ${newItems.length} item RAB (Offline Mode).`);
+        setShowModal(false);
+      }
+    };
+
     const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+      // Use correct gemini-1.5-flash model
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Buatkan daftar item RAB konstruksi dalam Bahasa Indonesia berdasarkan deskripsi berikut: '${aiPrompt}'. Output wajib format JSON murni array of objects dengan key: category, name, unit, volume, unitPrice. Pastikan nama item dan kategori menggunakan istilah konstruksi standar Indonesia. No markdown.` }] }] })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Buat RAB konstruksi JSON array (category, name, unit, volume:number, unitPrice:number) untuk: ${aiPrompt}. Volume harus logis. No markdown.` }] }] })
       });
+
+      if (!response.ok) throw new Error("API Error");
       const data = await response.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       const cleanJson = text.replace(/```json|```/g, '').trim();
       const items = JSON.parse(cleanJson);
+
+      if (!Array.isArray(items)) throw new Error("Invalid Format");
+
       const newItems = items.map((i: any) => ({ ...i, id: Date.now() + Math.random(), progress: 0, isAddendum: false }));
-      if (activeProject) { updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] }); alert(`Berhasil menambahkan ${newItems.length} item RAB!`); setShowModal(false); }
-    } catch (e) { console.error(e); alert("Gagal generate AI. Coba lagi."); } finally { setIsGeneratingAI(false); }
+      if (activeProject) {
+        updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
+        alert(`Berhasil generate RAB!`);
+        setShowModal(false);
+      }
+    } catch (e) {
+      console.warn("Switching to offline generator:", e);
+      runOffline();
+    } finally {
+      setIsGeneratingAI(false);
+    }
   };
 
   const handleImportRAB = (importedItems: any[]) => {
