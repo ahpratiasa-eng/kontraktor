@@ -371,7 +371,21 @@ const App = () => {
   };
   const getFilteredEvidence = () => { if (!activeProject || !activeProject.attendanceEvidences) return []; return activeProject.attendanceEvidences; }; // Simplified for now
 
-  const openModal = (type: string) => { setModalType(type); setShowModal(true); };
+  const openModal = (type: string) => {
+    // Reset state for new project creation
+    if (type === 'newProject') {
+      setActiveProjectId(null);
+      setInputName('');
+      setInputClient('');
+      setInputLocation('');
+      setInputOwnerPhone('');
+      setInputBudget(0);
+      setInputStartDate('');
+      setInputEndDate('');
+    }
+    setModalType(type);
+    setShowModal(true);
+  };
 
   const handleGenerateRAB = async () => {
     if (!aiPrompt) return alert("Masukkan deskripsi proyek dulu!");
