@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
     Search, Plus, Edit, Trash2, Package, Users, Wrench,
-    ChevronDown, ChevronRight, Copy, FileSpreadsheet, X, RefreshCw
+    ChevronDown, ChevronRight, Copy, FileSpreadsheet, X, RefreshCw,
+    Sparkles, Send, Pencil
 } from 'lucide-react';
 import type { AHSItem, AHSComponent, AHSComponentType, PricingResource } from '../types';
 import { calculateAHSTotal, calculateAHSSubtotal } from '../types';
@@ -35,6 +36,10 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
     const [pageAHS, setPageAHS] = useState(1);
     const [pageRes, setPageRes] = useState(1);
     const itemsPerPage = 50;
+
+    // AI & Resource Edit
+    const [aiCommand, setAiCommand] = useState('');
+    const [editingResource, setEditingResource] = useState<PricingResource | null>(null);
 
     useEffect(() => {
         setPageAHS(1);
@@ -215,20 +220,106 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
     };
 
     const handleAddNewResource = () => {
-        const name = prompt("Nama Sumber Daya:");
-        if (!name) return;
-        const unit = prompt("Satuan (e.g. m3, kg, OH):");
-        const price = Number(prompt("Harga Satuan:"));
-        const category = prompt("Kategori:", "UMUM");
-
         const newRes: PricingResource = {
             id: `res_${Date.now()}`,
-            name, unit: unit || 'ls', price: price || 0,
-            category: category || 'UMUM',
-            type: 'bahan', // default props
+            name: '', unit: '', price: 0,
+            category: 'UMUM',
+            type: 'bahan',
             source: 'User Input'
         };
-        onSaveResources([...resources, newRes]);
+        setEditingResource(newRes);
+    };
+
+    const handleSaveResource = (res: PricingResource) => {
+        const idx = resources.findIndex(r => r.id === res.id);
+        let newResList = [...resources];
+
+        let shouldCheckSync = false;
+        let oldPrice = 0;
+
+        if (idx >= 0) {
+            oldPrice = resources[idx].price;
+            if (oldPrice !== res.price) shouldCheckSync = true;
+            newResList[idx] = res;
+        } else {
+            newResList.push(res);
+        }
+
+        onSaveResources(newResList);
+        setEditingResource(null);
+
+        // Trigger Sync Check if price changed
+        if (shouldCheckSync) {
+            setTimeout(() => {
+                triggerSmartSync(res, false);
+            }, 100);
+        }
+    };
+
+    const handleAICommand = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!aiCommand.trim()) return;
+
+        const lower = aiCommand.toLowerCase();
+        let actionTaken = false;
+
+        // 1. UPDATE PRICE regex
+        // Matches "harga ... jadi ..." or just "... jadi ..."
+        const priceMatch = lower.match(/(?:ubah|ganti|set|update)?\s*(?:harga)?\s*(.+?)\s*(?:jadi|menjadi|=)\s*([0-9.,]+)/);
+
+        if (priceMatch && !lower.startsWith('tambah') && !lower.startsWith('hapus')) {
+            const namePart = priceMatch[1].trim();
+            const priceStr = priceMatch[2];
+            // Remove non-digits (assume IDR integer prices)
+            const price = parseInt(priceStr.replace(/[^0-9]/g, ''));
+
+            // Find resource
+            const target = resources.find(r => r.name.toLowerCase().includes(namePart));
+            if (target && !isNaN(price)) {
+                if (confirm(`AI: Saya menemukan "${target.name}".\nUbah harga dari ${formatRupiah(target.price)} menjadi ${formatRupiah(price)}?`)) {
+                    handleUpdateResourcePrice(target, price);
+                    setAiCommand('');
+                    actionTaken = true;
+                }
+            } else if (!target) {
+                alert(`AI: Maaf, saya tidak menemukan item dengan nama "${namePart}".`);
+                actionTaken = true;
+            }
+        }
+
+        // 2. DELETE
+        if (!actionTaken && lower.startsWith('hapus ')) {
+            const namePart = lower.replace('hapus ', '').trim();
+            const target = resources.find(r => r.name.toLowerCase().includes(namePart));
+            if (target) {
+                if (confirm(`AI: Hapus item "${target.name}"?`)) {
+                    onSaveResources(resources.filter(r => r.id !== target.id));
+                    setAiCommand('');
+                    actionTaken = true;
+                }
+            }
+        }
+
+        // 3. ADD
+        if (!actionTaken && lower.startsWith('tambah ')) {
+            alert("AI: Silakan lengkapi data item baru di form berikut.");
+            const newRes: PricingResource = {
+                id: `res_${Date.now()}`,
+                name: lower.replace('tambah ', '').toUpperCase(),
+                unit: 'ls',
+                price: 0,
+                category: 'UMUM',
+                type: 'bahan',
+                source: 'AI Input'
+            };
+            setEditingResource(newRes);
+            setAiCommand('');
+            actionTaken = true;
+        }
+
+        if (!actionTaken) {
+            alert("AI: Maaf, saya tidak mengerti. Coba:\n- 'Ubah [nama] jadi [harga]'\n- 'Hapus [nama]'\n- 'Tambah [nama]'");
+        }
     };
 
     const getTypeIcon = (type: AHSComponentType) => {
@@ -342,6 +433,25 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
                         </button>
                     </div>
 
+                    {/* AI COMMAND BAR */}
+                    <div className="p-4 bg-indigo-50 border-b flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 min-w-[40px]">
+                            <Sparkles size={20} />
+                        </div>
+                        <form onSubmit={handleAICommand} className="flex-1 flex gap-2">
+                            <input
+                                type="text"
+                                className="flex-1 border border-indigo-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                placeholder="Tanya AI: 'Ubah harga pasir jadi 50.000' atau 'Tambah item...'"
+                                value={aiCommand}
+                                onChange={e => setAiCommand(e.target.value)}
+                            />
+                            <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700">
+                                <Send size={18} />
+                            </button>
+                        </form>
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
                             <thead className="bg-slate-50 text-slate-500 font-bold border-b">
@@ -359,13 +469,13 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
                                         <td className="p-4 font-medium text-slate-800">{res.name}</td>
                                         <td className="p-4 text-slate-500 text-xs"><span className="bg-slate-100 px-2 py-1 rounded">{res.category}</span></td>
                                         <td className="p-4 text-center">{res.unit}</td>
-                                        <td className="p-4 text-right font-mono font-bold text-slate-700" onClick={() => {
-                                            const newP = prompt(`Update harga untuk ${res.name}:`, res.price.toString());
-                                            if (newP && !isNaN(Number(newP))) handleUpdateResourcePrice(res, Number(newP));
-                                        }}>
-                                            <span className="cursor-pointer border-b border-dashed border-slate-300 hover:border-blue-500">{formatRupiah(res.price)}</span>
+                                        <td className="p-4 text-right font-mono font-bold text-slate-700">
+                                            <span onClick={() => setEditingResource(res)} className="cursor-pointer border-b border-dashed border-slate-300 hover:border-blue-500">
+                                                {formatRupiah(res.price)}
+                                            </span>
                                         </td>
                                         <td className="p-4 text-center flex justify-center gap-1">
+                                            <button onClick={() => setEditingResource(res)} className="text-slate-500 hover:bg-slate-100 p-1 rounded" title="Edit Detail"><Pencil size={16} /></button>
                                             <button onClick={() => triggerSmartSync(res, true)} className="text-blue-500 hover:bg-blue-50 p-1 rounded" title="Sync satu item ini"><RefreshCw size={16} /></button>
                                             <button onClick={() => {
                                                 if (confirm(`Hapus ${res.name}?`)) onSaveResources(resources.filter(r => r.id !== res.id));
@@ -391,6 +501,8 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
             )}
 
             {showEditor && editingItem && <AHSEditorModal item={editingItem} existingCategories={ahsCategories} onSave={handleSaveAHS} onClose={() => { setShowEditor(false); setEditingItem(null); }} />}
+
+            {editingResource && <ResourceEditorModal resource={editingResource} categories={resCategories} onSave={handleSaveResource} onClose={() => setEditingResource(null)} />}
         </div>
     );
 };
@@ -653,6 +765,106 @@ const AHSEditorModal: React.FC<AHSEditorModalProps> = ({ item, existingCategorie
                     <button onClick={handleSubmit} className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700">
                         Simpan AHS
                     </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ============ RESOURCE EDITOR MODAL ============
+interface ResourceEditorModalProps {
+    resource: PricingResource;
+    categories: string[];
+    onSave: (res: PricingResource) => void;
+    onClose: () => void;
+}
+
+const ResourceEditorModal: React.FC<ResourceEditorModalProps> = ({ resource, categories, onSave, onClose }) => {
+    const [formData, setFormData] = useState<PricingResource>(resource);
+
+    return (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b flex justify-between items-center bg-indigo-50">
+                    <div>
+                        <h3 className="font-bold text-xl text-slate-800">
+                            {resource.id.includes('res_') ? 'Edit Sumber Daya' : 'Tambah Sumber Daya'}
+                        </h3>
+                        <p className="text-sm text-indigo-600">Harga Dasar Upah & Bahan</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white rounded-full"><X size={20} /></button>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-1">Nama Item</label>
+                        <input
+                            type="text"
+                            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 bg-slate-50"
+                            value={formData.name}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="Contoh: Semen Gresik 40kg"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">Kategori</label>
+                            <input
+                                list="resource-categories"
+                                className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500"
+                                value={formData.category}
+                                onChange={e => setFormData({ ...formData, category: e.target.value })}
+                            />
+                            <datalist id="resource-categories">
+                                {categories.map(c => <option key={c} value={c} />)}
+                            </datalist>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">Jenis</label>
+                            <select
+                                className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500"
+                                value={formData.type}
+                                onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                            >
+                                <option value="bahan">Bahan</option>
+                                <option value="upah">Upah</option>
+                                <option value="alat">Alat</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">Satuan</label>
+                            <input
+                                type="text"
+                                className="w-full p-3 border rounded-xl"
+                                value={formData.unit}
+                                onChange={e => setFormData({ ...formData, unit: e.target.value })}
+                                placeholder="m3, kg, bh,..."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">Harga Dasar (Rp)</label>
+                            <input
+                                type="number"
+                                className="w-full p-3 border rounded-xl font-mono text-right font-bold text-indigo-700"
+                                value={formData.price || ''}
+                                onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-yellow-50 p-3 rounded-lg flex items-start gap-2 text-xs text-yellow-700 border border-yellow-100">
+                        <Sparkles size={16} className="mt-0.5 shrink-0" />
+                        <p>Tip: Perubahan harga disini akan otomatis disinkronkan ke semua Analisa (AHS) yang menggunakan item ini.</p>
+                    </div>
+                </div>
+
+                <div className="p-6 border-t bg-slate-50 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200">Batal</button>
+                    <button onClick={() => onSave(formData)} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg hover:bg-indigo-700 hover:shadow-indigo-200">Simpan Perubahan</button>
                 </div>
             </div>
         </div>
