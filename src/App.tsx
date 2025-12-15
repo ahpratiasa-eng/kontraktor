@@ -9,6 +9,7 @@ import DashboardView from './components/DashboardView';
 import ProjectDetailView from './components/ProjectDetailView';
 import ReportView from './components/ReportView';
 import ModalManager from './components/ModalManager';
+import type { Material } from './types'; // Import Material type
 import LandingPage from './components/LandingPage';
 import LandingEditor from './components/LandingEditor';
 import AHSLibraryView from './components/AHSLibraryView';
@@ -101,11 +102,23 @@ const App = () => {
     handleSaveRAB, deleteRABItem, handleUpdateProgress, handleSaveProject,
     prepareEditProject, prepareEditRABItem, handlePayWorker, handleSaveWorker,
     handleEditWorker, handleDeleteWorker, handleStockMovement, handleSaveMaterial,
+    handleEditMaterial, handleDeleteMaterial, // Destructure new handlers
     handleSoftDeleteProject, handleRestoreProject, handlePermanentDeleteProject,
     handlePhotoUpload, handleReportToOwner, saveAttendanceWithEvidence,
     getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB
   } = projectHandlers;
   // Pengawas ga boleh tambah tukang
+
+  // Helper to prepare material edit
+  const handlePrepareEditMaterial = (m: Material) => {
+    setSelectedMaterial(m);
+    setInputMaterialName(m.name);
+    setInputMaterialUnit(m.unit);
+    setInputMinStock(m.minStock);
+    setInputInitialStock(m.stock); // Just for display if needed, though we don't save it
+    setModalType('newMaterial');
+    setShowModal(true);
+  };
 
   // Effects
   // Effects
@@ -255,6 +268,8 @@ const App = () => {
               deleteRABItem={deleteRABItem}
               handleEditWorker={handleEditWorker}
               handleDeleteWorker={handleDeleteWorker}
+              handleDeleteMaterial={handleDeleteMaterial}
+              handlePrepareEditMaterial={handlePrepareEditMaterial}
               handleReportToOwner={handleReportToOwner}
               ahsItems={ahsItems}
             />
@@ -298,6 +313,7 @@ const App = () => {
         handleSaveWorker={handleSaveWorker}
         handleStockMovement={handleStockMovement}
         handleSaveMaterial={handleSaveMaterial}
+        handleEditMaterial={handleEditMaterial}
         handleAddUser={handleAddUser}
         handleGenerateRAB={handleGenerateRAB}
         handleImportRAB={handleImportRAB}

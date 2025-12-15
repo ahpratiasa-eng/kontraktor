@@ -35,6 +35,9 @@ interface ProjectDetailViewProps {
     deleteRABItem: (id: number) => void;
     handleEditWorker: (w: Worker) => void;
     handleDeleteWorker: (w: Worker) => void;
+    handleDeleteMaterial: (id: number) => void;
+    handlePrepareEditMaterial: (m: Material) => void;
+    handleReportToOwner: () => void;
     // ... existing props ...
     canAccessFinance: boolean;
     canAccessWorkers: boolean;
@@ -48,7 +51,6 @@ interface ProjectDetailViewProps {
     prepareEditProject: () => void;
     prepareEditRABItem: (item: RABItem) => void;
     isClientView?: boolean;
-    handleReportToOwner: () => void;
     ahsItems: AHSItem[];
 }
 
@@ -57,6 +59,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     openModal, setModalType, setShowModal, setSelectedRabItem, setProgressInput, setProgressDate,
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
+    handleDeleteMaterial, handlePrepareEditMaterial,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
     setActiveTab, prepareEditProject, prepareEditRABItem, isClientView, handleReportToOwner,
@@ -620,12 +623,17 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             const shopName = prompt("Nama Toko Bangunan / Supplier:", "Toko Langganan");
                                             if (shopName === null) return;
 
+                                            const shopPhone = prompt("Nomor WA Toko (Opsional, awali 628...):", "");
+
                                             const list = lowStock
                                                 .map(m => `- ${m.name}: butuh estimasi ${(m.minStock * 2) - m.stock > 0 ? (m.minStock * 2) - m.stock : 10} ${m.unit}`)
                                                 .join('\n');
 
                                             const msg = `Halo ${shopName},\nSaya mau pesan material untuk proyek *${activeProject.name}*:\n\n${list}\n\nMohon info ketersediaan & harga total. Terima kasih.`;
-                                            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+
+                                            const targetUrl = shopPhone ? `https://wa.me/${shopPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+                                            window.open(targetUrl, '_blank');
                                         }}
                                         className="w-full sm:w-auto bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-red-700 flex items-center justify-center gap-2"
                                     >
@@ -645,8 +653,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             <div className="text-right"><div className={`text-2xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div><div className="text-xs text-slate-400">{m.unit}</div></div>
                                         </div>
                                         <div className="flex gap-2 border-t pt-3">
-                                            <button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border hover:bg-slate-50 transition-colors"><Edit size={14} /> Update Stok</button>
-                                            <button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-white text-slate-500 rounded-lg border hover:bg-slate-50 shadow-sm"><History size={18} /></button>
+                                            <button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-green-50 text-green-700 text-xs font-bold rounded-lg border border-green-200 hover:bg-green-100 transition-colors">Update Stok</button>
+                                            <button onClick={() => handlePrepareEditMaterial(m)} className="px-3 py-2 bg-white text-blue-600 rounded-lg border hover:bg-blue-50 shadow-sm" title="Edit Material"><Edit size={16} /></button>
+                                            <button onClick={() => handleDeleteMaterial(m.id)} className="px-3 py-2 bg-white text-red-600 rounded-lg border hover:bg-red-50 shadow-sm" title="Hapus Material"><Trash2 size={16} /></button>
                                         </div>
                                     </div>
                                 ))}
