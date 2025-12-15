@@ -249,73 +249,31 @@ const App = () => {
     }
   };
 
-  // Default AHS Data (beberapa contoh SNI)
-  const getDefaultAHSData = (): AHSItem[] => [
-    {
-      id: 'ahs_sni_001', code: 'A.1.1', category: 'A. PEKERJAAN PERSIAPAN', name: 'Pembersihan Lapangan', unit: 'm²',
-      components: [
-        { id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.05, unitPrice: 100000 },
-        { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.005, unitPrice: 150000 },
-      ],
-      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
-    },
-    {
-      id: 'ahs_sni_002', code: 'B.1.1', category: 'B. PEKERJAAN TANAH', name: 'Galian Tanah Biasa Sedalam 1m', unit: 'm³',
-      components: [
-        { id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.75, unitPrice: 100000 },
-        { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.025, unitPrice: 150000 },
-      ],
-      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
-    },
-    {
-      id: 'ahs_sni_003', code: 'C.1.1', category: 'C. PEKERJAAN PASANGAN', name: 'Pasang 1m² Dinding Bata Merah 1:4', unit: 'm²',
-      components: [
-        { id: 1, type: 'bahan', name: 'Bata Merah', unit: 'bh', coefficient: 70, unitPrice: 800 },
-        { id: 2, type: 'bahan', name: 'Semen PC 50kg', unit: 'zak', coefficient: 0.23, unitPrice: 65000 },
-        { id: 3, type: 'bahan', name: 'Pasir Pasang', unit: 'm³', coefficient: 0.043, unitPrice: 250000 },
-        { id: 4, type: 'upah', name: 'Tukang Batu', unit: 'OH', coefficient: 0.2, unitPrice: 150000 },
-        { id: 5, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.2, unitPrice: 100000 },
-        { id: 6, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.01, unitPrice: 150000 },
-      ],
-      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
-    },
-    {
-      id: 'ahs_sni_004', code: 'C.2.1', category: 'C. PEKERJAAN PASANGAN', name: 'Plesteran 1:4', unit: 'm²',
-      components: [
-        { id: 1, type: 'bahan', name: 'Semen PC 50kg', unit: 'zak', coefficient: 0.13, unitPrice: 65000 },
-        { id: 2, type: 'bahan', name: 'Pasir Pasang', unit: 'm³', coefficient: 0.024, unitPrice: 250000 },
-        { id: 3, type: 'upah', name: 'Tukang Batu', unit: 'OH', coefficient: 0.15, unitPrice: 150000 },
-        { id: 4, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.2, unitPrice: 100000 },
-        { id: 5, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.01, unitPrice: 150000 },
-      ],
-      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
-    },
-    {
-      id: 'ahs_sni_005', code: 'D.1.1', category: 'D. PEKERJAAN BETON', name: 'Beton Mutu K-225', unit: 'm³',
-      components: [
-        { id: 1, type: 'bahan', name: 'Semen PC 50kg', unit: 'zak', coefficient: 7.84, unitPrice: 65000 },
-        { id: 2, type: 'bahan', name: 'Pasir Beton', unit: 'm³', coefficient: 0.52, unitPrice: 300000 },
-        { id: 3, type: 'bahan', name: 'Kerikil/Split', unit: 'm³', coefficient: 0.78, unitPrice: 350000 },
-        { id: 4, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 1.65, unitPrice: 100000 },
-        { id: 5, type: 'upah', name: 'Tukang Batu', unit: 'OH', coefficient: 0.275, unitPrice: 150000 },
-        { id: 6, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.083, unitPrice: 150000 },
-      ],
-      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
-    },
-    {
-      id: 'ahs_sni_006', code: 'E.1.1', category: 'E. PEKERJAAN LANTAI', name: 'Pasang Keramik Lantai 40x40', unit: 'm²',
-      components: [
-        { id: 1, type: 'bahan', name: 'Keramik 40x40', unit: 'm²', coefficient: 1.05, unitPrice: 85000 },
-        { id: 2, type: 'bahan', name: 'Semen PC 50kg', unit: 'zak', coefficient: 0.2, unitPrice: 65000 },
-        { id: 3, type: 'bahan', name: 'Pasir Pasang', unit: 'm³', coefficient: 0.045, unitPrice: 250000 },
-        { id: 4, type: 'bahan', name: 'Semen Warna/Nat', unit: 'kg', coefficient: 0.5, unitPrice: 15000 },
-        { id: 5, type: 'upah', name: 'Tukang Batu', unit: 'OH', coefficient: 0.2, unitPrice: 150000 },
-        { id: 6, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.35, unitPrice: 100000 },
-        { id: 7, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.018, unitPrice: 150000 },
-      ],
-      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
-    },
-  ];
+  // Import default AHS data from AHSP file
+  const getDefaultAHSData = (): AHSItem[] => {
+    // Data from parsed AHSP.xlsx - 20 items covering various work categories
+    return [
+      { id: 'ahs_galian_tanah_1', code: 'B.1.1', category: 'B. GALIAN TANAH', name: 'Penggalian 1 m3 tanah biasa sedalam 0 s.d. 1 m', unit: 'm³', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.75, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.038, unitPrice: 145000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_timbunan_1', code: 'C.1.1', category: 'C. TIMBUNAN PEMADATAN', name: '1 m3 urukan kembali galian tanah tanpa pemadatan', unit: 'm³', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.5, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.025, unitPrice: 145000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_pembongkaran_1', code: 'D.1.1', category: 'D. PEMBONGKARAN', name: 'Pembongkaran 1 m3 pasangan batu (manual)', unit: 'm³', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 1.2, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.06, unitPrice: 145000 }, { id: 3, type: 'alat', name: 'Palu/godam', unit: 'buah', coefficient: 0.006, unitPrice: 25000 }, { id: 4, type: 'alat', name: 'Linggis', unit: 'buah', coefficient: 0.02, unitPrice: 30000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_pondasi_1', code: 'E.1.1', category: 'E. PONDASI', name: 'Pemasangan 1 m3 batu kosong (anstamping)', unit: 'm³', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.78, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.39, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.039, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.013, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Batu belah', unit: 'm3', coefficient: 1.2, unitPrice: 286500 }, { id: 6, type: 'bahan', name: 'Pasir urug', unit: 'm3', coefficient: 0.432, unitPrice: 254700 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_beton_1', code: 'F.1.1', category: 'F. BETON', name: 'Pembuatan 1 kg penulangan slab BjTP/BjTS dia < 12mm', unit: 'kg', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.007, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang besi', unit: 'OH', coefficient: 0.007, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0007, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0007, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'BjTP', unit: 'kg', coefficient: 1.02, unitPrice: 14250 }, { id: 6, type: 'bahan', name: 'Kawat beton', unit: 'kg', coefficient: 0.015, unitPrice: 18800 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_rangka_atap_1', code: 'G.1.1', category: 'G. RANGKA ATAP', name: 'Pemasangan 1 m2 rangka atap baja ringan C75', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.734, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang besi', unit: 'OH', coefficient: 0.734, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.073, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.024, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Baja ringan C75', unit: 'batang', coefficient: 0.96, unitPrice: 77200 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_dinding_1', code: 'H.1.1', category: 'H. PASANGAN DINDING', name: 'Pemasangan 1 m2 dinding bata merah tebal 1 batu', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.4, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.2, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.02, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0067, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Bata merah', unit: 'buah', coefficient: 143.81, unitPrice: 700 }, { id: 6, type: 'bahan', name: 'Semen portland', unit: 'kg', coefficient: 43.5, unitPrice: 1300 }, { id: 7, type: 'bahan', name: 'Pasir pasang', unit: 'm3', coefficient: 0.08, unitPrice: 275000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_atap_1', code: 'I.1.1', category: 'I. PENUTUP ATAP', name: 'Pemasangan 1 m2 atap genteng palentong', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.15, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang kayu', unit: 'OH', coefficient: 0.075, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0075, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.003, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Genteng palentong', unit: 'buah', coefficient: 25, unitPrice: 2800 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_plester_1', code: 'J.1.1', category: 'J. PLESTERAN DAN ACIAN', name: 'Pemasangan 1 m2 plesteran 1SP:1PP tebal 15mm', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.2, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.1, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.01, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0033, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Semen portland', unit: 'kg', coefficient: 15.504, unitPrice: 1300 }, { id: 6, type: 'bahan', name: 'Pasir pasang', unit: 'm3', coefficient: 0.016, unitPrice: 275000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_plafon_1', code: 'K.1.1', category: 'K. PLAFON', name: 'Pemasangan 1 m2 plafon akustik 30x30cm', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.12, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang kayu', unit: 'OH', coefficient: 0.12, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.012, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.004, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Plafon akustik 30x30', unit: 'lembar', coefficient: 12, unitPrice: 6200 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_lantai_1', code: 'L.1.1', category: 'L. PENUTUP LANTAI', name: 'Pemasangan 1 m2 lantai ubin PC abu-abu 20x20cm', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.1333, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.0667, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0067, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0022, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Ubin PC abu-abu 20x20', unit: 'buah', coefficient: 26.25, unitPrice: 2000 }, { id: 6, type: 'bahan', name: 'Semen portland', unit: 'kg', coefficient: 13.632, unitPrice: 1300 }, { id: 7, type: 'bahan', name: 'Pasir pasang', unit: 'm3', coefficient: 0.027, unitPrice: 275000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_pintu_1', code: 'M.1.1', category: 'M. PINTU DAN JENDELA', name: 'Pemasangan 1 m2 rolling door besi', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 1.2, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang las', unit: 'OH', coefficient: 1.2, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.12, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.04, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Rolling door besi', unit: 'm2', coefficient: 1, unitPrice: 509100 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_kaca_1', code: 'N.1.1', category: 'N. KACA', name: 'Pemasangan 1 m2 sunscreen aluminium', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.08, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang aluminium', unit: 'OH', coefficient: 0.8, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.08, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0267, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Sunscreen aluminium', unit: 'm2', coefficient: 1, unitPrice: 381900 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_aluminium_1', code: 'O.1.1', category: 'O. BESI DAN ALUMINIUM', name: "Pemasangan 1 m' slimar aluminium", unit: "m'", components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.043, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang aluminium', unit: 'OH', coefficient: 0.043, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0043, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0014, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Profil slimar aluminium', unit: "m'", coefficient: 1.1, unitPrice: 60000 }, { id: 6, type: 'bahan', name: 'Skrup fixer', unit: 'buah', coefficient: 2, unitPrice: 1600 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_kayu_1', code: 'P.1.1', category: 'P. KAYU', name: 'Pembuatan 1 m2 plywood rangkap, rangka expose kayu kelas I', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.5952, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang kayu', unit: 'OH', coefficient: 0.2976, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0298, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0099, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Kayu papan kelas I', unit: 'm3', coefficient: 0.025, unitPrice: 26000000 }, { id: 6, type: 'bahan', name: 'Paku 1 inch', unit: 'kg', coefficient: 0.03, unitPrice: 15000 }, { id: 7, type: 'bahan', name: 'Plywood 4mm', unit: 'lembar', coefficient: 0.4, unitPrice: 75000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_cat_1', code: 'Q.1.1', category: 'Q. PENGECATAN', name: 'Pengecatan 1 m2 bidang kayu (1 lapis plamir + 3 lapis cat)', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.02, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang cat', unit: 'OH', coefficient: 0.063, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0063, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0021, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Plamir kayu', unit: 'kg', coefficient: 0.1, unitPrice: 28000 }, { id: 6, type: 'bahan', name: 'Cat kayu', unit: 'kg', coefficient: 0.26, unitPrice: 60000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_sanitair_1', code: 'R.1.1', category: 'R. SANITAIR', name: 'Pemasangan 1 bh closet duduk porselen', unit: 'bh', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 1.5, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.75, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.075, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.025, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Closet duduk porselen', unit: 'bh', coefficient: 1, unitPrice: 1500000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_air_1', code: 'S.1.1', category: 'S. SISTEM AIR MINUM', name: "Pemasangan 1 m' pipa PVC 1/2 inch", unit: "m'", components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.04, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang pipa', unit: 'OH', coefficient: 0.04, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.004, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0013, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Pipa PVC 1/2 inch', unit: "m'", coefficient: 1.05, unitPrice: 8000 }, { id: 6, type: 'bahan', name: 'Lem PVC', unit: 'kg', coefficient: 0.01, unitPrice: 50000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+      { id: 'ahs_listrik_1', code: 'W.1.1', category: 'W. JARINGAN LISTRIK', name: 'Pemasangan 1 titik stop kontak', unit: 'ttk', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.15, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang listrik', unit: 'OH', coefficient: 0.3, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.03, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.01, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Stop kontak', unit: 'bh', coefficient: 1, unitPrice: 35000 }, { id: 6, type: 'bahan', name: 'Kabel NYM 2x2.5mm', unit: "m'", coefficient: 12, unitPrice: 8500 }, { id: 7, type: 'bahan', name: 'Pipa conduit 5/8"', unit: "m'", coefficient: 4, unitPrice: 5000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+    ];
+  };
 
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
 

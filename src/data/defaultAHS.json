@@ -1,0 +1,1266 @@
+[
+  {
+    "id": "ahs_galian_tanah_1",
+    "code": "B.1.1",
+    "category": "B. GALIAN TANAH",
+    "name": "Penggalian 1 m3 tanah biasa sedalam 0 s.d. 1 m untuk volume s.d. 200 m3",
+    "unit": "m³",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.75,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.038,
+        "unitPrice": 145000
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_timbunan_pemadatan_1",
+    "code": "C.1.1",
+    "category": "C. TIMBUNAN PEMADATAN",
+    "name": "1 m3 urukan kembali galian tanah tanpa pemadatan secara manual",
+    "unit": "m³",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.5,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.025,
+        "unitPrice": 145000
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_pembongkaran_1",
+    "code": "D.1.1",
+    "category": "D. PEMBONGKARAN",
+    "name": "Pembongkaran 1 m3 pasangan batu (manual) untuk bangunan gedung",
+    "unit": "m³",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.2,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.06,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Palu/godam (baja keras)",
+        "unit": "buah",
+        "coefficient": 0.006,
+        "unitPrice": 25000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Pahat beton (baja keras)",
+        "unit": "buah",
+        "coefficient": 0.009,
+        "unitPrice": 15000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Linggis (baja keras)",
+        "unit": "buah",
+        "coefficient": 0.02,
+        "unitPrice": 30000
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_pondasi_1",
+    "code": "E.1.1",
+    "category": "E. PONDASI",
+    "name": "Pemasangan 1 m3 batu kosong (anstamping) untuk pondasi gedung",
+    "unit": "m³",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.78,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.39,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.039,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.013,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Batu belah (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 1.2,
+        "unitPrice": 286500
+      },
+      {
+        "id": 6,
+        "type": "upah",
+        "name": "Pasir urug (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.432,
+        "unitPrice": 254700
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_beton_1",
+    "code": "F.1.1",
+    "category": "F. BETON",
+    "name": "Pembuatan 1 kg penulangan slab untuk BjTP atau BjTS dia. < 12 mm, cara manual",
+    "unit": "kg",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.007,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang besi",
+        "unit": "OH",
+        "coefficient": 0.007,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0007,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0007,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "BjTP",
+        "unit": "kg",
+        "coefficient": 1.02,
+        "unitPrice": 14250
+      },
+      {
+        "id": 6,
+        "type": "upah",
+        "name": "Kawat beton",
+        "unit": "kg",
+        "coefficient": 0.015,
+        "unitPrice": 18800
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_rangka_atap_1",
+    "code": "G.1.1",
+    "category": "G. RANGKA ATAP",
+    "name": "Pemasangan 1 m2 rangka atap pelana baja ringan (canai dingin) profil C75",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.734,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang besi",
+        "unit": "OH",
+        "coefficient": 0.734,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.073,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.024,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Baja ringan C75 x 0,75 mm",
+        "unit": "batang",
+        "coefficient": 0.9603,
+        "unitPrice": 77200
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_pasangan_dinding_1",
+    "code": "H.1.1",
+    "category": "H. PASANGAN DINDING",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1 batu dengan mortar tipe M,fc’ 17,2 MPa (Setara Campuran 1",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.4,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.2,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.02,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0067,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Bata merah",
+        "unit": "buah",
+        "coefficient": 143.81,
+        "unitPrice": 700
+      },
+      {
+        "id": 6,
+        "type": "upah",
+        "name": "Semen portland",
+        "unit": "kg",
+        "coefficient": 43.5,
+        "unitPrice": 1300
+      },
+      {
+        "id": 7,
+        "type": "upah",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.08,
+        "unitPrice": 275000
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_penutup_atap_1",
+    "code": "I.1.1",
+    "category": "I. PENUTUP ATAP",
+    "name": "Pemasangan 1 m2 atap genteng palentong kecil",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.15,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang kayu",
+        "unit": "OH",
+        "coefficient": 0.075,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0075,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.003,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Genteng palentong",
+        "unit": "buah",
+        "coefficient": 25,
+        "unitPrice": 2800
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_plesteran_dan_acian_1",
+    "code": "J.1.1",
+    "category": "J. PLESTERAN DAN ACIAN",
+    "name": "Pemasangan 1 m2 plesteran 1SP : 1PP tebal 15 mm",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.2,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.1,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.01,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0033,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Semen portland",
+        "unit": "kg",
+        "coefficient": 15.504,
+        "unitPrice": 1300
+      },
+      {
+        "id": 6,
+        "type": "upah",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.016,
+        "unitPrice": 275000
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_plafon_1",
+    "code": "K.1.1",
+    "category": "K. PLAFON",
+    "name": "Pemasangan 1 m2 plafon akustik uk. 30x30 cm",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.12,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang kayu",
+        "unit": "OH",
+        "coefficient": 0.12,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.012,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.004,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Plafon akustik 30x30 cm",
+        "unit": "lembar",
+        "coefficient": 12,
+        "unitPrice": 6200
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_penutup_lantai_dan_dinding_1",
+    "code": "L.1.1",
+    "category": "L. PENUTUP LANTAI DAN DINDING",
+    "name": "Pemasangan 1 m2 lantai ubin PC abu-abu uk. 20x20 cm (1SP : 2PP)",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.1333,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.0667,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0067,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0022,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Ubin PC abu-abu 20x20 cm",
+        "unit": "buah",
+        "coefficient": 26.25,
+        "unitPrice": 2000
+      },
+      {
+        "id": 6,
+        "type": "upah",
+        "name": "Semen portland",
+        "unit": "kg",
+        "coefficient": 13.632,
+        "unitPrice": 1300
+      },
+      {
+        "id": 7,
+        "type": "upah",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.027,
+        "unitPrice": 275000
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_pintu_dan_jendela_1",
+    "code": "M.1.1",
+    "category": "M. PINTU DAN JENDELA",
+    "name": "Pemasangan 1 m2 rolling door besi",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.2,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang las",
+        "unit": "OH",
+        "coefficient": 1.2,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.12,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.04,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Rolling door besi",
+        "unit": "m2",
+        "coefficient": 1,
+        "unitPrice": 509100
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_kaca_1",
+    "code": "N.1.1",
+    "category": "N. KACA",
+    "name": "Pemasangan 1 m2 sunscreen alumunium",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.08,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang alumunium",
+        "unit": "OH",
+        "coefficient": 0.8,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.08,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0267,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Sunscreen aluminium",
+        "unit": "m2",
+        "coefficient": 1,
+        "unitPrice": 381900
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_besi_dan_aluminium_1",
+    "code": "O.1.1",
+    "category": "O. BESI DAN ALUMINIUM",
+    "name": "Pemasangan 1 m' slimar aluminium",
+    "unit": "m'",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.043,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang alumunium",
+        "unit": "OH",
+        "coefficient": 0.043,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0043,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0014,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Profil slimar aluminium",
+        "unit": "m'",
+        "coefficient": 1.1,
+        "unitPrice": 60000
+      },
+      {
+        "id": 6,
+        "type": "upah",
+        "name": "Skrup fixer",
+        "unit": "buah",
+        "coefficient": 2,
+        "unitPrice": 1600
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_kayu_1",
+    "code": "P.1.1",
+    "category": "P. KAYU",
+    "name": "Pembuatan 1 m2 plywood rangkap, rangka expose kayu kelas I",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.5952,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang kayu",
+        "unit": "OH",
+        "coefficient": 0.2976,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0298,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0099,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Kayu papan kelas I",
+        "unit": "m3",
+        "coefficient": 0.025,
+        "unitPrice": 26000000
+      },
+      {
+        "id": 6,
+        "type": "upah",
+        "name": "Paku 1 inch",
+        "unit": "kg",
+        "coefficient": 0.03,
+        "unitPrice": 15000
+      },
+      {
+        "id": 7,
+        "type": "upah",
+        "name": "Lem kayu",
+        "unit": "kg",
+        "coefficient": 0.3,
+        "unitPrice": 16400
+      },
+      {
+        "id": 8,
+        "type": "upah",
+        "name": "Plywood 4 mm lembar",
+        "unit": "lembar",
+        "coefficient": 1,
+        "unitPrice": 75000
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_pengecatan_dan_pelituran_1",
+    "code": "Q.1.1",
+    "category": "Q. PENGECATAN DAN PELITURAN",
+    "name": "Pengikisan/pengerokan 1 m2 permukaan cat lama (cat minyak)",
+    "unit": "m²",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.15,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0075,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Soda api",
+        "unit": "kg",
+        "coefficient": 0.05,
+        "unitPrice": 17900
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_sistem_air_limbah_1",
+    "code": "U.1.1",
+    "category": "U. SISTEM AIR LIMBAH",
+    "name": "Pemasangan 1 set Sewage Treatment Plant (STP) fiberglass kap. 2 m3",
+    "unit": "set",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.324,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 2.211,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.221,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.066,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Sewage Treatment Plant (STP) fiberglass kap. 2 m3",
+        "unit": "unit",
+        "coefficient": 1.5,
+        "unitPrice": 19500000
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_bak_kontrol_1",
+    "code": "V.1.1",
+    "category": "V. BAK KONTROL",
+    "name": "Pemasangan 1 buah bak kontrol pas. bata 30x30 cm tinggi 35 cm dengan tutup beton",
+    "unit": "bh",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 2.16,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.72,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.072,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.011,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Bata merah",
+        "unit": "buah",
+        "coefficient": 40,
+        "unitPrice": 700
+      },
+      {
+        "id": 6,
+        "type": "upah",
+        "name": "Semen portland",
+        "unit": "kg",
+        "coefficient": 44,
+        "unitPrice": 1300
+      },
+      {
+        "id": 7,
+        "type": "upah",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.1,
+        "unitPrice": 275000
+      },
+      {
+        "id": 8,
+        "type": "upah",
+        "name": "Pasir beton (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.1,
+        "unitPrice": 370200
+      },
+      {
+        "id": 9,
+        "type": "upah",
+        "name": "Batu split 1/2",
+        "unit": "m3",
+        "coefficient": 0.1,
+        "unitPrice": 370200
+      },
+      {
+        "id": 10,
+        "type": "upah",
+        "name": "BjTP",
+        "unit": "kg",
+        "coefficient": 1.6,
+        "unitPrice": 14250
+      },
+      {
+        "id": 11,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 3.2,
+        "unitPrice": 100000
+      },
+      {
+        "id": 12,
+        "type": "upah",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 1.15,
+        "unitPrice": 145000
+      },
+      {
+        "id": 13,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.011,
+        "unitPrice": 150000
+      },
+      {
+        "id": 14,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.016,
+        "unitPrice": 145000
+      },
+      {
+        "id": 15,
+        "type": "upah",
+        "name": "Bata merah",
+        "unit": "buah",
+        "coefficient": 70,
+        "unitPrice": 700
+      },
+      {
+        "id": 16,
+        "type": "upah",
+        "name": "Semen portland",
+        "unit": "kg",
+        "coefficient": 77,
+        "unitPrice": 1300
+      },
+      {
+        "id": 17,
+        "type": "upah",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.1,
+        "unitPrice": 275000
+      },
+      {
+        "id": 18,
+        "type": "upah",
+        "name": "Pasir beton (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.1,
+        "unitPrice": 370200
+      },
+      {
+        "id": 19,
+        "type": "upah",
+        "name": "Batu split 1/2",
+        "unit": "m3",
+        "coefficient": 0.02,
+        "unitPrice": 370200
+      },
+      {
+        "id": 20,
+        "type": "upah",
+        "name": "BjTP",
+        "unit": "kg",
+        "coefficient": 2.6,
+        "unitPrice": 14250
+      },
+      {
+        "id": 21,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 3.2,
+        "unitPrice": 100000
+      },
+      {
+        "id": 22,
+        "type": "upah",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 1.15,
+        "unitPrice": 145000
+      },
+      {
+        "id": 23,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.011,
+        "unitPrice": 150000
+      },
+      {
+        "id": 24,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.016,
+        "unitPrice": 145000
+      },
+      {
+        "id": 25,
+        "type": "upah",
+        "name": "Bata merah",
+        "unit": "buah",
+        "coefficient": 123,
+        "unitPrice": 700
+      },
+      {
+        "id": 26,
+        "type": "upah",
+        "name": "Semen portland",
+        "unit": "kg",
+        "coefficient": 114,
+        "unitPrice": 1300
+      },
+      {
+        "id": 27,
+        "type": "upah",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.184,
+        "unitPrice": 275000
+      },
+      {
+        "id": 28,
+        "type": "upah",
+        "name": "Pasir beton (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.12,
+        "unitPrice": 370200
+      },
+      {
+        "id": 29,
+        "type": "upah",
+        "name": "Batu split 1/2",
+        "unit": "m3",
+        "coefficient": 0.033,
+        "unitPrice": 370200
+      },
+      {
+        "id": 30,
+        "type": "upah",
+        "name": "BjTP",
+        "unit": "kg",
+        "coefficient": 4.85,
+        "unitPrice": 14250
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_perpipaan_gedung_1",
+    "code": "W.1.1",
+    "category": "W. PERPIPAAN GEDUNG",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 1/2\" (15 mm)",
+    "unit": "m'",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.017,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang pipa",
+        "unit": "OH",
+        "coefficient": 0.028,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.003,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.001,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Pipa PVC AW Ø 1/2\" (m)",
+        "unit": "m'",
+        "coefficient": 1.45,
+        "unitPrice": 6875
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  },
+  {
+    "id": "ahs_jaringan_listrik_1",
+    "code": "Z.1.1",
+    "category": "Z. JARINGAN LISTRIK",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 4 mm²",
+    "unit": "m'",
+    "components": [
+      {
+        "id": 1,
+        "type": "upah",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.024,
+        "unitPrice": 100000
+      },
+      {
+        "id": 2,
+        "type": "upah",
+        "name": "Tukang listrik",
+        "unit": "OH",
+        "coefficient": 0.04,
+        "unitPrice": 145000
+      },
+      {
+        "id": 3,
+        "type": "upah",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.004,
+        "unitPrice": 150000
+      },
+      {
+        "id": 4,
+        "type": "upah",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.001,
+        "unitPrice": 145000
+      },
+      {
+        "id": 5,
+        "type": "upah",
+        "name": "Kabel NYY 1 x 4 mm²",
+        "unit": "m'",
+        "coefficient": 1.15,
+        "unitPrice": 7500
+      }
+    ],
+    "isCustom": false,
+    "createdAt": "2024-01-01",
+    "updatedAt": "2024-01-01"
+  }
+]
