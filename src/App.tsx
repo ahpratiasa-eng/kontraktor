@@ -36,6 +36,7 @@ import defaultResourceData from './data/defaultResources.json';
 import { compressImage } from './utils/imageHelper';
 import { calculateProjectHealth, formatRupiah } from './utils/helpers';
 import { loadDemoData as loadDemoDataUtil } from './utils/demoData';
+import { useFormStates } from './hooks';
 
 const App = () => {
   const [user, setUser] = useState<any | null>(null);
@@ -64,58 +65,25 @@ const App = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<any>(null);
 
-  // Form States (now managed centrally in App to pass to ModalManager)
-  const [inputName, setInputName] = useState('');
-  const [inputClient, setInputClient] = useState('');
-  const [inputLocation, setInputLocation] = useState('');
-  const [inputOwnerPhone, setInputOwnerPhone] = useState('');
-  const [inputBudget, setInputBudget] = useState(0);
-  const [inputStartDate, setInputStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [inputEndDate, setInputEndDate] = useState(new Date().toISOString().split('T')[0]);
-
-  const [rabCategory, setRabCategory] = useState('');
-  const [rabItemName, setRabItemName] = useState('');
-  const [rabUnit, setRabUnit] = useState('');
-  const [rabVol, setRabVol] = useState(0);
-  const [rabPrice, setRabPrice] = useState(0);
-  const [selectedRabItem, setSelectedRabItem] = useState<RABItem | null>(null);
-  const [selectedAhsId, setSelectedAhsId] = useState<string | null>(null);
-
-  const [progressInput, setProgressInput] = useState(0);
-  const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
-  const [progressNote, setProgressNote] = useState('');
-
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
-
-  const [inputWorkerRole, setInputWorkerRole] = useState('Tukang');
-  const [inputWageUnit, setInputWageUnit] = useState('Harian');
-  const [inputRealRate, setInputRealRate] = useState(0);
-  const [inputMandorRate, setInputMandorRate] = useState(0);
-
-  const [stockType, setStockType] = useState<'in' | 'out'>('in');
-  const [stockQty, setStockQty] = useState(0);
-  const [stockDate, setStockDate] = useState(new Date().toISOString().split('T')[0]);
-  const [stockNotes, setStockNotes] = useState('');
-  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
-
-  // Material Creation State
-  const [inputMaterialName, setInputMaterialName] = useState('');
-  const [inputMaterialUnit, setInputMaterialUnit] = useState('pcs');
-  const [inputMinStock, setInputMinStock] = useState(10);
-  const [inputInitialStock, setInputInitialStock] = useState(0);
-
-  const [inputEmail, setInputEmail] = useState('');
-  const [inputRole, setInputRole] = useState<UserRole>('pengawas');
-
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-
-  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [attendanceData, setAttendanceData] = useState<any>({});
-  const [evidencePhoto, setEvidencePhoto] = useState<string | null>(null);
-  const [evidenceLocation, setEvidenceLocation] = useState<string | null>(null);
-  const [isGettingLoc, setIsGettingLoc] = useState(false);
+  // Form States - now managed by useFormStates hook (~50 lines moved)
+  const formStates = useFormStates();
+  const {
+    inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation,
+    inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate,
+    inputEndDate, setInputEndDate, rabCategory, setRabCategory, rabItemName, setRabItemName,
+    rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice, selectedRabItem, setSelectedRabItem,
+    selectedAhsId, setSelectedAhsId, progressInput, setProgressInput, progressDate, setProgressDate,
+    progressNote, setProgressNote, paymentAmount, setPaymentAmount, selectedWorkerId, setSelectedWorkerId,
+    inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate,
+    inputMandorRate, setInputMandorRate, stockType, setStockType, stockQty, setStockQty,
+    stockDate, setStockDate, stockNotes, setStockNotes,
+    selectedMaterial, setSelectedMaterial,
+    inputMaterialName, setInputMaterialName, inputMaterialUnit, setInputMaterialUnit,
+    inputMinStock, setInputMinStock, inputInitialStock, setInputInitialStock,
+    inputEmail, setInputEmail, inputRole, setInputRole, aiPrompt, setAiPrompt, isGeneratingAI, setIsGeneratingAI,
+    attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, setEvidencePhoto,
+    evidenceLocation, setEvidenceLocation, isGettingLoc, setIsGettingLoc
+  } = formStates;
 
   const canAccessManagement = () => userRole === 'super_admin';
   const canEditProject = () => ['super_admin', 'kontraktor'].includes(userRole || '');
