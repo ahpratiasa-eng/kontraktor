@@ -14,14 +14,13 @@ import {
     Instagram,
     ExternalLink,
     Phone,
-    MapPin,
-    Loader2
+    MapPin
 } from 'lucide-react';
 import type { LandingPageConfig } from '../types';
 
 interface LandingPageProps {
     onLogin: () => void;
-    config: LandingPageConfig | null;
+    config: LandingPageConfig;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin, config }) => {
@@ -78,17 +77,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, config }) => {
             }
         ];
 
-    // Show loading if config is still loading
-    if (!config) {
-        return (
-            <div className="min-h-screen bg-white flex items-center justify-center">
-                <div className="text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-slate-500">Memuat halaman...</p>
-                </div>
-            </div>
-        );
-    }
+    // Config is always available, no loading state needed
 
     return (
         <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">

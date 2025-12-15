@@ -41,7 +41,14 @@ const App = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [landingConfig, setLandingConfig] = useState<LandingPageConfig | null>(null);
+  const [landingConfig, setLandingConfig] = useState<LandingPageConfig>({
+    companyName: 'Guna Karya',
+    tagline: 'Wujudkan Hunian Impian Anda',
+    subtitle: 'Layanan konstruksi profesional untuk rumah tinggal, renovasi, dan pembangunan baru. Kualitas terjamin dengan harga transparan.',
+    whatsappNumber: '6281234567890',
+    instagramHandle: 'guna.karya',
+    portfolioItems: []
+  });
   const [showLandingEditor, setShowLandingEditor] = useState(false);
 
   // Modal State
