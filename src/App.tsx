@@ -383,6 +383,22 @@ const App = () => {
       setInputStartDate('');
       setInputEndDate('');
     }
+    // Reset RAB form for new item (not edit)
+    if (type === 'newRAB' && !selectedRabItem) {
+      setRabCategory('');
+      setRabItemName('');
+      setRabUnit('');
+      setRabVol(0);
+      setRabPrice(0);
+    }
+    // Reset worker form for new worker
+    if (type === 'newWorker' && !selectedWorkerId) {
+      setInputName('');
+      setInputWorkerRole('Tukang');
+      setInputWageUnit('Harian');
+      setInputRealRate(0);
+      setInputMandorRate(0);
+    }
     setModalType(type);
     setShowModal(true);
   };

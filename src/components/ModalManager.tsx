@@ -159,8 +159,44 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <h3 className="font-bold text-xl mb-4">{selectedRabItem ? 'Edit Item RAB' : 'Tambah Item RAB'}</h3>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold ml-1">Kategori Pekerjaan</label>
-                                <input list="categories" className="w-full p-3 border rounded-xl" placeholder="Contoh: A. PERSIAPAN" value={rabCategory} onChange={e => setRabCategory(e.target.value)} />
-                                <datalist id="categories"><option value="A. PERSIAPAN" /><option value="B. PEKERJAAN TANAH" /><option value="C. PEKERJAAN STRUKTUR" /></datalist>
+                                {/* Get existing categories from project */}
+                                {(() => {
+                                    const existingCategories = activeProject?.rabItems
+                                        ? [...new Set(activeProject.rabItems.map(item => item.category))].sort()
+                                        : [];
+                                    return (
+                                        <div className="relative">
+                                            <select
+                                                className="w-full p-3 border rounded-xl bg-white appearance-none pr-10"
+                                                value={existingCategories.includes(rabCategory) ? rabCategory : '_custom'}
+                                                onChange={e => {
+                                                    if (e.target.value !== '_custom') {
+                                                        setRabCategory(e.target.value);
+                                                    }
+                                                }}
+                                            >
+                                                <option value="_custom">-- Ketik Kategori Baru --</option>
+                                                {existingCategories.map((cat, idx) => (
+                                                    <option key={idx} value={cat}>{cat}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                                {/* Show text input if custom or editing */}
+                                {(!activeProject?.rabItems?.some(item => item.category === rabCategory) || rabCategory === '' || rabCategory === '_custom') && (
+                                    <input
+                                        className="w-full p-3 border rounded-xl mt-2"
+                                        placeholder="Contoh: A. PERSIAPAN"
+                                        value={rabCategory === '_custom' ? '' : rabCategory}
+                                        onChange={e => setRabCategory(e.target.value)}
+                                    />
+                                )}
                             </div>
                             <input className="w-full p-3 border rounded-xl" placeholder="Nama Item / Uraian Pekerjaan" value={rabItemName} onChange={e => setRabItemName(e.target.value)} />
                             <div className="flex gap-2">

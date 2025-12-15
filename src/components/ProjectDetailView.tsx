@@ -359,7 +359,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-green-100 text-green-700 px-3 py-2 rounded-lg font-bold border border-green-200 hover:bg-green-200 flex items-center gap-1"><Upload size={14} /> Import</button>
                                         <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1"><Sparkles size={14} /> Auto RAB</button>
                                         <button onClick={() => { /* handleAddCCO prop */ }} className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-bold border border-orange-200">+ CCO</button>
-                                        <button onClick={() => { setSelectedRabItem(null); setModalType('newRAB'); setShowModal(true); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold">+ Item</button>
+                                        <button onClick={() => { setSelectedRabItem(null); openModal('newRAB'); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold">+ Item</button>
                                     </div>
                                 )}
                             </div>
