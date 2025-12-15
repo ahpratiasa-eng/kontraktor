@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote,
-    ImageIcon, ExternalLink, Upload, Lock
+    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart
 } from 'lucide-react';
 import { NumberInput, TransactionGroup } from './UIComponents';
 import SCurveChart from './SCurveChart';
@@ -602,6 +602,39 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                     {logisticsTab === 'stock' && (
                         <div>
+                            {/* SMART RESTOCK ALERT */}
+                            {(activeProject.materials?.filter(m => m.stock <= m.minStock) || []).length > 0 && (
+                                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-white p-2 rounded-full shadow-sm text-red-500">
+                                            <AlertTriangle size={24} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-red-800">Stok Menipis! ({(activeProject.materials?.filter(m => m.stock <= m.minStock) || []).length} item)</h4>
+                                            <p className="text-sm text-red-600">Beberapa material di bawah batas aman. Segera lakukan pemesanan.</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const lowStock = activeProject.materials!.filter(m => m.stock <= m.minStock);
+                                            const shopName = prompt("Nama Toko Bangunan / Supplier:", "Toko Langganan");
+                                            if (shopName === null) return;
+
+                                            const list = lowStock
+                                                .map(m => `- ${m.name}: butuh estimasi ${(m.minStock * 2) - m.stock > 0 ? (m.minStock * 2) - m.stock : 10} ${m.unit}`)
+                                                .join('\n');
+
+                                            const msg = `Halo ${shopName},\nSaya mau pesan material untuk proyek *${activeProject.name}*:\n\n${list}\n\nMohon info ketersediaan & harga total. Terima kasih.`;
+                                            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                                        }}
+                                        className="w-full sm:w-auto bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-red-700 flex items-center justify-center gap-2"
+                                    >
+                                        <ShoppingCart size={20} />
+                                        Order via WhatsApp
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-xl text-slate-700">Stok Material (Real)</h3><button onClick={() => openModal('newMaterial')} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold shadow-md">+ Material Baru</button></div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {(activeProject.materials || []).map(m => (
