@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Loader2, RotateCcw, ShieldCheck, UserPlus,
-  Trash2, Palette
+  Loader2
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
@@ -13,6 +12,9 @@ import ModalManager from './components/ModalManager';
 import LandingPage from './components/LandingPage';
 import LandingEditor from './components/LandingEditor';
 import AHSLibraryView from './components/AHSLibraryView';
+import TrashBinView from './components/TrashBinView';
+import UserManagementView from './components/UserManagementView';
+import LandingSettingsView from './components/LandingSettingsView';
 
 import {
   signInWithPopup, signOut, onAuthStateChanged
@@ -26,8 +28,10 @@ import {
 import { auth, db, googleProvider, appId, signInAnonymously } from './lib/firebase';
 import type {
   Project, AppUser, RABItem, Transaction, Material,
-  MaterialLog, Worker, TaskLog, UserRole, LandingPageConfig, AHSItem
+  MaterialLog, Worker, TaskLog, UserRole, LandingPageConfig, AHSItem, PricingResource
 } from './types';
+import defaultAHSData from './data/defaultAHS.json';
+import defaultResourceData from './data/defaultResources.json';
 import { compressImage } from './utils/imageHelper';
 import { calculateProjectHealth, formatRupiah } from './utils/helpers';
 
@@ -43,6 +47,7 @@ const App = () => {
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [ahsItems, setAhsItems] = useState<AHSItem[]>([]);
+  const [pricingResources, setPricingResources] = useState<PricingResource[]>([]);
   const [landingConfig, setLandingConfig] = useState<LandingPageConfig>({
     companyName: 'Guna Karya',
     tagline: 'Wujudkan Hunian Impian Anda',
@@ -220,23 +225,32 @@ const App = () => {
     }
   };
 
-  // AHS Library Functions
+  // Library Functions
   useEffect(() => {
-    const fetchAHS = async () => {
+    const fetchLibraryData = async () => {
       try {
-        const docRef = doc(db, 'app_data', appId, 'settings', 'ahs_library');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setAhsItems(docSnap.data().items || []);
+        // Fetch AHS
+        const ahsRef = doc(db, 'app_data', appId, 'settings', 'ahs_library');
+        const ahsSnap = await getDoc(ahsRef);
+        if (ahsSnap.exists()) {
+          setAhsItems(ahsSnap.data().items || []);
         } else {
-          // Load default SNI data
           setAhsItems(getDefaultAHSData());
         }
+
+        // Fetch Resources
+        const resRef = doc(db, 'app_data', appId, 'settings', 'resources_library');
+        const resSnap = await getDoc(resRef);
+        if (resSnap.exists()) {
+          setPricingResources(resSnap.data().items || []);
+        } else {
+          setPricingResources(defaultResourceData as PricingResource[]);
+        }
       } catch (e) {
-        console.error('Failed to fetch AHS:', e);
+        console.error('Failed to fetch library data:', e);
       }
     };
-    if (user) fetchAHS();
+    if (user) fetchLibraryData();
   }, [user]);
 
   const saveAhsItems = async (items: AHSItem[]) => {
@@ -250,30 +264,20 @@ const App = () => {
     }
   };
 
+  const saveResources = async (items: PricingResource[]) => {
+    try {
+      const docRef = doc(db, 'app_data', appId, 'settings', 'resources_library');
+      await setDoc(docRef, { items, updatedAt: new Date().toISOString() });
+      setPricingResources(items);
+    } catch (e) {
+      console.error('Failed to save Resources:', e);
+      alert('Gagal menyimpan Resources');
+    }
+  };
+
   // Import default AHS data from AHSP file
   const getDefaultAHSData = (): AHSItem[] => {
-    // Data from parsed AHSP.xlsx - 20 items covering various work categories
-    return [
-      { id: 'ahs_galian_tanah_1', code: 'B.1.1', category: 'B. GALIAN TANAH', name: 'Penggalian 1 m3 tanah biasa sedalam 0 s.d. 1 m', unit: 'm³', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.75, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.038, unitPrice: 145000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_timbunan_1', code: 'C.1.1', category: 'C. TIMBUNAN PEMADATAN', name: '1 m3 urukan kembali galian tanah tanpa pemadatan', unit: 'm³', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.5, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.025, unitPrice: 145000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_pembongkaran_1', code: 'D.1.1', category: 'D. PEMBONGKARAN', name: 'Pembongkaran 1 m3 pasangan batu (manual)', unit: 'm³', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 1.2, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.06, unitPrice: 145000 }, { id: 3, type: 'alat', name: 'Palu/godam', unit: 'buah', coefficient: 0.006, unitPrice: 25000 }, { id: 4, type: 'alat', name: 'Linggis', unit: 'buah', coefficient: 0.02, unitPrice: 30000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_pondasi_1', code: 'E.1.1', category: 'E. PONDASI', name: 'Pemasangan 1 m3 batu kosong (anstamping)', unit: 'm³', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.78, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.39, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.039, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.013, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Batu belah', unit: 'm3', coefficient: 1.2, unitPrice: 286500 }, { id: 6, type: 'bahan', name: 'Pasir urug', unit: 'm3', coefficient: 0.432, unitPrice: 254700 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_beton_1', code: 'F.1.1', category: 'F. BETON', name: 'Pembuatan 1 kg penulangan slab BjTP/BjTS dia < 12mm', unit: 'kg', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.007, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang besi', unit: 'OH', coefficient: 0.007, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0007, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0007, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'BjTP', unit: 'kg', coefficient: 1.02, unitPrice: 14250 }, { id: 6, type: 'bahan', name: 'Kawat beton', unit: 'kg', coefficient: 0.015, unitPrice: 18800 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_rangka_atap_1', code: 'G.1.1', category: 'G. RANGKA ATAP', name: 'Pemasangan 1 m2 rangka atap baja ringan C75', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.734, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang besi', unit: 'OH', coefficient: 0.734, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.073, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.024, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Baja ringan C75', unit: 'batang', coefficient: 0.96, unitPrice: 77200 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_dinding_1', code: 'H.1.1', category: 'H. PASANGAN DINDING', name: 'Pemasangan 1 m2 dinding bata merah tebal 1 batu', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.4, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.2, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.02, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0067, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Bata merah', unit: 'buah', coefficient: 143.81, unitPrice: 700 }, { id: 6, type: 'bahan', name: 'Semen portland', unit: 'kg', coefficient: 43.5, unitPrice: 1300 }, { id: 7, type: 'bahan', name: 'Pasir pasang', unit: 'm3', coefficient: 0.08, unitPrice: 275000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_atap_1', code: 'I.1.1', category: 'I. PENUTUP ATAP', name: 'Pemasangan 1 m2 atap genteng palentong', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.15, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang kayu', unit: 'OH', coefficient: 0.075, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0075, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.003, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Genteng palentong', unit: 'buah', coefficient: 25, unitPrice: 2800 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_plester_1', code: 'J.1.1', category: 'J. PLESTERAN DAN ACIAN', name: 'Pemasangan 1 m2 plesteran 1SP:1PP tebal 15mm', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.2, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.1, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.01, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0033, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Semen portland', unit: 'kg', coefficient: 15.504, unitPrice: 1300 }, { id: 6, type: 'bahan', name: 'Pasir pasang', unit: 'm3', coefficient: 0.016, unitPrice: 275000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_plafon_1', code: 'K.1.1', category: 'K. PLAFON', name: 'Pemasangan 1 m2 plafon akustik 30x30cm', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.12, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang kayu', unit: 'OH', coefficient: 0.12, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.012, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.004, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Plafon akustik 30x30', unit: 'lembar', coefficient: 12, unitPrice: 6200 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_lantai_1', code: 'L.1.1', category: 'L. PENUTUP LANTAI', name: 'Pemasangan 1 m2 lantai ubin PC abu-abu 20x20cm', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.1333, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.0667, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0067, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0022, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Ubin PC abu-abu 20x20', unit: 'buah', coefficient: 26.25, unitPrice: 2000 }, { id: 6, type: 'bahan', name: 'Semen portland', unit: 'kg', coefficient: 13.632, unitPrice: 1300 }, { id: 7, type: 'bahan', name: 'Pasir pasang', unit: 'm3', coefficient: 0.027, unitPrice: 275000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_pintu_1', code: 'M.1.1', category: 'M. PINTU DAN JENDELA', name: 'Pemasangan 1 m2 rolling door besi', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 1.2, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang las', unit: 'OH', coefficient: 1.2, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.12, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.04, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Rolling door besi', unit: 'm2', coefficient: 1, unitPrice: 509100 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_kaca_1', code: 'N.1.1', category: 'N. KACA', name: 'Pemasangan 1 m2 sunscreen aluminium', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.08, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang aluminium', unit: 'OH', coefficient: 0.8, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.08, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0267, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Sunscreen aluminium', unit: 'm2', coefficient: 1, unitPrice: 381900 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_aluminium_1', code: 'O.1.1', category: 'O. BESI DAN ALUMINIUM', name: "Pemasangan 1 m' slimar aluminium", unit: "m'", components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.043, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang aluminium', unit: 'OH', coefficient: 0.043, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0043, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0014, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Profil slimar aluminium', unit: "m'", coefficient: 1.1, unitPrice: 60000 }, { id: 6, type: 'bahan', name: 'Skrup fixer', unit: 'buah', coefficient: 2, unitPrice: 1600 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_kayu_1', code: 'P.1.1', category: 'P. KAYU', name: 'Pembuatan 1 m2 plywood rangkap, rangka expose kayu kelas I', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.5952, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang kayu', unit: 'OH', coefficient: 0.2976, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0298, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0099, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Kayu papan kelas I', unit: 'm3', coefficient: 0.025, unitPrice: 26000000 }, { id: 6, type: 'bahan', name: 'Paku 1 inch', unit: 'kg', coefficient: 0.03, unitPrice: 15000 }, { id: 7, type: 'bahan', name: 'Plywood 4mm', unit: 'lembar', coefficient: 0.4, unitPrice: 75000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_cat_1', code: 'Q.1.1', category: 'Q. PENGECATAN', name: 'Pengecatan 1 m2 bidang kayu (1 lapis plamir + 3 lapis cat)', unit: 'm²', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.02, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang cat', unit: 'OH', coefficient: 0.063, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.0063, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0021, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Plamir kayu', unit: 'kg', coefficient: 0.1, unitPrice: 28000 }, { id: 6, type: 'bahan', name: 'Cat kayu', unit: 'kg', coefficient: 0.26, unitPrice: 60000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_sanitair_1', code: 'R.1.1', category: 'R. SANITAIR', name: 'Pemasangan 1 bh closet duduk porselen', unit: 'bh', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 1.5, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang batu', unit: 'OH', coefficient: 0.75, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.075, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.025, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Closet duduk porselen', unit: 'bh', coefficient: 1, unitPrice: 1500000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_air_1', code: 'S.1.1', category: 'S. SISTEM AIR MINUM', name: "Pemasangan 1 m' pipa PVC 1/2 inch", unit: "m'", components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.04, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang pipa', unit: 'OH', coefficient: 0.04, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.004, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.0013, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Pipa PVC 1/2 inch', unit: "m'", coefficient: 1.05, unitPrice: 8000 }, { id: 6, type: 'bahan', name: 'Lem PVC', unit: 'kg', coefficient: 0.01, unitPrice: 50000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-      { id: 'ahs_listrik_1', code: 'W.1.1', category: 'W. JARINGAN LISTRIK', name: 'Pemasangan 1 titik stop kontak', unit: 'ttk', components: [{ id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.15, unitPrice: 100000 }, { id: 2, type: 'upah', name: 'Tukang listrik', unit: 'OH', coefficient: 0.3, unitPrice: 145000 }, { id: 3, type: 'upah', name: 'Kepala tukang', unit: 'OH', coefficient: 0.03, unitPrice: 150000 }, { id: 4, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.01, unitPrice: 145000 }, { id: 5, type: 'bahan', name: 'Stop kontak', unit: 'bh', coefficient: 1, unitPrice: 35000 }, { id: 6, type: 'bahan', name: 'Kabel NYM 2x2.5mm', unit: "m'", coefficient: 12, unitPrice: 8500 }, { id: 7, type: 'bahan', name: 'Pipa conduit 5/8"', unit: "m'", coefficient: 4, unitPrice: 5000 }], isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-    ];
+    return defaultAHSData as AHSItem[];
   };
 
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
@@ -858,84 +862,34 @@ const App = () => {
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
 
           {/* TRASH BIN VIEW */}
+          {/* TRASH BIN VIEW */}
           {view === 'trash-bin' && (
-            <main className="space-y-4">
-              <h2 className="font-bold text-2xl text-slate-800 mb-6">Tong Sampah Proyek</h2>
-              {projects.filter(p => p.isDeleted).length === 0 && <div className="text-center py-20 text-slate-400 bg-white rounded-xl border border-dashed">Tong sampah kosong.</div>}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{projects.filter(p => p.isDeleted).map(p => (<div key={p.id} className="bg-red-50 p-6 rounded-xl border border-red-100 flex flex-col justify-between h-full"><div className="mb-4"><h3 className="font-bold text-lg text-slate-800">{p.name}</h3><p className="text-sm text-slate-500">{p.client}</p></div><div className="flex gap-2 mt-auto"><button onClick={() => handleRestoreProject(p)} className="flex-1 bg-green-100 text-green-700 p-2 rounded-lg text-sm font-bold hover:bg-green-200 flex items-center justify-center gap-2"><RotateCcw size={16} /> Pulihkan</button>{canAccessManagement() && <button onClick={() => handlePermanentDeleteProject(p)} className="flex-1 bg-red-200 text-red-800 p-2 rounded-lg text-sm font-bold hover:bg-red-300 flex items-center justify-center gap-2"><Trash2 size={16} /> Hapus</button>}</div></div>))}</div>
-            </main>
+            <TrashBinView
+              projects={projects}
+              onRestore={handleRestoreProject}
+              onDeletePermanent={handlePermanentDeleteProject}
+              canAccessManagement={canAccessManagement()}
+            />
           )}
 
           {/* USER MANAGEMENT VIEW */}
+          {/* USER MANAGEMENT VIEW */}
           {view === 'user-management' && canAccessManagement() && (
-            <main className="space-y-6">
-              <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4"><div><h2 className="font-bold text-2xl flex items-center gap-2"><ShieldCheck size={28} /> Kelola Akses Pengguna</h2></div><button onClick={() => openModal('addUser')} className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-50 shadow-md"><UserPlus size={20} /> Tambah User</button></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{appUsers.map((u) => (<div key={u.email} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4"><div className="flex items-start justify-between"><div><div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold text-lg mb-2">{u.name.charAt(0)}</div><p className="font-bold text-lg text-slate-800">{u.name}</p><p className="text-sm text-slate-500">{u.email}</p></div>{u.email !== user?.email && <button onClick={() => handleDeleteUser(u.email)} className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition-colors"><Trash2 size={20} /></button>}</div><span className="self-start text-xs px-3 py-1 rounded-full font-bold bg-blue-100 text-blue-700 uppercase">{u.role.replace('_', ' ')}</span></div>))}</div>
-            </main>
+            <UserManagementView
+              appUsers={appUsers}
+              currentUser={user}
+              onDeleteUser={handleDeleteUser}
+              onAddUser={() => openModal('addUser')}
+            />
           )}
 
           {/* LANDING PAGE SETTINGS VIEW */}
+          {/* LANDING PAGE SETTINGS VIEW */}
           {view === 'landing-settings' && canAccessManagement() && (
-            <main className="space-y-6">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-bold text-2xl flex items-center gap-2">
-                    <Palette size={28} /> Kelola Landing Page
-                  </h2>
-                  <p className="text-indigo-100 mt-1">Edit konten halaman depan website</p>
-                </div>
-                <button
-                  onClick={() => setShowLandingEditor(true)}
-                  className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-50 shadow-md"
-                >
-                  <Palette size={20} /> Edit Landing Page
-                </button>
-              </div>
-
-              {/* Preview Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
-                  <h3 className="font-bold text-lg text-slate-800">Preview Konfigurasi</h3>
-                </div>
-                <div className="p-6 space-y-4">
-                  {landingConfig ? (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-slate-50 p-4 rounded-xl">
-                          <p className="text-xs text-slate-500 font-bold uppercase mb-1">Nama Perusahaan</p>
-                          <p className="text-lg font-bold text-slate-800">{landingConfig.companyName}</p>
-                        </div>
-                        <div className="bg-slate-50 p-4 rounded-xl">
-                          <p className="text-xs text-slate-500 font-bold uppercase mb-1">Nomor WhatsApp</p>
-                          <p className="text-lg font-bold text-green-600">+{landingConfig.whatsappNumber}</p>
-                        </div>
-                        <div className="bg-slate-50 p-4 rounded-xl">
-                          <p className="text-xs text-slate-500 font-bold uppercase mb-1">Instagram</p>
-                          <p className="text-lg font-bold text-pink-600">@{landingConfig.instagramHandle}</p>
-                        </div>
-                        <div className="bg-slate-50 p-4 rounded-xl">
-                          <p className="text-xs text-slate-500 font-bold uppercase mb-1">Jumlah Portofolio</p>
-                          <p className="text-lg font-bold text-blue-600">{landingConfig.portfolioItems.length} Item</p>
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 p-4 rounded-xl">
-                        <p className="text-xs text-slate-500 font-bold uppercase mb-1">Tagline</p>
-                        <p className="text-lg font-bold text-slate-800">{landingConfig.tagline}</p>
-                      </div>
-                      <div className="bg-slate-50 p-4 rounded-xl">
-                        <p className="text-xs text-slate-500 font-bold uppercase mb-1">Deskripsi</p>
-                        <p className="text-sm text-slate-600">{landingConfig.subtitle}</p>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-8 text-slate-400">
-                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                      <p>Memuat konfigurasi...</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </main>
+            <LandingSettingsView
+              config={landingConfig}
+              onEdit={() => setShowLandingEditor(true)}
+            />
           )}
 
           {view === 'ahs-library' && (
@@ -943,6 +897,8 @@ const App = () => {
               <AHSLibraryView
                 ahsItems={ahsItems}
                 onSave={saveAhsItems}
+                resources={pricingResources}
+                onSaveResources={saveResources}
               />
             </main>
           )}
@@ -1069,7 +1025,10 @@ const App = () => {
         activeProject={activeProject}
         selectedRabItem={selectedRabItem}
         selectedWorkerId={selectedWorkerId}
+
+
         ahsItems={ahsItems}
+        resources={pricingResources}
         selectedAhsId={selectedAhsId}
         setSelectedAhsId={setSelectedAhsId}
       />

@@ -1,0 +1,6005 @@
+[
+  {
+    "id": "res_6",
+    "name": "Pembuatan 1 m’ pagar sementara dari kayu tinggi 2 meter",
+    "unit": "m'",
+    "price": 792200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_7",
+    "name": "Pembuatan 1 m’ pagar sementara dari seng gelombang rangka kayu tinggi 2 meter",
+    "unit": "m'",
+    "price": 636600,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_8",
+    "name": "Pembuatan 1 m’ pagar sementara dari kawat duri tinggi 2 meter",
+    "unit": "m'",
+    "price": 380100,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_9",
+    "name": "Pembuatan 1 m2 pagar BRC Galvanis",
+    "unit": "m2",
+    "price": 17200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_10",
+    "name": "Pemasangan 1 m2 panel beton pracetak 240x40x5 untuk pagar",
+    "unit": "m2",
+    "price": 463200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_11",
+    "name": "Pembuatan 1 m2 kantor sementara/rumah jaga/gudang semen dan peralatan lantai plesteran, dinding setengah tembok",
+    "unit": "m2",
+    "price": 1928800,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_12",
+    "name": "Pembersihan dan pengupasan permukaan tanah (striping) s.d. tanaman ∅ 2 cm (m2)",
+    "unit": "m2",
+    "price": 11700,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_13",
+    "name": "Tebas tebang 1 m\r\n2\r\n tanaman/tumbuhan ∅ < 5 cm",
+    "unit": "m2",
+    "price": 3700,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_14",
+    "name": "Tebas tebang 1 m\r\n2\r\n tanaman/tumbuhan ∅ >5 s.d. 15 cm",
+    "unit": "m2",
+    "price": 6200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_15",
+    "name": "Tebas tebang 1 batang pohon/tumbuhan ∅ >15 s.d. 30 cm",
+    "unit": "btg",
+    "price": 21800,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_16",
+    "name": "Tebas tebang 1 batang pohon/tumbuhan ∅ > 30 s.d 50 cm",
+    "unit": "btg",
+    "price": 22100,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_17",
+    "name": "Tebas tebang 1 batang pohon/tumbuhan ∅ > 50 s.d 75 cm (diameter pohon diukur 1 m di atas permukaan tanah)",
+    "unit": "btg",
+    "price": 47800,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_18",
+    "name": "Tebas tebang 1 batang pohon/tumbuhan ∅ > 75 cm (diameter pohon diukur 1 m di atas permukaan tanah)",
+    "unit": "btg",
+    "price": 61100,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_19",
+    "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 5 s.d. 15 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+    "unit": "tgl",
+    "price": 47600,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_20",
+    "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm  s.d. 30 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+    "unit": "tgl",
+    "price": 67300,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_21",
+    "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 30 cm  s.d. 50\r\ncm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+    "unit": "tgl",
+    "price": 95500,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_22",
+    "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 50 cm  s.d. 75 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+    "unit": "tgl",
+    "price": 148400,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_23",
+    "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 75 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+    "unit": "tgl",
+    "price": 216100,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_24",
+    "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 5 s.d. 15 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang)",
+    "unit": "tgl",
+    "price": 48600,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_25",
+    "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 30 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang)",
+    "unit": "tgl",
+    "price": 77600,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_26",
+    "name": "Pengukuran ulang topografi seluas 1 Ha",
+    "unit": "Ha",
+    "price": 3277000,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_27",
+    "name": "Pembuatan 1 m' bouwplank",
+    "unit": "m'",
+    "price": 171400,
+    "type": "bahan",
+    "category": "PEKERJAAN PERSIAPAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_29",
+    "name": "Penggalian 1 m3 tanah biasa sedalam 0 s.d. 1 m untuk volume s.d. 200 m3",
+    "unit": "m3",
+    "price": 88500,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_30",
+    "name": "Penggalian 1 m3 tanah biasa sedalam 0 s.d. 1 m untuk volume 200 m3 s.d 2.000 m3",
+    "unit": "m3",
+    "price": 70900,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_31",
+    "name": "Penggalian 1 m3 tanah biasa sedalam 0 s.d. 1 m untuk volume > 2.000 m3",
+    "unit": "m3",
+    "price": 50300,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_32",
+    "name": "Penggalian 1 m3 tanah biasa sedalam > 1 s.d. 2 m untuk volume s.d 200 m3",
+    "unit": "m3",
+    "price": 106100,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_33",
+    "name": "Penggalian 1 m3 tanah biasa sedalam > 1 s.d. 2 m untuk volume > 200 m3",
+    "unit": "m3",
+    "price": 85000,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_34",
+    "name": "Penggalian 1 m3 tanah biasa sedalam > 2 s.d. 3 m untuk volume s.d 200 m3",
+    "unit": "m3",
+    "price": 126100,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_35",
+    "name": "Penggalian 1 m3 tanah biasa sedalam > 2 s.d. 3 m untuk volume > 200 m3",
+    "unit": "m3",
+    "price": 95700,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_36",
+    "name": "Penggalian 1 m3 tanah biasa sedalam > 3 m, setiap penambahan kedalaman 1 m",
+    "unit": "m3",
+    "price": 9400,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_37",
+    "name": "Penggalian 1 m3 cadas atau tanah keras sedalam > 0 s.d. 1 m untuk volume s.d 200 m3",
+    "unit": "m3",
+    "price": 176900,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_38",
+    "name": "Penggalian 1 m3 cadas atau tanah keras sedalam > 0 s.d. 1 m untuk volume > 200 m3",
+    "unit": "m3",
+    "price": 157400,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_39",
+    "name": "Penggalian 1 m3 cadas atau tanah keras sedalam > 1 s.d. 2 m untuk volume s.d 200 m3",
+    "unit": "m3",
+    "price": 174500,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_40",
+    "name": "Penggalian 1 m3 cadas atau tanah keras sedalam > 1 s.d. 2 m untuk volume > 200 m3",
+    "unit": "m3",
+    "price": 175300,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_41",
+    "name": "Penggalian 1 m3 cadas atau tanah keras sedalam > 2 s.d 3 m untuk volume s.d 200 m3",
+    "unit": "m3",
+    "price": 188900,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_42",
+    "name": "Penggalian 1 m3 cadas atau tanah keras sedalam > 3 m tiap tambah dalam 1 m",
+    "unit": "m3",
+    "price": 12500,
+    "type": "bahan",
+    "category": "PEKERJAAN GALIAN TANAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_44",
+    "name": "1 m3 urukan kembali galian tanah tanpa pemadatan secara manual",
+    "unit": "m3",
+    "price": 58900,
+    "type": "bahan",
+    "category": "PEKERJAAN TIMBUNAN DAN PEMADATAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_45",
+    "name": "1 m3 urukan pasir uruk untuk volume s.d 200 m3 tanpa pemadatan secara manual",
+    "unit": "m3",
+    "price": 371500,
+    "type": "bahan",
+    "category": "PEKERJAAN TIMBUNAN DAN PEMADATAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_46",
+    "name": "1 m3 urukan pasir uruk untuk volume > 200 m3 tanpa pemadatan secara manual",
+    "unit": "m3",
+    "price": 344300,
+    "type": "bahan",
+    "category": "PEKERJAAN TIMBUNAN DAN PEMADATAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_47",
+    "name": "1 m3 urukan tanah biasa tanpa pemadatan secara manual",
+    "unit": "m3",
+    "price": 206500,
+    "type": "bahan",
+    "category": "PEKERJAAN TIMBUNAN DAN PEMADATAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_48",
+    "name": "1 m3 pemadatan tanah per 20 cm menggunakan alat timbris secara manual",
+    "unit": "m3",
+    "price": 58900,
+    "type": "bahan",
+    "category": "PEKERJAAN TIMBUNAN DAN PEMADATAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_49",
+    "name": "1 m3 timbunan dan pemadatan sirtu",
+    "unit": "m3",
+    "price": 375100,
+    "type": "bahan",
+    "category": "PEKERJAAN TIMBUNAN DAN PEMADATAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_51",
+    "name": "Pembongkaran 1 m3 pasangan batu (manual) untuk bangunan gedung",
+    "unit": "m3",
+    "price": 142500,
+    "type": "bahan",
+    "category": "PEKERJAAN PEMBONGKARAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_52",
+    "name": "Pembongkaran 1 m3 pasangan batu dengan jack hammer untuk bangunan gedung",
+    "unit": "m3",
+    "price": 150000,
+    "type": "bahan",
+    "category": "PEKERJAAN PEMBONGKARAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_53",
+    "name": "Pembongkaran 1 m3 beton mutu rendah f’c < 20 MPa secara manual",
+    "unit": "m3",
+    "price": 204500,
+    "type": "bahan",
+    "category": "PEKERJAAN PEMBONGKARAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_54",
+    "name": "Pembongkaran 1 m3 beton mutu rendah f’c ≥ 20 MPa secara manual",
+    "unit": "m3",
+    "price": 493700,
+    "type": "bahan",
+    "category": "PEKERJAAN PEMBONGKARAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_55",
+    "name": "Pembongkaran 1 m3 beton mutu rendah f’c < 20 MPa dengan jack hammer",
+    "unit": "m3",
+    "price": 151600,
+    "type": "bahan",
+    "category": "PEKERJAAN PEMBONGKARAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_56",
+    "name": "Pembongkaran 1 m3 beton mutu sedang 20 MPa ≤ f’c ≤ 40 MPa dengan jack hammer",
+    "unit": "m3",
+    "price": 300100,
+    "type": "bahan",
+    "category": "PEKERJAAN PEMBONGKARAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_57",
+    "name": "Pembongkaran 1 m3 pasangan bata merah secara manual",
+    "unit": "m3",
+    "price": 38100,
+    "type": "bahan",
+    "category": "PEKERJAAN PEMBONGKARAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_58",
+    "name": "Pembongkaran 1 m3 pasangan bata merah dengan jack hammer",
+    "unit": "m3",
+    "price": 24600,
+    "type": "bahan",
+    "category": "PEKERJAAN PEMBONGKARAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_60",
+    "name": "Pemasangan 1 m3 batu kosong (anstamping) untuk pondasi gedung",
+    "unit": "m3",
+    "price": 655700,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_61",
+    "name": "Pemasangan 1 m3 pondasi batu belah mortar tipe M 17,2 Mpa (setara 1SP : 2PP), cara manual",
+    "unit": "m3",
+    "price": 1140300,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_62",
+    "name": "Pemasangan 1 m3 pondasi batu belah mortar tipe M 17,2 Mpa (setara 1SP : 2PP), cara semi mekanis",
+    "unit": "m3",
+    "price": 1091900,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_63",
+    "name": "Pemasangan 1 m3 pondasi batu belah mortar tipe S 12,5 Mpa (setara 1SP : 3PP), cara manual",
+    "unit": "m3",
+    "price": 1082400,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_64",
+    "name": "Pemasangan 1 m3 pondasi batu belah mortar tipe S 12,5 Mpa (setara 1SP : 3PP), cara semi mekanis",
+    "unit": "m3",
+    "price": 1034000,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_65",
+    "name": "Pemasangan 1 m3 pondasi batu belah mortar tipe N 5,2 Mpa (setara 1SP : 4PP), cara manual",
+    "unit": "m3",
+    "price": 1037200,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_66",
+    "name": "Pemasangan 1 m3 pondasi batu belah mortar tipe N 5,2 Mpa (setara 1SP : 4PP), cara semi mekanis",
+    "unit": "m3",
+    "price": 988800,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_67",
+    "name": "Pemasangan 1 m3 pondasi batu belah mortar tipe O 2,4 Mpa (setara 1SP : 5PP), cara manual",
+    "unit": "m3",
+    "price": 1004400,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_68",
+    "name": "Pemasangan 1 m3 pondasi batu belah mortar tipe O 2,4 Mpa (setara 1SP : 5PP), cara semi mekanis",
+    "unit": "m3",
+    "price": 956100,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_69",
+    "name": "Pemasangan 1 m3 pondasi batu belah campuran 1SP : 6PP, cara manual",
+    "unit": "m3",
+    "price": 983800,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_70",
+    "name": "Pemasangan 1 m3 pondasi batu belah campuran 1SP : 6PP, cara semi mekanis",
+    "unit": "m3",
+    "price": 935500,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_71",
+    "name": "Pembuatan 1 m3 pondasi beton siklop, 60% beton fc' 15 MPa : 40% batu belah untuk vol. s.d 200 m3 secara manual",
+    "unit": "m3",
+    "price": 1001500,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_72",
+    "name": "Pembuatan 1 m3 pondasi beton siklop, 60% beton fc' 15 MPa : 40% batu belah untuk vol. > 200 m3 secara manual",
+    "unit": "m3",
+    "price": 990500,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_73",
+    "name": "Pembuatan 1 m3 pondasi beton siklop, 60% beton fc' 15 MPa : 40% batu belah untuk vol. > 200 m3 secara semi mekanis",
+    "unit": "m3",
+    "price": 967300,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_74",
+    "name": "Pembuatan 1 m3 pondasi beton siklop, 70% beton fc' 15 MPa : 30% batu belah untuk vol. > 200 m3 secara manual",
+    "unit": "m3",
+    "price": 1064900,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_75",
+    "name": "Pembuatan 1 m3 pondasi beton siklop, 70% beton fc' 15 MPa : 30% batu belah untuk vol. > 200 m3 secara semi mekanis",
+    "unit": "m3",
+    "price": 1037400,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_76",
+    "name": "Pembuatan 1 m3 pondasi sumuran, diameter 100 cm masif",
+    "unit": "m3",
+    "price": 838500,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_77",
+    "name": "Pengeboran 1 m' lubang bored pile φ 20 cm pada pada tanah lunak (manual)",
+    "unit": "m'",
+    "price": 730200,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_78",
+    "name": "Pengeboran 1 m' lubang bored pile φ 20 cm pada pada tanah sedang (manual)",
+    "unit": "m'",
+    "price": 19100,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_79",
+    "name": "Pengeboran 1 m' lubang bored pile φ 20 cm pada pada tanah keras, sangat padat, dan batuan lunak (manual)",
+    "unit": "m'",
+    "price": 127500,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_80",
+    "name": "Pengeboran 1 m' lubang bored pile φ 20 cm pada tanah berbatu (manual)",
+    "unit": "m'",
+    "price": 191500,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_81",
+    "name": "Pengeboran 1 m' lubang bored pile φ 30 cm pada tanah lunak (manual)",
+    "unit": "m'",
+    "price": 1609000,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_82",
+    "name": "Pengeboran 1 m' lubang bored pile φ 30 cm pada tanah sedang (manual)",
+    "unit": "m'",
+    "price": 47700,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_83",
+    "name": "Pengeboran 1 m' lubang bored pile φ 30 cm pada pada tanah keras, sangat padat, dan batuan lunak (manual)",
+    "unit": "m'",
+    "price": 287300,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_84",
+    "name": "Pengeboran 1 m' lubang bored pile φ 30 cm pada tanah berbatu (manual)",
+    "unit": "m'",
+    "price": 430900,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_85",
+    "name": "Pengeboran 1 m' lubang bored pile φ 40 cm pada tanah lunak (manual)",
+    "unit": "m'",
+    "price": 2847900,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_86",
+    "name": "Pengeboran 1 m' lubang bored pile φ 40 cm pada tanah sedang (manual)",
+    "unit": "m'",
+    "price": 94200,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_87",
+    "name": "Pengeboran 1 m' lubang bored pile φ 40 cm pada pada tanah keras, sangat padat, dan batuan lunak (manual)",
+    "unit": "m'",
+    "price": 420800,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_88",
+    "name": "Pengeboran 1 m' lubang bored pile φ 40 cm pada tanah berbatu (manual)",
+    "unit": "m'",
+    "price": 631300,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_89",
+    "name": "Pengeboran 1 m' lubang bored pile φ 50 cm pada tanah lunak (manual)",
+    "unit": "m'",
+    "price": 4478200,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_90",
+    "name": "Pengeboran 1 m' lubang bored pile φ 50 cm pada tanah sedang (manual)",
+    "unit": "m'",
+    "price": 163600,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_91",
+    "name": "Pengeboran 1 m' lubang bored pile φ 50 cm pada pada tanah keras, sangat padat, dan batuan lunak (manual)",
+    "unit": "m'",
+    "price": 1091400,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_92",
+    "name": "Pengeboran 1 m' lubang bored pile φ 50 cm pada tanah berbatu (manual)",
+    "unit": "m'",
+    "price": 1637000,
+    "type": "bahan",
+    "category": "PEKERJAAN PONDASI",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_94",
+    "name": "Pembuatan 1 kg penulangan slab untuk BjTP atau BjTS dia. < 12 mm, cara manual",
+    "unit": "kg",
+    "price": 18400,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_95",
+    "name": "Pembuatan 1 kg penulangan slab untuk BjTP atau BjTS dia. ≥ 12 mm, cara semi mekanis",
+    "unit": "kg",
+    "price": 16800,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_96",
+    "name": "Pembuatan 1 kg penulangan kolom, balok, ring balok, dan sloof untuk BjTP atau BjTS dia. < 12 mm, cara manual",
+    "unit": "kg",
+    "price": 17000,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_97",
+    "name": "Pembuatan 1 kg penulangan kolom, balok, ring balok, sloof, dan shearwall untuk BjTP atau BjTS dia. ≥ 12 mm, cara semi mekanis",
+    "unit": "kg",
+    "price": 89600,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_98",
+    "name": "Pembuatan 1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual",
+    "unit": "kg",
+    "price": 13700,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_99",
+    "name": "Pembuatan 1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+    "unit": "kg",
+    "price": 13200,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_100",
+    "name": "Menaikkan 1 kg tulangan tiap kenaikan vertikal 4 m ke tapak pemasangan secara manual",
+    "unit": "kg",
+    "price": 56,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_101",
+    "name": "Mengangkut 1 kg tulangan tiap tambahan jarak horizontal 25 m ke tapak pemasangan secara manual",
+    "unit": "kg",
+    "price": 26,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_102",
+    "name": "Mengangkut/menaikkan 1 kg tulangan tiap kenaikan vertikal 4 m atau tambahan jarak horizontal 25 m ke tapak pemasangan secara mekanis",
+    "unit": "kg",
+    "price": 1200,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_103",
+    "name": "Pemasangan 1 m' PVC waterstop lebar 150 mm",
+    "unit": "m'",
+    "price": 98600,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_104",
+    "name": "Pemasangan 1 m' PVC waterstop lebar 200 mm",
+    "unit": "m'",
+    "price": 122600,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_105",
+    "name": "Pemasangan 1 m' PVC waterstop lebar 230-320 mm",
+    "unit": "m'",
+    "price": 174400,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_106",
+    "name": "Pemasangan 1 m2 bekisting untuk pondasi telapak (3 kali pakai)",
+    "unit": "m2",
+    "price": 253300,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_107",
+    "name": "Pemasangan 1 m2 bekisting bata merah tebal 1/2 batu, setara 1SP : 5PP",
+    "unit": "m2",
+    "price": 134300,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_108",
+    "name": "Pemasangan 1 m2 bekisting untuk sloof (3 kali pakai)",
+    "unit": "m2",
+    "price": 270900,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_109",
+    "name": "Pemasangan 1 m2 bekisting untuk kolom (3 kali pakai)",
+    "unit": "m2",
+    "price": 233000,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_110",
+    "name": "Pemasangan 1 m2 bekisting untuk balok (3 kali pakai)",
+    "unit": "m2",
+    "price": 245200,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_111",
+    "name": "Pemasangan 1 m2 bekisting untuk plat lantai (3 kali pakai)",
+    "unit": "m2",
+    "price": 239700,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_112",
+    "name": "Pemasangan 1 m2 bekisting untuk dinding shearwall (3 kali pakai)",
+    "unit": "m2",
+    "price": 270500,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_113",
+    "name": "Pemasangan 1 m2 bekisting untuk tangga (3 kali pakai)",
+    "unit": "m2",
+    "price": 236200,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_114",
+    "name": "Pemasangan 1 m2 bekisting jembatan untuk pengecoran beton (3 kali pakai)",
+    "unit": "m2",
+    "price": 132900,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_115",
+    "name": "Pembongkaran 1 m2 bekisting secara biasa (termasuk membersihkan dan membereskan puing-puing)",
+    "unit": "m2",
+    "price": 5000,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_116",
+    "name": "Pembongkaran 1 m2 bekisting secara hati-hati (untuk beton expose dan/atau pemanfaatan kembali bekisting)",
+    "unit": "m2",
+    "price": 7500,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_117",
+    "name": "Pembuatan 1 m3 beton mutu rendah f'c 7,5 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara manual",
+    "unit": "m3",
+    "price": 926600,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_118",
+    "name": "Pembuatan 1 m3 beton mutu rendah f'c 10 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara manual",
+    "unit": "m3",
+    "price": 1234700,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_119",
+    "name": "Pembuatan 1 m3 beton mutu rendah f'c 15 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara manual",
+    "unit": "m3",
+    "price": 1277600,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_120",
+    "name": "Pembuatan 1 m3 beton mutu rendah f'c 17 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara manual",
+    "unit": "m3",
+    "price": 1295500,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_121",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 20 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara manual",
+    "unit": "m3",
+    "price": 1323800,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_122",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 21 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara manual",
+    "unit": "m3",
+    "price": 1345800,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_123",
+    "name": "Pembuatan 1 m3 beton mutu rendah f'c 10 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1221900,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_124",
+    "name": "Pembuatan 1 m3 beton mutu rendah f'c 15 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1264800,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_125",
+    "name": "Pembuatan 1 m3 beton mutu rendah f'c 17 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1282700,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_126",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 20 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1311000,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_127",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 21 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1333000,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_128",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 25 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1375900,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_129",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 28 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1408900,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_130",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 30 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1430900,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_131",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 31 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1443300,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_132",
+    "name": "Pembuatan 1 m3 beton mutu sedang f'c 35 MPa, slump (100 ± 25) mm, agregat maks 19 mm secara semi mekanis",
+    "unit": "m3",
+    "price": 1411000,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_133",
+    "name": "Pembuatan 1 m3 beton kedap air dengan aditif secara semi mekanis",
+    "unit": "m3",
+    "price": 1496200,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_134",
+    "name": "Pengecoran 1 m3 ready mixed",
+    "unit": "m3",
+    "price": 1119400,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_135",
+    "name": "1 m3 beton dicorkan pada tapak setiap tambah jarak 25 m', secara manual",
+    "unit": "m3",
+    "price": 63400,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_136",
+    "name": "1 m3 beton dicorkan pada tapak setiap kenaikan 4 m', secara manual",
+    "unit": "m3",
+    "price": 135100,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_137",
+    "name": "Pengecoran pakai pompa beton ø 1,5\"; 5 KW; 8 bar; T = 5 m'",
+    "unit": "hari",
+    "price": 941600,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_140",
+    "name": "Pengecoran pakai pompa beton ∅ 3”,140 KW; 180 bar, T=75 m'/H=150 m'",
+    "unit": "hari",
+    "price": 724100,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_141",
+    "name": "Pemadatan 1 m3 beton menggunakan penusuk besi beton",
+    "unit": "m3",
+    "price": 25100,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_142",
+    "name": "Pemadatan 1 m3 beton menggunakan vibrator",
+    "unit": "m3",
+    "price": 80400,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_143",
+    "name": "Menggenangi 1 m2 permukaan beton dengan air selama 4 hari",
+    "unit": "m2",
+    "price": 3600,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_144",
+    "name": "Menyirami 1 m2 permukaan beton menggunakan media kain terpal selama 4 hari",
+    "unit": "m2",
+    "price": 15800,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_145",
+    "name": "Menyirami 1 m2 permukaan beton menggunakan media karung goni selama 4 hari",
+    "unit": "m2",
+    "price": 18600,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_146",
+    "name": "Pembuatan 1 m' kolom praktis beton bertulang (11x11)",
+    "unit": "m'",
+    "price": 117700,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_147",
+    "name": "Pembuatan 1 m' balok praktis beton bertulang (10x15)",
+    "unit": "m'",
+    "price": 158100,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_148",
+    "name": "1 m3 pekerjaan grouting secara manual",
+    "unit": "m3",
+    "price": 13025900,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_149",
+    "name": "1 kg pekerjaan grouting secara injeksi",
+    "unit": "kg",
+    "price": 285400,
+    "type": "bahan",
+    "category": "PEKERJAAN BETON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_151",
+    "name": "Pemasangan 1 m2 rangka atap pelana baja ringan (canai dingin) profil C75",
+    "unit": "m2",
+    "price": 295200,
+    "type": "bahan",
+    "category": "PEKERJAAN RANGKA ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_152",
+    "name": "Pemasangan 1 m2 rangka atap jurai/limasan baja ringan (canai dingin) profil C75",
+    "unit": "m2",
+    "price": 303000,
+    "type": "bahan",
+    "category": "PEKERJAAN RANGKA ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_153",
+    "name": "Pemasangan 1 m3 konstruksi kuda-kuda konvensional, kayu kelas I, II, dan III bentang s.d. 6 meter",
+    "unit": "m3",
+    "price": 17322200,
+    "type": "bahan",
+    "category": "PEKERJAAN RANGKA ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_154",
+    "name": "Pemasangan 1 m3 konstruksi kuda-kuda ekspose, kayu kelas I",
+    "unit": "m3",
+    "price": 37628400,
+    "type": "bahan",
+    "category": "PEKERJAAN RANGKA ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_155",
+    "name": "Pemasangan 1 m3 konstruksi gording, kayu kelas II",
+    "unit": "m3",
+    "price": 16218700,
+    "type": "bahan",
+    "category": "PEKERJAAN RANGKA ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_156",
+    "name": "Pemasangan 1 m2 rangka atap genteng keramik, kayu kelas II",
+    "unit": "m2",
+    "price": 226300,
+    "type": "bahan",
+    "category": "PEKERJAAN RANGKA ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_157",
+    "name": "Pemasangan 1 m2 rangka atap genteng beton, kayu kelas II",
+    "unit": "m2",
+    "price": 249900,
+    "type": "bahan",
+    "category": "PEKERJAAN RANGKA ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_158",
+    "name": "Pemasangan 1 m2 rangka atap sirap, kayu kelas II",
+    "unit": "m2",
+    "price": 114200,
+    "type": "bahan",
+    "category": "PEKERJAAN RANGKA ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_160",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1 batu dengan mortar tipe M,fc’ 17,2 MPa (Setara Campuran 1SP : 2PP)",
+    "unit": "m2",
+    "price": 277400,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_161",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1 batu dengan mortar tipe S,fc’ 12,5 MPa (Setara Campuran 1SP : 3PP)",
+    "unit": "m2",
+    "price": 262700,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_162",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1 batu dengan mortar tipe N,fc’ 5,2 MPa (Setara Campuran 1SP : 4PP)",
+    "unit": "m2",
+    "price": 257100,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_163",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1 batu dengan mortar tipe O,fc’ 2,4 MPa (Setara Campuran 1SP : 5PP)",
+    "unit": "m2",
+    "price": 253600,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_164",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1 batu campuran 1SP : 6PP",
+    "unit": "m2",
+    "price": 280000,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_165",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1/2 batu dengan mortar tipe M,fc’ 17,2 MPa (Setara Campuran 1SP : 2PP)",
+    "unit": "m2",
+    "price": 134000,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_166",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1/2 batu dengan mortar tipe S,fc’ 12,5 MPa (Setara Campuran 1SP : 3PP)",
+    "unit": "m2",
+    "price": 128100,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_167",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1/2 batu dengan mortar tipe N,fc’ 5,2 MPa (Setara Campuran 1SP : 4PP)",
+    "unit": "m2",
+    "price": 124900,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_168",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1/2 batu dengan mortar tipe O,fc’ 2,4 MPa (Setara Campuran 1SP : 5PP)",
+    "unit": "m2",
+    "price": 122900,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_169",
+    "name": "Pemasangan 1 m2 dinding bata merah tebal 1/2 batu campuran 1SP : 6PP",
+    "unit": "m2",
+    "price": 122200,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_170",
+    "name": "Pemasangan 1 m2 dinding conblock HB20 dengan mortar tipe S,fc’ 12,5 MPa (Setara Campuran 1SP : 3PP)",
+    "unit": "m2",
+    "price": 342800,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_171",
+    "name": "Pemasangan 1 m2 dinding conblock HB20 dengan mortar tipe N,fc’ 5,2 MPa (Setara Campuran 1SP : 4PP)",
+    "unit": "m2",
+    "price": 340800,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_172",
+    "name": "Pemasangan 1 m2 dinding conblock HB15 dengan mortar tipe S,fc’ 12,5 MPa (Setara Campuran 1SP : 3PP)",
+    "unit": "m2",
+    "price": 299600,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_173",
+    "name": "Pemasangan 1 m2 dinding conblock HB15 dengan mortar tipe N,fc’ 5,2 MPa (Setara Campuran 1SP : 4PP)",
+    "unit": "m2",
+    "price": 290300,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_174",
+    "name": "Pemasangan 1 m2 dinding conblock HB10 dengan mortar tipe S,fc’ 12,5 MPa (Setara Campuran 1SP : 3PP)",
+    "unit": "m2",
+    "price": 285900,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_176",
+    "name": "Pemasangan 1 m2 dinding kerawang (rooster) 12x11x24 dengan mortar tipe S,fc’ 12,5 MPa (Setara Campuran 1SP : 3PP)",
+    "unit": "m2",
+    "price": 668000,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_177",
+    "name": "Pemasangan 1 m2 dinding kerawang (rooster) 12x11x24 dengan mortar tipe N,fc’ 5,2 MPa (Setara Campuran 1SP : 4PP)",
+    "unit": "m2",
+    "price": 668000,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_178",
+    "name": "Pemasangan 1 m2 dinding bata berongga ekspose 12x11x24 dengan mortar tipe S,fc’ 12,5 MPa (Setara Campuran 1SP : 3PP)",
+    "unit": "m2",
+    "price": 691400,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_179",
+    "name": "Pemasangan 1 m2 glass block 20x20 cm, 1PC : 3PP",
+    "unit": "m2",
+    "price": 142000,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_180",
+    "name": "Pemasangan 1 m2 dinding bata ringan tebal 7,5 cm dengan mortar siap pakai",
+    "unit": "m2",
+    "price": 120500,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_181",
+    "name": "Pemasangan 1 m2 dinding bata ringan tebal 10 cm dengan mortar siap pakai",
+    "unit": "m2",
+    "price": 146400,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_182",
+    "name": "Pemasangan 1 m2 dinding bata ringan tebal 20 cm dengan mortar siap pakai",
+    "unit": "m2",
+    "price": 256600,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_183",
+    "name": "Pemasangan 1 m2 dinding batako dengan mortar tipe S,fc’ 12,5 MPa (Setara Campuran 1SP : 3PP)",
+    "unit": "m2",
+    "price": 154400,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_184",
+    "name": "Pemasangan 1 m2 dinding batako dengan mortar tipe N,fc’ 5,2 MPa (Setara Campuran 1SP : 4PP)",
+    "unit": "m2",
+    "price": 358600,
+    "type": "bahan",
+    "category": "PEKERJAAN PASANGAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_186",
+    "name": "Pemasangan 1 m2 atap genteng palentong kecil",
+    "unit": "m2",
+    "price": 107100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_187",
+    "name": "Pemasangan 1 m2 atap genteng kodok glazuur",
+    "unit": "m2",
+    "price": 189600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_188",
+    "name": "Pemasangan 1 m2 atap genteng palentong besar",
+    "unit": "m2",
+    "price": 100000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_189",
+    "name": "Pemasangan 1 m2 atap genteng beton",
+    "unit": "m2",
+    "price": 123000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_190",
+    "name": "Pemasangan 1 m' bubung genteng palentong",
+    "unit": "m'",
+    "price": 160200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_191",
+    "name": "Pemasangan 1 m' bubung genteng kodok glazuur",
+    "unit": "m'",
+    "price": 148600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_192",
+    "name": "Pemasangan 1 m' bubung genteng palentong besar",
+    "unit": "m'",
+    "price": 148400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_193",
+    "name": "Pemasangan 1 m' bubung genteng beton",
+    "unit": "m'",
+    "price": 151700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_194",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 92 cm x 250 cm x 5 mm",
+    "unit": "m2",
+    "price": 93900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_195",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 92 cm x 225 cm x 5 mm",
+    "unit": "m2",
+    "price": 100800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_196",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 92 cm x 200 cm x 5 mm",
+    "unit": "m2",
+    "price": 92600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_197",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 92 cm x 180 cm x 5 mm",
+    "unit": "m2",
+    "price": 101100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_198",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 105 cm x 270 cm x 4 mm",
+    "unit": "m2",
+    "price": 71400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_199",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 105 cm x 300 cm x 5 mm",
+    "unit": "m2",
+    "price": 82600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_200",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 105 cm x 240 cm x 5 mm",
+    "unit": "m2",
+    "price": 93500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_201",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 105 cm x 210 cm x 5 mm",
+    "unit": "m2",
+    "price": 100700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_202",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 105 cm x 150 cm x 5 mm",
+    "unit": "m2",
+    "price": 136200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_203",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 108 cm x 300 cm x 6 mm",
+    "unit": "m2",
+    "price": 83900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_204",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 108 cm x 270 cm x 6 mm",
+    "unit": "m2",
+    "price": 78000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_205",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 108 cm x 240 cm x 6 mm",
+    "unit": "m2",
+    "price": 81000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_206",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 108 cm x 210 cm x 6 mm",
+    "unit": "m2",
+    "price": 80700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_207",
+    "name": "Pemasangan 1 m2 atap asbes gelombang 108 cm x 180 cm x 6 mm",
+    "unit": "m2",
+    "price": 88900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_208",
+    "name": "Pemasangan 1 m' bubung stel gelombang 92 cm",
+    "unit": "m'",
+    "price": 388900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_209",
+    "name": "Pemasangan 1 m' bubung stel gelombang 105 cm",
+    "unit": "m'",
+    "price": 392200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_210",
+    "name": "Pemasangan 1 m' bubung stel gelombang 108 cm",
+    "unit": "m'",
+    "price": 406500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_211",
+    "name": "Pemasangan 1 m' bubung paten 92 cm",
+    "unit": "m'",
+    "price": 309100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_212",
+    "name": "Pemasangan 1 m' bubung paten 105 cm",
+    "unit": "m'",
+    "price": 322900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_213",
+    "name": "Pemasangan 1 m' bubung paten 108 cm",
+    "unit": "m'",
+    "price": 329500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_214",
+    "name": "Pemasangan 1 m' bubung setel rata 92 cm",
+    "unit": "m'",
+    "price": 321400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_215",
+    "name": "Pemasangan 1 m' bubung setel rata 105 cm",
+    "unit": "m'",
+    "price": 321200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_216",
+    "name": "Pemasangan 1 m' bubung setel rata 108 cm",
+    "unit": "m'",
+    "price": 327300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_217",
+    "name": "Pemasangan 1 m2 atap seng gelombang 105x180 cm",
+    "unit": "m2",
+    "price": 88300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_218",
+    "name": "Pemasangan 1 m2 atap aluminium gelombang 95x180 cm",
+    "unit": "m2",
+    "price": 301700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_219",
+    "name": "Pemasangan 1 m2 atap sirap kayu",
+    "unit": "m2",
+    "price": 231800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_220",
+    "name": "Pemasangan 1 m2 atap fibreglass 90x180 cm",
+    "unit": "m2",
+    "price": 111500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_221",
+    "name": "Pemasangan 1 m2 atap UPVC",
+    "unit": "m2",
+    "price": 274600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_222",
+    "name": "Pemasangan 1 m2 atap aspal/bitumen",
+    "unit": "m2",
+    "price": 295800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_223",
+    "name": "Pemasangan 1 m2 atap metal berpasir",
+    "unit": "m2",
+    "price": 228600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_224",
+    "name": "Pemasangan 1 m2 atap metal menerus tebal 0,4 mm",
+    "unit": "m2",
+    "price": 161500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_225",
+    "name": "Pemasangan 1 m2 atap kaca ketebalan 8/10/12 mm",
+    "unit": "m2",
+    "price": 778800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_226",
+    "name": "Pemasangan 1 m' bubung atap seng gelombang",
+    "unit": "m'",
+    "price": 53600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_227",
+    "name": "Pemasangan 1 m' bubung atap aluminium gelombang",
+    "unit": "m'",
+    "price": 281100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_228",
+    "name": "Pemasangan 1 m' bubung atap sirap kayu",
+    "unit": "m'",
+    "price": 89300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_229",
+    "name": "Pemasangan 1 m' bubung atap aspal/bitumen",
+    "unit": "m'",
+    "price": 314900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_230",
+    "name": "Pemasangan 1 m' bubung genteng metal",
+    "unit": "m'",
+    "price": 87300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_231",
+    "name": "Pemasangan 1 m2 lembaran insulasi atap",
+    "unit": "m2",
+    "price": 29300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_232",
+    "name": "Pemasangan 1 m2 modul insulasi tebal 8 mm",
+    "unit": "m2",
+    "price": 102700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_233",
+    "name": "Pemasangan 1 m2 foam insulasi atap",
+    "unit": "m2",
+    "price": 104700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_234",
+    "name": "Pemasangan 1 m2 lapisan aluminium foil",
+    "unit": "m2",
+    "price": 37100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_235",
+    "name": "Pemasangan 1 m' talang datar/jurai seng BJLS 28 lebar 90 cm",
+    "unit": "m'",
+    "price": 311600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_236",
+    "name": "Pemasangan 1 m' talang ½ lingkaran D-15 cm seng plat BJLS 30",
+    "unit": "m'",
+    "price": 166400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_237",
+    "name": "Pemasangan 1 m' lisplank uk. 3x20 cm, kayu kelas I atau II",
+    "unit": "m'",
+    "price": 215500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_238",
+    "name": "Pemasangan 1 m' lisplank uk. 3x30 cm, kayu kelas I atau II",
+    "unit": "m'",
+    "price": 217600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_239",
+    "name": "Pemasangan 1 m' lisplank non kayu (GRC, serat semen) lebar 30 cm",
+    "unit": "m'",
+    "price": 74800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_240",
+    "name": "Pemasangan 1 m' lisplank non kayu (GRC, serat semen) lebar 20 cm",
+    "unit": "m'",
+    "price": 72500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP ATAP",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_242",
+    "name": "Pemasangan 1 m2 plesteran 1SP : 1PP tebal 15 mm",
+    "unit": "m2",
+    "price": 67100,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_243",
+    "name": "Pemasangan 1 m2 plesteran 1SP : 2PP tebal 15 mm",
+    "unit": "m2",
+    "price": 60700,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_244",
+    "name": "Pemasangan 1 m2 plesteran 1SP : 3PP tebal 15 mm",
+    "unit": "m2",
+    "price": 58200,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_245",
+    "name": "Pemasangan 1 m2 plesteran 1SP : 4PP tebal 15 mm",
+    "unit": "m2",
+    "price": 56300,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_246",
+    "name": "Pemasangan 1 m2 plesteran 1SP : 5PP tebal 15 mm",
+    "unit": "m2",
+    "price": 55400,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_247",
+    "name": "Pemasangan 1 m2 plesteran 1SP : 6PP tebal 15 mm",
+    "unit": "m2",
+    "price": 54600,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_248",
+    "name": "Pemasangan 1 m2 plesteran dengan semen instan tebal 10 mm",
+    "unit": "m2",
+    "price": 67300,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_249",
+    "name": "Pemasangan 1 m2 acian",
+    "unit": "m2",
+    "price": 44700,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_250",
+    "name": "Pemasangan 1 m2 berapen 1SP : 5PP tebal 15 mm",
+    "unit": "m2",
+    "price": 66300,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_251",
+    "name": "Pemasangan 1 m' plesteran skoning 1SP : 3PP lebar 10 cm",
+    "unit": "m'",
+    "price": 56600,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_252",
+    "name": "Pemasangan 1 m2 plesteran serbuk batu granit 1SP : 2 granit, tebal 10 mm",
+    "unit": "m2",
+    "price": 252300,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_253",
+    "name": "Pemasangan 1 m2 plesteran serbuk batu traso 1SP : 2 traso, tebal 10 mm",
+    "unit": "m2",
+    "price": 268800,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_254",
+    "name": "Pemasangan 1 m2 kamprotan untuk finishing 1SP : 2PP",
+    "unit": "m2",
+    "price": 34700,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_255",
+    "name": "Pemasangan 1 m2 finishing siar pasangan bata merah",
+    "unit": "m2",
+    "price": 35800,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_256",
+    "name": "Pemasangan 1 m2 finishing dinding siar pasangan conblock ekspose",
+    "unit": "m2",
+    "price": 25800,
+    "type": "bahan",
+    "category": "PEKERJAAN PLESTERAN DAN ACIAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_258",
+    "name": "Pemasangan 1 m2 plafon akustik uk. 30x30 cm",
+    "unit": "m2",
+    "price": 116700,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_259",
+    "name": "Pemasangan 1 m2 plafon akustik uk. 30x60 cm",
+    "unit": "m2",
+    "price": 123900,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_260",
+    "name": "Pemasangan 1 m2 plafon akustik uk. 60x120 cm",
+    "unit": "m2",
+    "price": 68700,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_261",
+    "name": "Pemasangan 1 m2 plafon akustik uk. 60x120 cm dengan profil aluminium T",
+    "unit": "m2",
+    "price": 254100,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_262",
+    "name": "Pemasangan 1 m2 plafon gypsum tebal 9 mm",
+    "unit": "m2",
+    "price": 51700,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_263",
+    "name": "Pemasangan 1 m2 plafon serat semen tebal 4 mm, 5 mm, dan 6 mm",
+    "unit": "m2",
+    "price": 76000,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_264",
+    "name": "Pemasangan 1 m2 plafon kayu lapis tebal 3 mm, 4 mm, dan 6 mm",
+    "unit": "m2",
+    "price": 60600,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_265",
+    "name": "Pemasangan 1 m2 plafon lambisering kayu tebal 9 mm",
+    "unit": "m2",
+    "price": 464200,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_266",
+    "name": "Pemasangan 1 m' list plafon kayu profil",
+    "unit": "m'",
+    "price": 13600,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_267",
+    "name": "Pemasangan 1 m' list plafon gypsum",
+    "unit": "m'",
+    "price": 26700,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_268",
+    "name": "Pemasangan 1 m2 plafon aluminium spandrel",
+    "unit": "m2",
+    "price": 414600,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_269",
+    "name": "Pemasangan 1 m2 rangka plafon besi hollow 40.40, modul 60x60 cm",
+    "unit": "m2",
+    "price": 131900,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_270",
+    "name": "Pemasangan 1 m2 rangka plafon kayu kelas II atau III, modul 60x60 cm",
+    "unit": "m2",
+    "price": 265000,
+    "type": "bahan",
+    "category": "PEKERJAAN PLAFON",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_272",
+    "name": "Pemasangan 1 m2 lantai ubin PC abu-abu uk. 20x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 112100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_273",
+    "name": "Pemasangan 1 m2 lantai ubin PC abu-abu uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 99900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_274",
+    "name": "Pemasangan 1 m2 lantai ubin PC abu-abu uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 91700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_275",
+    "name": "Pemasangan 1 m2 lantai ubin PC abu-abu uk. 60x60 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 89500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_276",
+    "name": "Pemasangan 1 m’ plint ubin PC abu-abu uk. 10 s.d. 15x20 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 20500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_277",
+    "name": "Pemasangan 1 m’ plint ubin PC abu-abu uk. 10 s.d. 15x30 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 21600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_278",
+    "name": "Pemasangan 1 m’ plint ubin PC abu-abu uk. 10 s.d. 15x40 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 22400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_279",
+    "name": "Pemasangan 1 m’ plint ubin PC abu-abu uk. 10 s.d. 15x60 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 22400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_280",
+    "name": "Pemasangan 1 m2 lantai ubin warna uk. 20x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 125000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_281",
+    "name": "Pemasangan 1 m2 lantai ubin warna uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 126900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_282",
+    "name": "Pemasangan 1 m2 lantai ubin warna uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 114700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_283",
+    "name": "Pemasangan 1 m2 lantai ubin warna uk. 60x60 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 108800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_284",
+    "name": "Pemasangan 1 m' plint ubin warna uk. 10 s.d. 15x20 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 25100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_285",
+    "name": "Pemasangan 1 m' plint ubin warna uk. 10 s.d. 15x30 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 25100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_286",
+    "name": "Pemasangan 1 m' plint ubin warna uk. 10 s.d. 15x40 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 8680800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_287",
+    "name": "Pemasangan 1 m' plint ubin warna uk. 10 s.d. 15x60 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 27900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_288",
+    "name": "Pemasangan 1 m2 lantai ubin teraso uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 377200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_289",
+    "name": "Pemasangan 1 m2 lantai ubin teraso uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 287900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_290",
+    "name": "Pemasangan 1 m2 lantai teraso cor di tempat, tebal 3cm",
+    "unit": "m2",
+    "price": 211600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_291",
+    "name": "Pemasangan 1 m' plint ubin teraso uk. 10 s.d. 15x30 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 32800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_292",
+    "name": "Pemasangan 1 m' plint ubin teraso uk. 10 s.d. 15x40 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 35600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_293",
+    "name": "Pemasangan 1 m2 lantai homogenous tile uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 325800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_294",
+    "name": "Pemasangan 1 m2 lantai homogenous tile uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 287900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_295",
+    "name": "Pemasangan 1 m2 lantai homogenous tile uk. 60x60 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 243500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_296",
+    "name": "Pemasangan 1 m' plint homogenous tile uk. 10 s.d. 15x30 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 36700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_297",
+    "name": "Pemasangan 1 m' plint homogenous tile uk. 10 s.d. 15x40 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 38500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_298",
+    "name": "Pemasangan 1 m' plint homogenous tile uk. 10 s.d. 15x60 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 38500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_299",
+    "name": "Pemasangan 1 m2 lantai ubin granit uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 251400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_300",
+    "name": "Pemasangan 1 m2 lantai ubin granit uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 215700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_301",
+    "name": "Pemasangan 1 m2 lantai ubin granit uk. 60x60 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 179300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_302",
+    "name": "Pemasangan 1 m' plint ubin granit uk. 10 s.d. 15x30 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 40500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_303",
+    "name": "Pemasangan 1 m' plint ubin granit uk. 10 s.d. 15x40 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 41400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_304",
+    "name": "Pemasangan 1 m' plint ubin granit uk. 10 s.d. 15x60 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 38500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_305",
+    "name": "Pemasangan 1 m2 lantai ubin teralux marmer uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 646700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_306",
+    "name": "Pemasangan 1 m2 lantai ubin teralux marmer uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 504500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_307",
+    "name": "Pemasangan 1 m2 lantai ubin teralux marmer uk. 60x60 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 307700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_308",
+    "name": "Pemasangan 1 m' plint ubin teralux kerang uk. 10 s.d. 15x30 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 25100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_309",
+    "name": "Pemasangan 1 m' plint ubin teralux kerang uk. 10 s.d. 15x40 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 26900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_310",
+    "name": "Pemasangan 1 m' plint ubin teralux kerang uk. 10 s.d. 15x60 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 26900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_311",
+    "name": "Pemasangan 1 m' plint ubin teralux marmer uk. 10 s.d. 15x30 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 27100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_312",
+    "name": "Pemasangan 1 m' plint ubin teralux marmer uk. 10 s.d. 15x40 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 26900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_313",
+    "name": "Pemasangan 1 m' plint ubin teralux marmer uk. 10 s.d. 15x60 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 26900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_314",
+    "name": "Pemasangan 1 m2 lantai keramik artistik uk. 8x8 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 287900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_315",
+    "name": "Pemasangan 1 m2 lantai keramik artistik uk. 10x10 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 280600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_316",
+    "name": "Pemasangan 1 m2 lantai keramik artistik uk. 20x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 238700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_317",
+    "name": "Pemasangan 1 m2 lantai keramik artistik uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 219400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_318",
+    "name": "Pemasangan 1 m2 lantai keramik artistik uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 209800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_319",
+    "name": "Pemasangan 1 m' plint internal cove artistik uk. 5x5x20 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 252500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_320",
+    "name": "Pemasangan 1 m2 lantai keramik uk. 20x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 130800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_321",
+    "name": "Pemasangan 1 m2 lantai keramik uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 120500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_322",
+    "name": "Pemasangan 1 m2 lantai keramik uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 129800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_323",
+    "name": "Pemasangan 1 m2 lantai keramik uk. 60x60 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 121600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_324",
+    "name": "Pemasangan 1 m2 lantai keramik uk. 30 s.d. 40 cm untuk variasi/border (1SP : 2PP)",
+    "unit": "m2",
+    "price": 337700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_325",
+    "name": "Pemasangan 1 m' plint keramik uk. 10 s.d. 15x20 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 27900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_326",
+    "name": "Pemasangan 1 m' plint keramik uk. 10 s.d. 15x30 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 29000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_327",
+    "name": "Pemasangan 1 m' plint keramik uk. 10 s.d. 15x40 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 29800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_328",
+    "name": "Pemasangan 1 m' plint keramik uk. 10 s.d. 15x60 cm (1SP : 2PP)",
+    "unit": "m'",
+    "price": 28900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_329",
+    "name": "Pemasangan 1 m2 lantai marmer uk. 100x100 cm",
+    "unit": "m2",
+    "price": 1706900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_330",
+    "name": "Pemasangan 1 m2 lantai karpet",
+    "unit": "m2",
+    "price": 124600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_331",
+    "name": "Pemasangan 1 m2 underlayer (pelapis bawah karpet)",
+    "unit": "m2",
+    "price": 69600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_332",
+    "name": "Pemasangan 1 m2 lantai parquet kayu solid",
+    "unit": "m2",
+    "price": 517600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_333",
+    "name": "Pemasangan 1 m2 lantai engineering wood",
+    "unit": "m2",
+    "price": 411000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_334",
+    "name": "Pemasangan 1 m' plint kayu tebal 2 cm lebar 10 cm",
+    "unit": "m'",
+    "price": 122400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_335",
+    "name": "Pemasangan 1 m2 lantai vinyl uk. 30x30 cm",
+    "unit": "m2",
+    "price": 158100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_336",
+    "name": "Pemasangan 1 m' plint vinyl uk. 15x30 cm",
+    "unit": "m'",
+    "price": 52400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_337",
+    "name": "Pemasangan 1 m2 floor hardener",
+    "unit": "m2",
+    "price": 62400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_338",
+    "name": "Pemasangan 1 m2 lantai UPVC decking",
+    "unit": "m2",
+    "price": 1530600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_339",
+    "name": "Pemolesan 1 m2 lantai ubin teraso, granit, marmer",
+    "unit": "m2",
+    "price": 83800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_340",
+    "name": "Pemasangan 1 m2 dinding keramik artistik uk. 10x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 320400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_341",
+    "name": "Pemasangan 1 m2 dinding keramik artistik uk. 5x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 457000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_342",
+    "name": "Pemasangan 1 m2 dinding keramik uk. 10x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 257000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_343",
+    "name": "Pemasangan 1 m2 dinding keramik uk. 20x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 201500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_344",
+    "name": "Pemasangan 1 m2 dinding homogeneous tile uk. 30x30 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 501800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_345",
+    "name": "Pemasangan 1 m2 dinding homogeneous tile uk. 40x40 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 415800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_346",
+    "name": "Pemasangan 1 m2 dinding homogeneous tile uk. 60x60 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 211400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_347",
+    "name": "Pemasangan 1 m2 dinding porselen uk. 11x11 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 319500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_348",
+    "name": "Pemasangan 1 m2 dinding porselen uk. 10x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 339500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_349",
+    "name": "Pemasangan 1 m2 dinding porselen uk. 20x20 cm (1SP : 2PP)",
+    "unit": "m2",
+    "price": 201000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_350",
+    "name": "Pemasangan 1 m2 dinding bata pelapis uk. 3x7x24 cm",
+    "unit": "m2",
+    "price": 422900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_351",
+    "name": "Pemasangan 1 m2 dinding batu paras",
+    "unit": "m2",
+    "price": 319100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_352",
+    "name": "Pemasangan 1 m2 dinding batu tempel hitam",
+    "unit": "m2",
+    "price": 315000,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_353",
+    "name": "Pemasangan 1 m2 wallpaper lebar 50 cm",
+    "unit": "m2",
+    "price": 119500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_354",
+    "name": "Pemasangan 1 m2 dinding pemisah plywood rangkap, rangka kayu kelas II",
+    "unit": "m2",
+    "price": 550500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_355",
+    "name": "Pemasangan 1 m2 dinding lambisering dari papan kayu kelas I",
+    "unit": "m2",
+    "price": 599700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_356",
+    "name": "Pemasangan 1 m2 dinding lambisering dari plywood",
+    "unit": "m2",
+    "price": 45100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_357",
+    "name": "Pemasangan 1 m2 dinding bilik, rangka kayu kelas III atau IV",
+    "unit": "m2",
+    "price": 128700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_358",
+    "name": "Pemasangan kering 1 m2 dinding marmer 100x100 cm tebal 2 cm",
+    "unit": "m2",
+    "price": 1545900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_359",
+    "name": "Pemasangan basah 1 m2 dinding marmer 100x100 cm tebal 2 cm",
+    "unit": "m2",
+    "price": 1316200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_360",
+    "name": "Pemasangan 1 m2 rangka besi hollow galvanis 40x40 mm, modul 60x120 cm, untuk partisi",
+    "unit": "m2",
+    "price": 67300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_361",
+    "name": "Pemasangan 1 m2 rangka dinding pemisah 60x120 cm kayu kelas II atau III",
+    "unit": "m2",
+    "price": 463900,
+    "type": "bahan",
+    "category": "PEKERJAAN PENUTUP LANTAI DAN DINDING",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_363",
+    "name": "Pemasangan 1 m2 rolling door besi",
+    "unit": "m2",
+    "price": 909500,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_364",
+    "name": "Pemasangan 1 m2 rolling door alumunium",
+    "unit": "m2",
+    "price": 951900,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_365",
+    "name": "Pemasangan 1 m2 pintu lipat PVC",
+    "unit": "m2",
+    "price": 953200,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_366",
+    "name": "Pemasangan 1 m2 pintu aluminium strip lebar 8 cm",
+    "unit": "m2",
+    "price": 1457000,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_367",
+    "name": "Pemasangan 1 m2 pintu kaca rangka aluminium",
+    "unit": "m2",
+    "price": 950600,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_368",
+    "name": "Pemasangan 1 m2 jendela kaca rangka aluminium",
+    "unit": "m2",
+    "price": 950600,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_369",
+    "name": "Pembuatan dan pemasangan 1 m2 pintu klamp standar, kayu kelas II",
+    "unit": "m2",
+    "price": 736400,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_370",
+    "name": "Pembuatan dan pemasangan 1 m2 pintu klamp sederhana, kayu kelas III",
+    "unit": "m2",
+    "price": 581800,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_371",
+    "name": "Pembuatan 1 m2 pintu dan jendela kaca, kayu kelas I atau II",
+    "unit": "m2",
+    "price": 736300,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_372",
+    "name": "Pembuatan 1 m2 pintu dan jendela jalusi, kayu kelas I atau II",
+    "unit": "m2",
+    "price": 1648500,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_373",
+    "name": "Pembuatan 1 m2 daun pintu panel, kayu kelas I atau II",
+    "unit": "m2",
+    "price": 1278900,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_374",
+    "name": "Pembuatan 1 m2 daun pintu plywood rangkap, rangka kayu kelas II tertutup (lebar s.d. 90 cm)",
+    "unit": "m2",
+    "price": 934700,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_375",
+    "name": "Pembuatan 1 m2 daun pintu plywood rangkap, rangka expose kayu kelas I atau II",
+    "unit": "m2",
+    "price": 1003000,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_376",
+    "name": "Pembuatan dan pemasangan 1 buah pintu panel kayu lapis timbal di tengah (khusus RS/Laboratorium/R.Radiologi)",
+    "unit": "buah",
+    "price": 11802600,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_377",
+    "name": "Pembuatan dan pemasangan 1 m2 pintu besi pelat baja tebal 2 mm rangkap, rangka baja siku",
+    "unit": "m2",
+    "price": 1402800,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_378",
+    "name": "Pemasangan 1 buah pintu besi tahan api",
+    "unit": "buah",
+    "price": 9258800,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_379",
+    "name": "Pemasangan 1 m2 pintu engineering wood",
+    "unit": "m2",
+    "price": 1444600,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_380",
+    "name": "Pemasangan 1 m2 jendela nako aluminium",
+    "unit": "m2",
+    "price": 368700,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_381",
+    "name": "Pemasangan 1 m2 jendela nako dan tralis",
+    "unit": "m2",
+    "price": 407200,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_382",
+    "name": "Pemasangan 1 m' kusen aluminium",
+    "unit": "m'",
+    "price": 175400,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_383",
+    "name": "Pembuatan dan pemasangan 1 m’ kusen pintu dan kusen jendela, kayu kelas I uk. 6x12 cm",
+    "unit": "m'",
+    "price": 314600,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_384",
+    "name": "Pembuatan dan pemasangan 1 m’ kusen pintu dan kusen jendela, kayu kelas I uk. 6x15 cm",
+    "unit": "m'",
+    "price": 375100,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_385",
+    "name": "Pembuatan dan pemasangan 1 m’ kusen pintu dan kusen jendela, kayu kelas II atau III uk. 6x12 cm",
+    "unit": "m'",
+    "price": 191200,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_386",
+    "name": "Pembuatan dan pemasangan 1 m’ kusen pintu dan kusen jendela, kayu kelas II atau III uk. 6x15 cm",
+    "unit": "m'",
+    "price": 220100,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_387",
+    "name": "Pembuatan dan pemasangan 1 m2 jalusi kusen, kayu kelas I atau II",
+    "unit": "m2",
+    "price": 1362800,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_388",
+    "name": "Pemasangan 1 buah kunci tanam antik",
+    "unit": "buah",
+    "price": 274100,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_389",
+    "name": "Pemasangan 1 buah kunci tanam biasa",
+    "unit": "buah",
+    "price": 164100,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_390",
+    "name": "Pemasangan 1 buah kunci tanam kamar mandi",
+    "unit": "buah",
+    "price": 142800,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_391",
+    "name": "Pemasangan 1 buah kunci tanam silinder",
+    "unit": "buah",
+    "price": 168200,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_392",
+    "name": "Pemasangan 1 buah engsel pintu",
+    "unit": "buah",
+    "price": 63400,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_393",
+    "name": "Pemasangan 1 buah engsel tanam (floor hinge)",
+    "unit": "buah",
+    "price": 644500,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_394",
+    "name": "Pemasangan 1 buah engsel jendela kupu-kupu",
+    "unit": "buah",
+    "price": 65000,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_395",
+    "name": "Pemasangan 1 buah engsel angin",
+    "unit": "buah",
+    "price": 77400,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_396",
+    "name": "Pemasangan 1 buah spring knip untuk jendela",
+    "unit": "buah",
+    "price": 52600,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_397",
+    "name": "Pemasangan 1 buah kait angin",
+    "unit": "buah",
+    "price": 42000,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_398",
+    "name": "Pemasangan 1 buah door closer",
+    "unit": "buah",
+    "price": 280400,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_399",
+    "name": "Pemasangan 1 buah door holder",
+    "unit": "buah",
+    "price": 185300,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_400",
+    "name": "Pemasangan 1 buah door stop",
+    "unit": "buah",
+    "price": 83500,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_401",
+    "name": "Pemasangan 1 buah rel pintu dorong",
+    "unit": "buah",
+    "price": 382800,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_402",
+    "name": "Pemasangan 1 buah venetions blinds dan vertical blinds",
+    "unit": "buah",
+    "price": 255900,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_403",
+    "name": "Pemasangan 1 m2 teralis besi strip (20x3) mm",
+    "unit": "m2",
+    "price": 613600,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_404",
+    "name": "Pemasangan 1 m2 kawat nyamuk",
+    "unit": "m2",
+    "price": 64400,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_405",
+    "name": "Pemasangan 1 buah kunci slot (grendel) untuk jendela",
+    "unit": "buah",
+    "price": 161000,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_406",
+    "name": "Pemasangan 1 buah kunci lemari",
+    "unit": "buah",
+    "price": 62400,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_407",
+    "name": "Pemasangan 1 buah grendel",
+    "unit": "buah",
+    "price": 45300,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_408",
+    "name": "Pemasangan 1 buah grendel tanam",
+    "unit": "buah",
+    "price": 208200,
+    "type": "bahan",
+    "category": "PEKERJAAN PINTU DAN JENDELA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_410",
+    "name": "Pemasangan 1 m2 sunscreen alumunium",
+    "unit": "m2",
+    "price": 573900,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_411",
+    "name": "Pemasangan 1 m2 kaca polos tebal 3 mm",
+    "unit": "m2",
+    "price": 175800,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_412",
+    "name": "Pemasangan 1 m2 kaca polos tebal 5 mm",
+    "unit": "m2",
+    "price": 270200,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_413",
+    "name": "Pemasangan 1 m2 kaca polos tebal 6 mm",
+    "unit": "m2",
+    "price": 319300,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_414",
+    "name": "Pemasangan 1 m2 kaca polos tebal 8 mm",
+    "unit": "m2",
+    "price": 309100,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_415",
+    "name": "Pemasangan 1 m2 kaca buram tebal 12 mm",
+    "unit": "m2",
+    "price": 434100,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_416",
+    "name": "Pemasangan 1 m2 kaca cermin tebal 5 mm",
+    "unit": "m2",
+    "price": 268600,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_417",
+    "name": "Pemasangan 1 m2 kaca cermin tebal 8 mm",
+    "unit": "m2",
+    "price": 995900,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_418",
+    "name": "Pemasangan 1 m2 kaca wireglass tebal 5 mm",
+    "unit": "m2",
+    "price": 204000,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_419",
+    "name": "Pemasangan 1 m2 kaca patri tebal 5 mm",
+    "unit": "m2",
+    "price": 1871900,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_420",
+    "name": "Pemasangan 1 m2 kaca laminated tebal 16 mm (8 mm double)",
+    "unit": "m2",
+    "price": 1672400,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_421",
+    "name": "Pemasangan 1 m2 kaca laminated tebal 16 mm (8 mm double) dengan aluminium frame",
+    "unit": "m2",
+    "price": 1857000,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_422",
+    "name": "Pemasangan 1 m2 kaca tempered tebal 12 mm",
+    "unit": "m2",
+    "price": 771300,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_423",
+    "name": "Pemasangan 1 m2 kaca laminated tebal 12 mm dengan aluminium frame",
+    "unit": "m2",
+    "price": 1329000,
+    "type": "bahan",
+    "category": "PEKERJAAN KACA",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_425",
+    "name": "Pemasangan 1 m' slimar aluminium",
+    "unit": "m'",
+    "price": 88600,
+    "type": "bahan",
+    "category": "PEKERJAAN BESI DAN ALUMINIUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_426",
+    "name": "Pemasangan 1 m2 profil jalusi aluminium",
+    "unit": "m2",
+    "price": 740300,
+    "type": "bahan",
+    "category": "PEKERJAAN BESI DAN ALUMINIUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_427",
+    "name": "Pemasangan 1 m2 Aluminium Composite Panel rangka besi hollow 40.40.1,2 mm",
+    "unit": "m2",
+    "price": 614200,
+    "type": "bahan",
+    "category": "PEKERJAAN BESI DAN ALUMINIUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_428",
+    "name": "Pengelasan 1 m’ dengan las listrik",
+    "unit": "m'",
+    "price": 32700,
+    "type": "bahan",
+    "category": "PEKERJAAN BESI DAN ALUMINIUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_429",
+    "name": "Pembuatan dan pemasangan 1 m' railing besi pengaman tinggi 1.2 m",
+    "unit": "m'",
+    "price": 537700,
+    "type": "bahan",
+    "category": "PEKERJAAN BESI DAN ALUMINIUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_430",
+    "name": "Pembuatan dan pemasangan 1 m' railing tangga/ramp dan hand rail tinggi 0.85 m dan 0.65 m",
+    "unit": "m'",
+    "price": 307800,
+    "type": "bahan",
+    "category": "PEKERJAAN BESI DAN ALUMINIUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_432",
+    "name": "Pembuatan 1 m2 plywood rangkap, rangka expose kayu kelas I",
+    "unit": "m2",
+    "price": 922800,
+    "type": "bahan",
+    "category": "PEKERJAAN KAYU",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_433",
+    "name": "Pembuatan 1 m2 plywood rangkap lapis formika, rangka expose kayu kelas II",
+    "unit": "m2",
+    "price": 1025300,
+    "type": "bahan",
+    "category": "PEKERJAAN KAYU",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_435",
+    "name": "Pengikisan/pengerokan 1 m2 permukaan cat lama (cat minyak)",
+    "unit": "m2",
+    "price": 18600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_436",
+    "name": "Pencucian 1 m2 permukaan tembok yang pernah dicat",
+    "unit": "m2",
+    "price": 18700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_437",
+    "name": "Pengerokan 1 m2 karat pada permukaan baja cara manual",
+    "unit": "m2",
+    "price": 18700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_438",
+    "name": "Pengecatan 1 m2 bidang kayu baru (1 lapis plamir, 1 lapis cat dasar, 2 lapis cat penutup)",
+    "unit": "m2",
+    "price": 47300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_439",
+    "name": "Pengecatan 1 m2 bidang kayu baru (1 lapis plamir, 1 lapis cat dasar, 3 lapis cat penutup)",
+    "unit": "m2",
+    "price": 70500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_440",
+    "name": "Pelaburan 1 m2 bidang kayu dengan teak oil",
+    "unit": "m2",
+    "price": 27300,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_441",
+    "name": "Pelaburan 1 m2 bidang kayu dengan pelitur",
+    "unit": "m2",
+    "price": 63100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_442",
+    "name": "Pelaburan 1 m2 bidang kayu dengan residu",
+    "unit": "m2",
+    "price": 19800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_443",
+    "name": "Pelaburan 1 m2 bidang kayu dengan vernis",
+    "unit": "m2",
+    "price": 56200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_444",
+    "name": "Pengecatan 1 m2 tembok baru (1 lapis plamir, 1 lapis cat dasar, 2 lapis cat penutup), interior",
+    "unit": "m2",
+    "price": 72700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_445",
+    "name": "Pengecatan 1 m2 tembok baru (1 lapis cat dasar, 2 lapis cat penutup), eksterior",
+    "unit": "m2",
+    "price": 72600,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_446",
+    "name": "Pengecatan 1 m2 tembok lama (1 lapis cat dasar, 2 lapis cat penutup), interior",
+    "unit": "m2",
+    "price": 56100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_447",
+    "name": "Pengecatan 1 m2 tembok lama (1 lapis cat dasar, 2 lapis cat penutup), eksterior",
+    "unit": "m2",
+    "price": 58500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_448",
+    "name": "Pelaburan 1 m2 tembok baru dengan kapur padam (kapur pemutih)",
+    "unit": "m2",
+    "price": 26500,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_449",
+    "name": "Pelaburan 1 m2 tembok lama dengan kapur padam (kapur pemutih)",
+    "unit": "m2",
+    "price": 16700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_450",
+    "name": "Pengecatan 1 m2 permukaan baja galvanis 3 lapis cat terakhir secara semprot",
+    "unit": "m2",
+    "price": 75700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_451",
+    "name": "Pengecatan 1 m2 permukaan baja galvanis secara manual sistem 3 lapis",
+    "unit": "m2",
+    "price": 209800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_452",
+    "name": "Pengecatan 1 m2 permukaan baja dengan menie besi",
+    "unit": "m2",
+    "price": 43200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_453",
+    "name": "Pengecatan 1 m2 permukaan baja dengan menie besi dengan perancah",
+    "unit": "m2",
+    "price": 78400,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_454",
+    "name": "Pengecatan 1 m2 permukaan baja galvanis secara manual sistem 4 lapis",
+    "unit": "m2",
+    "price": 89100,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_455",
+    "name": "Pengecatan 1 m2 permukaan baja galvanis secara manual sistem 1 lapis cat penutup",
+    "unit": "m2",
+    "price": 35800,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_456",
+    "name": "Pengecatan 1 m2 plafon (1 lapis cat dasar dan 2 lapis cat penutup)",
+    "unit": "m2",
+    "price": 59700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_457",
+    "name": "Pengecatan 1 m2 cat epoxy tebal 2 mm",
+    "unit": "m2",
+    "price": 91200,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_458",
+    "name": "Pelituran 1 m2 dengan pelitur melamic",
+    "unit": "m2",
+    "price": 300700,
+    "type": "bahan",
+    "category": "PEKERJAAN PENGECATAN DAN PELITURAN",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_460",
+    "name": "Pemasangan 1 buah Logo PU plat besi finish cat uk. 80x80 cm",
+    "unit": "buah",
+    "price": 2900500,
+    "type": "bahan",
+    "category": "PEKERJAAN SIGNAGE",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_461",
+    "name": "Pemasangan 1 m2 signage akrilik",
+    "unit": "m2",
+    "price": 169000,
+    "type": "bahan",
+    "category": "PEKERJAAN SIGNAGE",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_462",
+    "name": "Pemasangan 1 m2 signage cutting sticker",
+    "unit": "m2",
+    "price": 123100,
+    "type": "bahan",
+    "category": "PEKERJAAN SIGNAGE",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_464",
+    "name": "Pemasangan 1 buah closet duduk/monoblock",
+    "unit": "buah",
+    "price": 2009900,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_465",
+    "name": "Pemasangan 1 buah closet jongkok",
+    "unit": "buah",
+    "price": 425800,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_466",
+    "name": "Pemasangan 1 m2 kubikel toilet",
+    "unit": "m2",
+    "price": 1445600,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_467",
+    "name": "Pemasangan 1 buah urinoir",
+    "unit": "buah",
+    "price": 805300,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_468",
+    "name": "Pemasangan 1 buah partisi urinoir",
+    "unit": "buah",
+    "price": 1006400,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_469",
+    "name": "Pemasangan 1 buah wastafel",
+    "unit": "buah",
+    "price": 641400,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_470",
+    "name": "Pemasangan 1 buah bak mandi teraso vol. 0,3 m3",
+    "unit": "buah",
+    "price": 1701400,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_471",
+    "name": "Pemasangan 1 buah bak mandi pasangan bata vol. 0,3 m3",
+    "unit": "buah",
+    "price": 1977800,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_472",
+    "name": "Pemasangan 1 buah bak fiberglass vol. 0,3 m3",
+    "unit": "buah",
+    "price": 593100,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_473",
+    "name": "Pemasangan 1 buah bak fiberglass vol. 1 m3",
+    "unit": "buah",
+    "price": 671900,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_474",
+    "name": "Pemasangan 1 buah bak beton vol. 1 m3",
+    "unit": "buah",
+    "price": 7871600,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_475",
+    "name": "Pemasangan 1 buah bathup",
+    "unit": "buah",
+    "price": 2959100,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_476",
+    "name": "Pemasangan 1 buah bak cuci piring stainles steel",
+    "unit": "buah",
+    "price": 665400,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_477",
+    "name": "Pemasangan 1 buah bak cuci piring teraso",
+    "unit": "buah",
+    "price": 1153900,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_478",
+    "name": "Pemasangan 1 buah floor drain stainless steel",
+    "unit": "buah",
+    "price": 68300,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_479",
+    "name": "Pemasangan 1 buah kran diameter ½\" atau 3/4\"",
+    "unit": "buah",
+    "price": 118000,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_480",
+    "name": "Pemasangan 1 buah jet washer",
+    "unit": "buah",
+    "price": 182100,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_481",
+    "name": "Pemasangan 1 buah gantungan baju (robe hook)",
+    "unit": "buah",
+    "price": 96200,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_482",
+    "name": "Pemasangan 1 buah towel bar",
+    "unit": "buah",
+    "price": 184200,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_483",
+    "name": "Pemasangan 1 buah grab bar",
+    "unit": "buah",
+    "price": 151200,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_484",
+    "name": "Pemasangan 1 buah clean out",
+    "unit": "buah",
+    "price": 125600,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_485",
+    "name": "Pemasangan 1 buah soap holder",
+    "unit": "buah",
+    "price": 184200,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_486",
+    "name": "Pemasangan 1 buah tissue holder",
+    "unit": "buah",
+    "price": 184200,
+    "type": "bahan",
+    "category": "PEKERJAAN SANITAIR",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_488",
+    "name": "Pemasangan 1 unit roof tank fiberglass kap. 2 m3",
+    "unit": "unit",
+    "price": 7299700,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_489",
+    "name": "Pemasangan 1 unit roof tank fiberglass kap. 4 m3",
+    "unit": "unit",
+    "price": 14786000,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_490",
+    "name": "Pemasangan 1 unit roof tank fiberglass kap. 12 m3",
+    "unit": "unit",
+    "price": 44669700,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_491",
+    "name": "Pemasangan 1 unit roof tank stainless kap. 2 m3",
+    "unit": "unit",
+    "price": 8267700,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_492",
+    "name": "Pemasangan 1 unit roof tank stainless kap. 4 m3",
+    "unit": "unit",
+    "price": 19241000,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_493",
+    "name": "Pemasangan 1 unit roof tank stainless kap. 12 m3",
+    "unit": "unit",
+    "price": 61037700,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_494",
+    "name": "Pemasangan 1 unit tangki toren kap. 0,7 m3",
+    "unit": "unit",
+    "price": 1287100,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_495",
+    "name": "Pemasangan 1 unit tangki toren kap. 1,5 m3",
+    "unit": "unit",
+    "price": 2135200,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_496",
+    "name": "Pemasangan 1 unit tangki toren kap. 2,5 m3",
+    "unit": "unit",
+    "price": 4098700,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_497",
+    "name": "Pemasangan 1 unit tangki toren kap. 3 m3",
+    "unit": "unit",
+    "price": 5579000,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_498",
+    "name": "Pemasangan 1 unit tangki toren kap. 4 m3",
+    "unit": "unit",
+    "price": 6376500,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_499",
+    "name": "Pemasangan 1 unit tangki toren kap. 5 m3",
+    "unit": "unit",
+    "price": 7931900,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_500",
+    "name": "Pemasangan 1 unit tangki toren kap. 5,5 m3",
+    "unit": "unit",
+    "price": 8154100,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_501",
+    "name": "Pemasangan 1 unit tangki toren kap. 6 m3",
+    "unit": "unit",
+    "price": 9035000,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_502",
+    "name": "Pemasangan 1 unit pompa transfer 150 lpm; centrifugal end suction",
+    "unit": "unit",
+    "price": 1427800,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_503",
+    "name": "Pemasangan 1 unit pompa booster 450 lpm; centrifugal end suction",
+    "unit": "unit",
+    "price": 3520400,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_504",
+    "name": "Pemasangan 1 unit pompa booster 150 lpm; vertical in line-packaged",
+    "unit": "unit",
+    "price": 1524700,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_505",
+    "name": "Pemasangan 1 unit pompa jet 27 lpm",
+    "unit": "unit",
+    "price": 1403100,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_506",
+    "name": "Pemasangan 1 unit pompa jet 34 lpm",
+    "unit": "unit",
+    "price": 1766100,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_507",
+    "name": "Pemasangan 1 unit pompa jet 100 lpm",
+    "unit": "unit",
+    "price": 2734100,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_508",
+    "name": "Pemasangan 1 unit pompa lift 80 lpm",
+    "unit": "unit",
+    "price": 1412300,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_509",
+    "name": "Pemasangan 1 unit pompa lift 250 lpm",
+    "unit": "unit",
+    "price": 4342900,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_510",
+    "name": "Pemasangan 1 unit sand filter kap. 0,1 m3 / hari",
+    "unit": "unit",
+    "price": 3273400,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_511",
+    "name": "Pemasangan 1 unit sand filter kap. 14 m3 / hari",
+    "unit": "unit",
+    "price": 7861000,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_512",
+    "name": "Pemasangan 1 unit carbon filter kap. 0,1 m3 / hari",
+    "unit": "unit",
+    "price": 1187500,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_513",
+    "name": "Pemasangan 1 unit carbon filter kap. 0,6 m3 / hari",
+    "unit": "unit",
+    "price": 5699500,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_514",
+    "name": "Pemasangan 1 unit silika filter kap. 0,1 m3 / hari",
+    "unit": "unit",
+    "price": 1018400,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_515",
+    "name": "Pemasangan 1 set priming tank 500 liter",
+    "unit": "set",
+    "price": 1723100,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_516",
+    "name": "Pemasangan 1 set priming tank 800 liter",
+    "unit": "set",
+    "price": 2619600,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_517",
+    "name": "Pemasangan 1 set priming tank 1.000 liter",
+    "unit": "set",
+    "price": 3513800,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_518",
+    "name": "Pemasangan 1 set priming tank 2.000 liter",
+    "unit": "set",
+    "price": 4853200,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_519",
+    "name": "Pemasangan 1 set pressure tank 1.000 liter",
+    "unit": "set",
+    "price": 19467900,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR MINUM",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_521",
+    "name": "Pemasangan 1 set Sewage Treatment Plant (STP) fiberglass kap. 2 m3",
+    "unit": "set",
+    "price": 32720200,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_522",
+    "name": "Pemasangan 1 set Sewage Treatment Plant (STP) fiberglass kap. 5 m3",
+    "unit": "set",
+    "price": 55811100,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_523",
+    "name": "Pemasangan 1 set Sewage Treatment Plant (STP) fiberglass kap. 10 m3",
+    "unit": "set",
+    "price": 90526000,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_524",
+    "name": "Pemasangan 1 set Sewage Treatment Plant (STP) fiberglass kap. 30 m3",
+    "unit": "set",
+    "price": 173195400,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_525",
+    "name": "Pemasangan 1 set Sewage Treatment Plant (STP) precast kap. 30 m3",
+    "unit": "set",
+    "price": 113439600,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_526",
+    "name": "Pemasangan 1 unit pompa sump pit air kotor 100 m3/jam, submersible cutter pump",
+    "unit": "unit",
+    "price": 9765800,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_527",
+    "name": "Pemasangan 1 unit grease trap portable fiberglass, kap. 30 Liter",
+    "unit": "unit",
+    "price": 1230600,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_528",
+    "name": "Pemasangan 1 unit grease trap portable stainless, kap. 30 Liter",
+    "unit": "unit",
+    "price": 1794400,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_529",
+    "name": "Pemasangan 1 unit grease trap central fiberglass, kap. 5 m3",
+    "unit": "unit",
+    "price": 22979100,
+    "type": "bahan",
+    "category": "PEKERJAAN SISTEM AIR LIMBAH",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_531",
+    "name": "Pemasangan 1 buah bak kontrol pas. bata 30x30 cm tinggi 35 cm dengan tutup beton",
+    "unit": "buah",
+    "price": 596500,
+    "type": "bahan",
+    "category": "PEKERJAAN BAK KONTROL",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_532",
+    "name": "Pemasangan 1 buah bak kontrol pas. bata 45x45 cm tinggi 50 cm dengan tutup beton",
+    "unit": "buah",
+    "price": 823600,
+    "type": "bahan",
+    "category": "PEKERJAAN BAK KONTROL",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_533",
+    "name": "Pemasangan 1 buah bak kontrol pas. bata 60x60 cm tinggi 65 cm dengan tutup beton",
+    "unit": "buah",
+    "price": 991500,
+    "type": "bahan",
+    "category": "PEKERJAAN BAK KONTROL",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_535",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 1/2\" (15 mm)",
+    "unit": "m'",
+    "price": 21700,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_536",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 3/4\" (20 mm)",
+    "unit": "m'",
+    "price": 28600,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_537",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 1\" (25 mm)",
+    "unit": "m'",
+    "price": 37000,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_538",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 1-1/4\" (32 mm)",
+    "unit": "m'",
+    "price": 56500,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_539",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 1-1/2\" (40 mm)",
+    "unit": "m'",
+    "price": 62700,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_540",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 2\" (50 mm)",
+    "unit": "m'",
+    "price": 81600,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_541",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 2-1/2\" (65 mm)",
+    "unit": "m'",
+    "price": 104200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_542",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 3\" (80 mm)",
+    "unit": "m'",
+    "price": 148700,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_543",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 4\" (100 mm)",
+    "unit": "m'",
+    "price": 206400,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_544",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 5\" (125 mm)",
+    "unit": "m'",
+    "price": 277900,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_545",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 6\" (150 mm)",
+    "unit": "m'",
+    "price": 306900,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_546",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 8\" (200 mm)",
+    "unit": "m'",
+    "price": 386500,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_547",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 10\" (250 mm)",
+    "unit": "m'",
+    "price": 448900,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_548",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 12\" (300 mm)",
+    "unit": "m'",
+    "price": 533200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_549",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 14\" (350 mm)",
+    "unit": "m'",
+    "price": 606400,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_550",
+    "name": "Pemasangan 1 m' pipa PVC AW, dia. 16\" (400 mm)",
+    "unit": "m'",
+    "price": 704100,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_551",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 1-1/4\" (32 mm)",
+    "unit": "m'",
+    "price": 38000,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_552",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 1-1/2\" (40 mm)",
+    "unit": "m'",
+    "price": 43700,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_553",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 2\" (50 mm)",
+    "unit": "m'",
+    "price": 57400,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_554",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 2-1/2\" (65 mm)",
+    "unit": "m'",
+    "price": 76200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_555",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 3\" (80 mm)",
+    "unit": "m'",
+    "price": 100400,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_556",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 4\" (100 mm)",
+    "unit": "m'",
+    "price": 135800,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_557",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 5\" (125 mm)",
+    "unit": "m'",
+    "price": 198700,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_558",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 6\" (150 mm)",
+    "unit": "m'",
+    "price": 247200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_559",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 8\" (200 mm)",
+    "unit": "m'",
+    "price": 401800,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_560",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 10\" (250 mm)",
+    "unit": "m'",
+    "price": 627400,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_561",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 12\" (300 mm)",
+    "unit": "m'",
+    "price": 839500,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_562",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 14\" (350 mm)",
+    "unit": "m'",
+    "price": 875500,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_563",
+    "name": "Pemasangan 1 m' pipa PVC D, dia. 16\" (400 mm)",
+    "unit": "m'",
+    "price": 981200,
+    "type": "bahan",
+    "category": "PEKERJAAN PERPIPAAN GEDUNG",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_565",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 4 mm²",
+    "unit": "m'",
+    "price": 19300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_566",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 6 mm²",
+    "unit": "m'",
+    "price": 25000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_567",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 10 mm²",
+    "unit": "m'",
+    "price": 32600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_568",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 16 mm²",
+    "unit": "m'",
+    "price": 55300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_569",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 25 mm²",
+    "unit": "m'",
+    "price": 82800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_570",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 35 mm²",
+    "unit": "m'",
+    "price": 109700,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_571",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 50 mm²",
+    "unit": "m'",
+    "price": 140800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_572",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 70 mm²",
+    "unit": "m'",
+    "price": 204100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_573",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 95 mm²",
+    "unit": "m'",
+    "price": 273000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_574",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 120 mm²",
+    "unit": "m'",
+    "price": 336300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_575",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 150 mm²",
+    "unit": "m'",
+    "price": 407800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_576",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 185 mm²",
+    "unit": "m'",
+    "price": 506300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_577",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 250 mm²",
+    "unit": "m'",
+    "price": 656800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_578",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 300 mm²",
+    "unit": "m'",
+    "price": 817400,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_579",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 400 mm²",
+    "unit": "m'",
+    "price": 1033500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_580",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 500 mm²",
+    "unit": "m'",
+    "price": 1319800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_581",
+    "name": "Pemasangan 1 m' kabel NYY 1 x 630 mm²",
+    "unit": "m'",
+    "price": 1634000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_582",
+    "name": "Pemasangan 1 m' kabel NYY 2 x 1,5 mm²",
+    "unit": "m'",
+    "price": 25000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_583",
+    "name": "Pemasangan 1 m' kabel NYY 2 x 2,5 mm²",
+    "unit": "m'",
+    "price": 30700,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_584",
+    "name": "Pemasangan 1 m' kabel NYY 2 x 4 mm²",
+    "unit": "m'",
+    "price": 38900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_585",
+    "name": "Pemasangan 1 m' kabel NYY 2 x 6 mm²",
+    "unit": "m'",
+    "price": 54100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_586",
+    "name": "Pemasangan 1 m' kabel NYY 2 x 10 mm²",
+    "unit": "m'",
+    "price": 82500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_587",
+    "name": "Pemasangan 1 m' kabel NYY 2 x 16 mm²",
+    "unit": "m'",
+    "price": 126200,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_588",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 1,5 mm²",
+    "unit": "m'",
+    "price": 28800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_589",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 2,5 mm²",
+    "unit": "m'",
+    "price": 37000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_590",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 4 mm²",
+    "unit": "m'",
+    "price": 53700,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_591",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 6 mm²",
+    "unit": "m'",
+    "price": 70100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_592",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 10 mm²",
+    "unit": "m'",
+    "price": 109200,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_593",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 16 mm²",
+    "unit": "m'",
+    "price": 159000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_594",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 25 mm²",
+    "unit": "m'",
+    "price": 236000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_595",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 35 mm²",
+    "unit": "m'",
+    "price": 315500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_596",
+    "name": "Pemasangan 1 m' kabel NYY 3 x 50 mm²",
+    "unit": "m'",
+    "price": 406500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_597",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 1,5 mm²",
+    "unit": "m'",
+    "price": 33300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_598",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 2,5 mm²",
+    "unit": "m'",
+    "price": 46000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_599",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 4 mm²",
+    "unit": "m'",
+    "price": 66300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_600",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 6 mm²",
+    "unit": "m'",
+    "price": 89100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_601",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 10 mm²",
+    "unit": "m'",
+    "price": 136200,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_602",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 16 mm²",
+    "unit": "m'",
+    "price": 202600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_603",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 25 mm²",
+    "unit": "m'",
+    "price": 308200,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_604",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 35 mm²",
+    "unit": "m'",
+    "price": 417300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_605",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 50 mm²",
+    "unit": "m'",
+    "price": 550800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_606",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 70 mm²",
+    "unit": "m'",
+    "price": 783800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_607",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 95 mm²",
+    "unit": "m'",
+    "price": 1077600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_608",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 120 mm²",
+    "unit": "m'",
+    "price": 1339100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_609",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 150 mm²",
+    "unit": "m'",
+    "price": 1648600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_610",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 185 mm²",
+    "unit": "m'",
+    "price": 2038000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_611",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 240 mm²",
+    "unit": "m'",
+    "price": 2685000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_612",
+    "name": "Pemasangan 1 m' kabel NYY 4 x 300 mm²",
+    "unit": "m'",
+    "price": 3325200,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_613",
+    "name": "Pemasangan 1 m' kabel NYA 1 x 1,5 mm²",
+    "unit": "m'",
+    "price": 9000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_614",
+    "name": "Pemasangan 1 m' kabel NYA 1 x 2,5 mm²",
+    "unit": "m'",
+    "price": 11700,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_615",
+    "name": "Pemasangan 1 m' kabel NYA 1 x 4 mm²",
+    "unit": "m'",
+    "price": 18300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_616",
+    "name": "Pemasangan 1 m' kabel NYA 1 x 6 mm²",
+    "unit": "m'",
+    "price": 23200,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_617",
+    "name": "Pemasangan 1 m' kabel NYA 1 x 10 mm²",
+    "unit": "m'",
+    "price": 35100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_618",
+    "name": "Pemasangan 1 m' kabel NYA 1 x 16 mm²",
+    "unit": "m'",
+    "price": 51500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_619",
+    "name": "Pemasangan 1 m' kabel NYA 2 x 1,5 mm² + PVC conduit HI 20 mm²",
+    "unit": "m'",
+    "price": 26600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_620",
+    "name": "Pemasangan 1 m' kabel NYA 3 x 1,5 mm² + PVC conduit HI 20 mm²",
+    "unit": "m'",
+    "price": 32700,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_621",
+    "name": "Pemasangan 1 m' kabel NYM 2 x 1,5 mm²",
+    "unit": "m'",
+    "price": 21500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_622",
+    "name": "Pemasangan 1 m' kabel NYM 2 x 2,5 mm²",
+    "unit": "m'",
+    "price": 27300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_623",
+    "name": "Pemasangan 1 m' kabel NYM 2 x 4 mm²",
+    "unit": "m'",
+    "price": 36100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_624",
+    "name": "Pemasangan 1 m' kabel NYM 2 x 6 mm²",
+    "unit": "m'",
+    "price": 48100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_625",
+    "name": "Pemasangan 1 m' kabel NYM 2 x 10 mm²",
+    "unit": "m'",
+    "price": 74500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_626",
+    "name": "Pemasangan 1 m' kabel NYM 3 x 1,5 mm²",
+    "unit": "m'",
+    "price": 24800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_627",
+    "name": "Pemasangan 1 m' kabel NYM 3 x 2,5 mm²",
+    "unit": "m'",
+    "price": 37900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_628",
+    "name": "Pemasangan 1 m' kabel NYM 3 x 4 mm²",
+    "unit": "m'",
+    "price": 47600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_629",
+    "name": "Pemasangan 1 m' kabel NYM 3 x 6 mm²",
+    "unit": "m'",
+    "price": 68800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_630",
+    "name": "Pemasangan 1 m' kabel NYM 3 x 10 mm²",
+    "unit": "m'",
+    "price": 106100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_631",
+    "name": "Pemasangan 1 m' kabel NYM 4 x 1,5 mm²",
+    "unit": "m'",
+    "price": 28800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_632",
+    "name": "Pemasangan 1 m' kabel NYM 4 x 2,5 mm²",
+    "unit": "m'",
+    "price": 39800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_633",
+    "name": "Pemasangan 1 m' kabel NYM 4 x 4 mm²",
+    "unit": "m'",
+    "price": 60800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_634",
+    "name": "Pemasangan 1 m' kabel NYM 4 x 6 mm²",
+    "unit": "m'",
+    "price": 83700,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_635",
+    "name": "Pemasangan 1 m' kabel NYM 4 x 10 mm²",
+    "unit": "m'",
+    "price": 137400,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_636",
+    "name": "Pemasangan 1 m' kabel NYM 4 x 16 mm²",
+    "unit": "m'",
+    "price": 212800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_637",
+    "name": "Pemasangan 1 m' kabel NYMHY 2 x 1,5 mm²",
+    "unit": "m'",
+    "price": 22100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_638",
+    "name": "Pemasangan 1 m' kabel NYMHY 2 x 2,5 mm²",
+    "unit": "m'",
+    "price": 28100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_639",
+    "name": "Pemasangan 1 m' kabel NYMHY 3 x 1,5 mm²",
+    "unit": "m'",
+    "price": 27500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_640",
+    "name": "Pemasangan 1 m' kabel NYMHY 3 x 2,5 mm²",
+    "unit": "m'",
+    "price": 37900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_641",
+    "name": "Pemasangan 1 m' kabel NYMHY 4 x 2,5 mm²",
+    "unit": "m'",
+    "price": 47700,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_642",
+    "name": "Pemasangan 1 m' kabel NYMHY 3 x 1,5 mm² + PVC conduit HI 20 mm²",
+    "unit": "m'",
+    "price": 32900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_643",
+    "name": "Pemasangan 1 m' kabel NYMHY 2 (3 x 1,5 mm²) + PVC conduit HI 20 mm²",
+    "unit": "m'",
+    "price": 35900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_644",
+    "name": "Pemasangan 1 m' kabel NYFGBY 2 x 1,5 mm²",
+    "unit": "m'",
+    "price": 39800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_645",
+    "name": "Pemasangan 1 m' kabel NYFGBY 2 x 2,5 mm²",
+    "unit": "m'",
+    "price": 50000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_646",
+    "name": "Pemasangan 1 m' kabel NYFGBY 2 x 4 mm²",
+    "unit": "m'",
+    "price": 56300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_647",
+    "name": "Pemasangan 1 m' kabel NYFGBY 2 x 6 mm²",
+    "unit": "m'",
+    "price": 67000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_648",
+    "name": "Pemasangan 1 m' kabel NYFGBY 2 x 10 mm²",
+    "unit": "m'",
+    "price": 90000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_649",
+    "name": "Pemasangan 1 m' kabel NYFGBY 2 x 16 mm²",
+    "unit": "m'",
+    "price": 118000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_650",
+    "name": "Pemasangan 1 m' kabel NYFGBY 3 x 1,5 mm²",
+    "unit": "m'",
+    "price": 47400,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_651",
+    "name": "Pemasangan 1 m' kabel NYFGBY 3 x 2,5 mm²",
+    "unit": "m'",
+    "price": 55400,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_652",
+    "name": "Pemasangan 1 m' kabel NYFGBY 3 x 4 mm²",
+    "unit": "m'",
+    "price": 76600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_653",
+    "name": "Pemasangan 1 m' kabel NYFGBY 3 x 6 mm²",
+    "unit": "m'",
+    "price": 98600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_654",
+    "name": "Pemasangan 1 m' kabel NYFGBY 3 x 10 mm²",
+    "unit": "m'",
+    "price": 119900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_655",
+    "name": "Pemasangan 1 m' kabel NYFGBY 3 x 16 mm²",
+    "unit": "m'",
+    "price": 184900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_656",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 1,5 mm²",
+    "unit": "m'",
+    "price": 48600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_657",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 2,5 mm²",
+    "unit": "m'",
+    "price": 62900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_658",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 4 mm²",
+    "unit": "m'",
+    "price": 99100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_659",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 6 mm²",
+    "unit": "m'",
+    "price": 107500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_660",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 10 mm²",
+    "unit": "m'",
+    "price": 147600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_661",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 16 mm²",
+    "unit": "m'",
+    "price": 230100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_662",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 25 mm²",
+    "unit": "m'",
+    "price": 350800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_663",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 35 mm²",
+    "unit": "m'",
+    "price": 444800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_664",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 50 mm²",
+    "unit": "m'",
+    "price": 587500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_665",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 70 mm²",
+    "unit": "m'",
+    "price": 818400,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_666",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 95 mm²",
+    "unit": "m'",
+    "price": 1040800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_667",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 120 mm²",
+    "unit": "m'",
+    "price": 1353500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_668",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 150 mm²",
+    "unit": "m'",
+    "price": 1641400,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_669",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 185 mm²",
+    "unit": "m'",
+    "price": 2039500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_670",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 240 mm²",
+    "unit": "m'",
+    "price": 2634700,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_671",
+    "name": "Pemasangan 1 m' kabel NYFGBY 4 x 300 mm²",
+    "unit": "m'",
+    "price": 3256100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_672",
+    "name": "Pemasangan 1 m' kabel FRC 3 x 2,5 mm²",
+    "unit": "m'",
+    "price": 60400,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_673",
+    "name": "Pemasangan 1 m' kabel FRC 4 x 4 mm²",
+    "unit": "m'",
+    "price": 125800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_674",
+    "name": "Pemasangan 1 m' kabel FRC 4 x 6 mm²",
+    "unit": "m'",
+    "price": 151100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_675",
+    "name": "Pemasangan 1 m' kabel FRC 4 x 150 mm²",
+    "unit": "m'",
+    "price": 2107100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_676",
+    "name": "Pemasangan 1 m' kabel FRC 1 x 150 mm²",
+    "unit": "m'",
+    "price": 406900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_677",
+    "name": "Pemasangan 1 m' kabel FRC 2 x 1,5 mm² + PVC Conduit HI 20 mm2",
+    "unit": "m'",
+    "price": 44100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_678",
+    "name": "Pemasangan 1 m' kabel FRC 2 x 2,5 mm² + PVC Conduit HI 20 mm2",
+    "unit": "m'",
+    "price": 86800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_679",
+    "name": "Pemasangan 1 m' kabel BCC 4 mm² (0,04 kg/m)",
+    "unit": "m'",
+    "price": 23000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_680",
+    "name": "Pemasangan 1 m' kabel BCC 6 mm² (0,06 kg/m)",
+    "unit": "m'",
+    "price": 24500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_681",
+    "name": "Pemasangan 1 m' kabel BCC 10 mm² (0,10 kg/m)",
+    "unit": "m'",
+    "price": 46500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_682",
+    "name": "Pemasangan 1 m' kabel BCC 16 mm² (0,16 kg/m)",
+    "unit": "m'",
+    "price": 51500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_683",
+    "name": "Pemasangan 1 m' kabel BCC 25 mm² (0,25 kg/m)",
+    "unit": "m'",
+    "price": 79000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_684",
+    "name": "Pemasangan 1 m' kabel BCC 35 mm² (0,35 kg/m)",
+    "unit": "m'",
+    "price": 105900,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_685",
+    "name": "Pemasangan 1 m' kabel BCC 50 mm² (0,50 kg/m)",
+    "unit": "m'",
+    "price": 135600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_686",
+    "name": "Pemasangan 1 m' kabel BCC 70 mm² (0,70 kg/m)",
+    "unit": "m'",
+    "price": 196500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_687",
+    "name": "Pemasangan 1 m' kabel BCC 95 mm² (0,95 kg/m)",
+    "unit": "m'",
+    "price": 258500,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_688",
+    "name": "Pemasangan 1 unit kabel tray (horizontal) 600 x 100 mm",
+    "unit": "unit",
+    "price": 533200,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_689",
+    "name": "Pemasangan 1 unit kabel tray (horizontal) 500 x 100 mm",
+    "unit": "unit",
+    "price": 474100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_690",
+    "name": "Pemasangan 1 unit kabel tray (horizontal) 400 x 100 mm",
+    "unit": "unit",
+    "price": 413600,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_691",
+    "name": "Pemasangan 1 unit kabel tray (horizontal) 300 x 100 mm",
+    "unit": "unit",
+    "price": 350300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_692",
+    "name": "Pemasangan 1 unit kabel tray (horizontal) 200 x 100 mm",
+    "unit": "unit",
+    "price": 289800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_693",
+    "name": "Pemasangan 1 unit kabel tray (vertikal) 600 x 100 mm",
+    "unit": "unit",
+    "price": 513800,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_694",
+    "name": "Pemasangan 1 unit kabel tray (vertikal) 500 x 100 mm",
+    "unit": "unit",
+    "price": 457100,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_695",
+    "name": "Pemasangan 1 unit kabel tray (vertikal) 400 x 100 mm",
+    "unit": "unit",
+    "price": 399000,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_696",
+    "name": "Pemasangan 1 unit kabel tray (vertikal) 300 x 100 mm",
+    "unit": "unit",
+    "price": 338300,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_697",
+    "name": "Pemasangan 1 unit kabel tray (vertikal) 200 x 100 mm",
+    "unit": "unit",
+    "price": 280200,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  },
+  {
+    "id": "res_698",
+    "name": "Pemasangan 1 unit pasang baja ringan 75 x 35 mm + Hanger",
+    "unit": "unit",
+    "price": 475400,
+    "type": "bahan",
+    "category": "PEKERJAAN JARINGAN LISTRIK",
+    "source": "AHSP 2024"
+  }
+]

@@ -142,6 +142,16 @@ export type AHSItem = {
   updatedAt: string;
 };
 
+export type PricingResource = {
+  id: string;
+  name: string;
+  unit: string;
+  price: number;
+  type: AHSComponentType;
+  category: string;
+  source: string; // e.g. "AHSP 2024", "Toko Bangunan A"
+};
+
 // Helper: Calculate total price dari AHS Item
 export const calculateAHSTotal = (item: AHSItem): number => {
   return item.components.reduce((sum, comp) => sum + (comp.coefficient * comp.unitPrice), 0);

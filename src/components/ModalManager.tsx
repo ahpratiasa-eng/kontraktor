@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package } from 'lucide-react';
 import { NumberInput } from './UIComponents';
 import * as XLSX from 'xlsx';
-import type { UserRole, Material, RABItem, Project, AHSItem } from '../types';
+import type { UserRole, Material, RABItem, Project, AHSItem, PricingResource } from '../types';
 import { calculateAHSTotal } from '../types';
 import { formatRupiah } from '../utils/helpers';
 
@@ -74,6 +74,7 @@ interface ModalManagerProps {
 
     // AHS Integration
     ahsItems: AHSItem[];
+    resources: PricingResource[]; // Standard prices (SHD)
     selectedAhsId: string | null;
     setSelectedAhsId: (id: string | null) => void;
 }
@@ -92,13 +93,18 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         aiPrompt, setAiPrompt, isGeneratingAI,
         attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, evidenceLocation, handlePhotoUpload, isGettingLoc,
         activeProject, selectedRabItem, selectedWorkerId,
-        ahsItems
+        ahsItems, resources,
+        setSelectedAhsId
     } = props;
 
     // State for AHS picker in RAB modal
     const [showAhsPicker, setShowAhsPicker] = useState(false);
     const [ahsSearch, setAhsSearch] = useState('');
-    const { setSelectedAhsId } = props;
+
+    // State for Resource picker in Worker modal
+    const [showResourcePicker, setShowResourcePicker] = useState(false);
+    const [resourceSearch, setResourceSearch] = useState('');
+
 
     const handleSelectAHS = (ahs: AHSItem) => {
         setRabCategory(ahs.category);
@@ -334,10 +340,55 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                     {modalType === 'newWorker' && (
                         <div className="space-y-4">
                             <h3 className="font-bold text-xl mb-4">{selectedWorkerId ? 'Edit Pekerja' : 'Tambah Pekerja Baru'}</h3>
+
+                            {/* RESOURCE PICKER */}
+                            {showResourcePicker ? (
+                                <div className="border rounded-xl p-3 bg-slate-50">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="font-bold text-sm text-slate-700">Pilih Standar Upah</h4>
+                                        <button onClick={() => setShowResourcePicker(false)} className="bg-slate-200 p-1 rounded hover:bg-slate-300"><X size={14} /></button>
+                                    </div>
+                                    <input
+                                        className="w-full p-2 border rounded-lg mb-2 text-sm"
+                                        placeholder="Cari standar upah..."
+                                        value={resourceSearch}
+                                        onChange={e => setResourceSearch(e.target.value)}
+                                        autoFocus
+                                    />
+                                    <div className="max-h-48 overflow-y-auto space-y-1">
+                                        {resources.filter(r => r.type === 'upah' && r.name.toLowerCase().includes(resourceSearch.toLowerCase())).map(r => (
+                                            <div key={r.id} onClick={() => {
+                                                // Auto fill
+                                                setInputWorkerRole(r.name);
+                                                setInputWageUnit(r.unit === 'OH' ? 'Harian' : 'Borongan');
+                                                setInputRealRate(r.price);
+                                                // Default mandor/charge rate = real rate + margin (e.g. 20%) or same for now?
+                                                const margin = r.price * 0.2; // Example 20% margin
+                                                setInputMandorRate(r.price + margin);
+                                                setShowResourcePicker(false);
+                                            }} className="p-2 bg-white border rounded hover:bg-blue-50 cursor-pointer flex justify-between items-center transition-colors">
+                                                <div>
+                                                    <div className="text-sm font-bold text-slate-700">{r.name}</div>
+                                                    <div className="text-xs text-slate-500">{r.category}</div>
+                                                </div>
+                                                <span className="font-mono font-bold text-blue-600 text-sm">{formatRupiah(r.price)}/{r.unit}</span>
+                                            </div>
+                                        ))}
+                                        {resources.filter(r => r.type === 'upah').length === 0 && <div className="text-center text-xs text-slate-400 py-4">Belum ada data upah di Library.</div>}
+                                    </div>
+                                </div>
+                            ) : (
+                                <button onClick={() => setShowResourcePicker(true)} className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
+                                    <Search size={14} /> Ambil dari Standar Upah
+                                </button>
+                            )}
+
                             <input className="w-full p-3 border rounded-xl" placeholder="Nama Lengkap" value={inputName} onChange={e => setInputName(e.target.value)} />
                             <div className="flex gap-2">
                                 <select className="flex-1 p-3 border rounded-xl bg-white" value={inputWorkerRole} onChange={e => setInputWorkerRole(e.target.value)}>
                                     <option>Tukang</option><option>Kuli</option><option>Kepala Tukang</option><option>Mandor</option>
+                                    {/* Allow custom roles from picker */}
+                                    {!['Tukang', 'Kuli', 'Kepala Tukang', 'Mandor'].includes(inputWorkerRole) && <option>{inputWorkerRole}</option>}
                                 </select>
                                 <select className="flex-1 p-3 border rounded-xl bg-white" value={inputWageUnit} onChange={e => setInputWageUnit(e.target.value)}>
                                     <option>Harian</option><option>Mingguan</option><option>Bulanan</option><option>Borongan</option>
@@ -345,6 +396,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             </div>
                             <NumberInput className="w-full p-3 border rounded-xl" placeholder="Upah Asli (Rate Internal)" value={inputRealRate} onChange={setInputRealRate} />
                             <NumberInput className="w-full p-3 border rounded-xl" placeholder="Upah Mandor (Rate Charge)" value={inputMandorRate} onChange={setInputMandorRate} />
+                            <div className="text-xs text-slate-400 italic px-1">*Upah Mandor adalah yang ditagihkan ke Owner/Klien. Selisih = Profit.</div>
                             <button onClick={handleSaveWorker} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg">Simpan Data Pekerja</button>
                         </div>
                     )}
