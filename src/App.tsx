@@ -591,13 +591,6 @@ const App = () => {
       });
     });
 
-    // Expenses
-    const expenseCategories = [
-      { category: 'Material', items: ['Pembelian Semen', 'Pembelian Besi', 'Pembelian Bata Ringan', 'Pembelian Cat', 'Material Finishing'] },
-      { category: 'Upah Tukang', items: ['Gaji Mingguan Tim'] },
-      { category: 'Operasional', items: ['Transport Material', 'Sewa Alat', 'Konsumsi Tukang'] },
-    ];
-
     // Distribute expenses over project duration
     for (let week = 0; week < 22; week++) {
       const weekDate = new Date(startDate);
