@@ -46,15 +46,23 @@ Masuk ke tab **Logistik / Bahan**.
 
 ### A. Stok Lapangan (Gudang Data)
 Digunakan untuk mencatat stok fisik di gudang proyek.
-*   **Update Stok**: Klik ikon pensil untuk catat barang masuk (Beli) atau keluar (Pakai).
+*   **Tambah Material**: Klik tombol `+ Material Baru` di pojok kanan.
+*   **Update Stok**: Klik tombol **"Update Stok"** untuk mencatat barang masuk (Beli) atau keluar (Pakai).
+*   **Edit/Hapus**: Gunakan ikon **Pensil** untuk mengedit nama/stok minimum, dan ikon **Sampah** untuk menghapus material.
 *   **Peringatan Dini**: Kartu material akan berwarna **MERAH** dan ada label "STOK MENIPIS" jika jumlah di bawah batas minimum.
 
-### B. Rekap Kebutuhan Proyek (Smart Shopping List)
-Ini adalah fitur otomatisasi logistik.
+### B. Otomatisasi Order (WhatsApp) 📱
+Jika ada material yang stoknya kritis:
+1.  Akan muncul alert merah dengan tombol **"Order via WhatsApp"**.
+2.  Klik tombol tersebut, masukkan **Nama Toko** dan **Nomor WhatsApp Toko** (Opsional).
+3.  Sistem akan otomatis membuat draft pesan pesanan berisi daftar material yang habis.
+4.  Kirim pesan langsung ke supplier tanpa mengetik ulang.
+
+### C. Rekap Kebutuhan Proyek (Smart Shopping List)
+Ini adalah fitur otomatisasi logistik berbasis RAB.
 *   Klik tombol **"Rekap Kebutuhan Proyek (RAB)"**.
-*   Sistem membaca semua ITEM RAB Anda, membongkar Analisa (AHS) di dalamnya, dan menghitung total bahan mentah.
+*   Sistem membaca semua ITEM RAB Anda, membongkar Analisa (AHS), dan menghitung total bahan mentah.
 *   **Hasil**: Daftar belanja lengkap (Semen total sekian sak, Pasir sekian kubik).
-*   **Traceability**: Kolom kanan menunjukkan bahan tersebut dipakai untuk pekerjaan apa saja.
 *   **Cetak**: Klik tombol `Print/PDF` untuk mengirim daftar ini ke Toko Bangunan.
 
 ---
@@ -62,7 +70,10 @@ Ini adalah fitur otomatisasi logistik.
 ## 4. Keuangan & Tim Lapangan
 ### Keuangan (Finance)
 *   **Catat Transaksi**: Input pengeluaran harian (makan, bensin, material darurat).
-*   **Filter**: Pisahkan pengeluaran Material vs Upah.
+*   **Gaji & Hutang Tukang**: Tab khusus untuk memantau "Siapa yang belum dibayar?".
+    *   Lihat total hutang gaji per tukang.
+    *   Bayar sebagian (Kasbon) atau lunas.
+    *   Otomatis terhitung dari Absensi x Upah Harian.
 *   **Cashflow**: Grafik pemasukan vs pengeluaran real-time.
 
 ### Tim & Absensi
@@ -95,6 +106,13 @@ Fitur untuk menjaga transparansi dengan Pemilik Rumah.
     *   Foto-foto Galeri Pro proyek.
     *   Kurva S sederhana.
     *   *Catatan: Nilai uang/profit KONTRAKTOR disembunyikan dari pandangan klien.*
+
+---
+
+## 7. Pengaturan & Branding 🏢
+Masuk ke menu **Landing Page CMS** (khusus Admin).
+*   **Identitas Perusahaan**: Ubah Nama PT/CV, Tagline, dan Kontak yang akan muncul di Kop Surat Laporan.
+*   **Portfolio**: Upload foto-foto proyek terbaik Anda untuk ditampilkan di halaman depan aplikasi (Landing Page).
 
 ---
 *Dibuat otomatis oleh Sistem Kontraktor Pro.*
