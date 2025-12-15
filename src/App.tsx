@@ -944,6 +944,7 @@ const App = () => {
               handleEditWorker={handleEditWorker}
               handleDeleteWorker={handleDeleteWorker}
               handleReportToOwner={handleReportToOwner}
+              ahsItems={ahsItems}
             />
           )}
 

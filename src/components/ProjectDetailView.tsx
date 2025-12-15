@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote,
     ImageIcon, ExternalLink, Upload, Lock
@@ -9,7 +9,7 @@ import {
     formatRupiah, getStats, getGroupedTransactions,
     calculateWorkerFinancials
 } from '../utils/helpers';
-import type { Project, RABItem, GroupedTransaction, Worker, Material } from '../types';
+import type { Project, RABItem, GroupedTransaction, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
 import type { UserRole } from '../types';
 
@@ -43,6 +43,7 @@ interface ProjectDetailViewProps {
     prepareEditRABItem: (item: RABItem) => void;
     isClientView?: boolean;
     handleReportToOwner: () => void;
+    ahsItems: AHSItem[];
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
@@ -51,10 +52,12 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
-    setActiveTab, prepareEditProject, prepareEditRABItem, isClientView, handleReportToOwner
+    setActiveTab, prepareEditProject, prepareEditRABItem, isClientView, handleReportToOwner,
+    ahsItems
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
+    const [logisticsTab, setLogisticsTab] = useState<'stock' | 'recap'>('stock');
 
     // Enforce Client View Mode
     React.useEffect(() => {
@@ -159,6 +162,52 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             return d >= start && d <= end;
         });
     };
+
+    const recapData = useMemo(() => {
+        const recap: Record<string, {
+            name: string;
+            unit: string;
+            type: string;
+            totalCoefficient: number;
+            items: string[];
+        }> = {};
+
+        activeProject.rabItems.forEach(rab => {
+            let ahs = ahsItems.find(a => a.id === rab.ahsItemId);
+            // Fallback match by Name if imported/generated
+            if (!ahs) ahs = ahsItems.find(a => a.name.trim().toLowerCase() === rab.name.trim().toLowerCase());
+
+            if (!ahs) return;
+
+            ahs.components.forEach(comp => {
+                const totalNeed = comp.coefficient * rab.volume;
+                const key = `${comp.name.toLowerCase()}_${comp.unit.toLowerCase()}`;
+
+                if (!recap[key]) {
+                    recap[key] = {
+                        name: comp.name,
+                        unit: comp.unit,
+                        type: comp.type,
+                        totalCoefficient: 0,
+                        items: []
+                    };
+                }
+
+                recap[key].totalCoefficient += totalNeed;
+                if (!recap[key].items.includes(rab.name)) {
+                    recap[key].items.push(rab.name);
+                }
+            });
+        });
+
+        return Object.values(recap).sort((a, b) => {
+            const typeOrder = { 'bahan': 1, 'alat': 2, 'upah': 3 };
+            const ta = typeOrder[a.type as keyof typeof typeOrder] || 99;
+            const tb = typeOrder[b.type as keyof typeof typeOrder] || 99;
+            if (ta !== tb) return ta - tb;
+            return a.name.localeCompare(b.name);
+        });
+    }, [activeProject.rabItems, ahsItems]);
 
     const tabs = [
         { id: 'dashboard', label: 'Ringkasan', icon: <FileText size={18} /> },
@@ -498,23 +547,83 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             )}
 
             {activeTab === 'logistics' && (
-                <div className="max-w-4xl mx-auto">
-                    <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-xl text-slate-700">Stok Material</h3><button onClick={() => openModal('newMaterial')} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold shadow-md">+ Material Baru</button></div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {(activeProject.materials || []).map(m => (
-                            <div key={m.id} className="bg-white p-5 rounded-2xl border shadow-sm relative overflow-hidden">
-                                {m.stock <= m.minStock && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-3 py-1 rounded-bl-xl font-bold shadow-sm">STOK MENIPIS</div>}
-                                <div className="flex justify-between items-start mb-4">
-                                    <div><div className="font-bold text-slate-800 text-lg mb-1">{m.name}</div><div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded inline-block">Min: {m.minStock} {m.unit}</div></div>
-                                    <div className="text-right"><div className={`text-2xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div><div className="text-xs text-slate-400">{m.unit}</div></div>
-                                </div>
-                                <div className="flex gap-2 border-t pt-3">
-                                    <button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border hover:bg-slate-50 transition-colors"><Edit size={14} /> Update Stok</button>
-                                    <button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-white text-slate-500 rounded-lg border hover:bg-slate-50 shadow-sm"><History size={18} /></button>
-                                </div>
-                            </div>
-                        ))}
+                <div className="max-w-5xl mx-auto">
+                    {/* Sub Navigation */}
+                    <div className="flex gap-2 bg-slate-100 p-1 rounded-xl w-fit mb-6">
+                        <button onClick={() => setLogisticsTab('stock')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${logisticsTab === 'stock' ? 'bg-white shadow text-slate-800' : 'text-slate-500'}`}>Stok Lapangan</button>
+                        <button onClick={() => setLogisticsTab('recap')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${logisticsTab === 'recap' ? 'bg-white shadow text-blue-600' : 'text-slate-500'}`}>Rekap Kebutuhan Proyek (RAB)</button>
                     </div>
+
+                    {logisticsTab === 'stock' && (
+                        <div>
+                            <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-xl text-slate-700">Stok Material (Real)</h3><button onClick={() => openModal('newMaterial')} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold shadow-md">+ Material Baru</button></div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {(activeProject.materials || []).map(m => (
+                                    <div key={m.id} className="bg-white p-5 rounded-2xl border shadow-sm relative overflow-hidden">
+                                        {m.stock <= m.minStock && <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-3 py-1 rounded-bl-xl font-bold shadow-sm">STOK MENIPIS</div>}
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div><div className="font-bold text-slate-800 text-lg mb-1">{m.name}</div><div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded inline-block">Min: {m.minStock} {m.unit}</div></div>
+                                            <div className="text-right"><div className={`text-2xl font-bold ${m.stock <= m.minStock ? 'text-red-600' : 'text-blue-600'}`}>{m.stock}</div><div className="text-xs text-slate-400">{m.unit}</div></div>
+                                        </div>
+                                        <div className="flex gap-2 border-t pt-3">
+                                            <button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2 bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border hover:bg-slate-50 transition-colors"><Edit size={14} /> Update Stok</button>
+                                            <button onClick={() => { setSelectedMaterial(m); openModal('stockHistory'); }} className="px-3 py-2 bg-white text-slate-500 rounded-lg border hover:bg-slate-50 shadow-sm"><History size={18} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {activeProject.materials.length === 0 && <div className="col-span-full text-center py-12 text-slate-400 border-2 border-dashed rounded-xl">Belum ada data stok material. Klik + Material Baru.</div>}
+                            </div>
+                        </div>
+                    )}
+
+                    {logisticsTab === 'recap' && (
+                        <div className="bg-white rounded-2xl shadow-sm border p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-700">Rekapitulasi Sumber Daya</h3>
+                                    <p className="text-sm text-slate-500">Estimasi total kebutuhan berdasarkan koefisien AHS & Volume RAB.</p>
+                                </div>
+                                <button onClick={() => window.print()} className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-200">Print / PDF</button>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-slate-50 text-slate-600 border-b">
+                                        <tr>
+                                            <th className="p-3 text-left">Nama Sumber Daya</th>
+                                            <th className="p-3 text-center w-32">Jenis</th>
+                                            <th className="p-3 text-right w-32">Total Kebutuhan</th>
+                                            <th className="p-3 text-center w-24">Satuan</th>
+                                            <th className="p-3 text-left w-1/3">Digunakan Pada (Analisa)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {recapData.map((item, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-50">
+                                                <td className="p-3 font-bold text-slate-700">{item.name}</td>
+                                                <td className="p-3 text-center">
+                                                    <span className={`px-2 py-1 rounded text-xs uppercase font-bold ${item.type === 'bahan' ? 'bg-blue-100 text-blue-700' : item.type === 'upah' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                        {item.type}
+                                                    </span>
+                                                </td>
+                                                <td className="p-3 text-right font-mono font-bold text-lg">{item.totalCoefficient.toLocaleString('id-ID', { maximumFractionDigits: 2 })}</td>
+                                                <td className="p-3 text-center text-slate-500">{item.unit}</td>
+                                                <td className="p-3 text-xs text-slate-500">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {item.items.slice(0, 3).map((r, i) => <span key={i} className="bg-slate-100 px-1.5 py-0.5 rounded border">{r}</span>)}
+                                                        {item.items.length > 3 && <span className="text-slate-400">+{item.items.length - 3} lainnya</span>}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {recapData.length === 0 && (
+                                            <tr><td colSpan={5} className="p-8 text-center text-slate-400">Tidak ada data rekap. Pastikan Item RAB Anda menggunakan AHS & memiliki volume.</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
