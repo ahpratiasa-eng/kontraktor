@@ -578,15 +578,15 @@ const App = () => {
     const integrateWithAHS = (items: any[]) => {
       if (!ahsItems || ahsItems.length === 0) return items;
 
-      return items.map(item => {
+      return items.map((item: any) => {
         // Simple keyword matching
-        const keywords = item.name.toLowerCase().replace(/[^\w\s]/gi, '').split(' ').filter((k: string) => k.length > 3);
+        const keywords = (item.name || '').toLowerCase().replace(/[^\w\s]/gi, '').split(' ').filter((k: string) => k.length > 3);
         let bestMatch: AHSItem | null = null;
         let maxScore = 0;
 
-        ahsItems.forEach(ahs => {
+        ahsItems.forEach((ahs: AHSItem) => {
           let score = 0;
-          const ahsName = ahs.name.toLowerCase();
+          const ahsName = (ahs.name || '').toLowerCase();
 
           // 1. Strict Category Match Boost
           if (item.category && ahs.category && item.category.split('.')[0] === ahs.category.split('.')[0]) {
@@ -608,13 +608,14 @@ const App = () => {
         });
 
         if (bestMatch) {
-          console.log(`AI Match: ${item.name} -> ${bestMatch!.name}`);
+          const match = bestMatch as AHSItem;
+          // console.log(`AI Match: ${item.name} -> ${match.name}`);
           return {
             ...item,
-            name: bestMatch!.name,
-            unit: bestMatch!.unit,
-            unitPrice: calculateAHSTotal(bestMatch!),
-            ahsItemId: bestMatch!.id
+            name: match.name,
+            unit: match.unit,
+            unitPrice: calculateAHSTotal(match),
+            ahsItemId: match.id
           };
         }
         return item;
