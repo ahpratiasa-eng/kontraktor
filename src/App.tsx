@@ -12,6 +12,7 @@ import ReportView from './components/ReportView';
 import ModalManager from './components/ModalManager';
 import LandingPage from './components/LandingPage';
 import LandingEditor from './components/LandingEditor';
+import AHSLibraryView from './components/AHSLibraryView';
 
 import {
   signInWithPopup, signOut, onAuthStateChanged
@@ -25,7 +26,7 @@ import {
 import { auth, db, googleProvider, appId, signInAnonymously } from './lib/firebase';
 import type {
   Project, AppUser, RABItem, Transaction, Material,
-  MaterialLog, Worker, TaskLog, UserRole, LandingPageConfig
+  MaterialLog, Worker, TaskLog, UserRole, LandingPageConfig, AHSItem
 } from './types';
 import { compressImage } from './utils/imageHelper';
 import { calculateProjectHealth, formatRupiah } from './utils/helpers';
@@ -34,13 +35,14 @@ const App = () => {
   const [user, setUser] = useState<any | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [authStatus, setAuthStatus] = useState<'loading' | 'connected' | 'error'>('loading');
-  const [view, setView] = useState<'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin' | 'landing-settings'>('project-list');
+  const [view, setView] = useState<'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin' | 'landing-settings' | 'ahs-library'>('project-list');
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isClientView, setIsClientView] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [ahsItems, setAhsItems] = useState<AHSItem[]>([]);
   const [landingConfig, setLandingConfig] = useState<LandingPageConfig>({
     companyName: 'Guna Karya',
     tagline: 'Wujudkan Hunian Impian Anda',
@@ -216,6 +218,104 @@ const App = () => {
       throw e;
     }
   };
+
+  // AHS Library Functions
+  useEffect(() => {
+    const fetchAHS = async () => {
+      try {
+        const docRef = doc(db, 'app_data', appId, 'settings', 'ahs_library');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setAhsItems(docSnap.data().items || []);
+        } else {
+          // Load default SNI data
+          setAhsItems(getDefaultAHSData());
+        }
+      } catch (e) {
+        console.error('Failed to fetch AHS:', e);
+      }
+    };
+    if (user) fetchAHS();
+  }, [user]);
+
+  const saveAhsItems = async (items: AHSItem[]) => {
+    try {
+      const docRef = doc(db, 'app_data', appId, 'settings', 'ahs_library');
+      await setDoc(docRef, { items, updatedAt: new Date().toISOString() });
+      setAhsItems(items);
+    } catch (e) {
+      console.error('Failed to save AHS:', e);
+      alert('Gagal menyimpan AHS');
+    }
+  };
+
+  // Default AHS Data (beberapa contoh SNI)
+  const getDefaultAHSData = (): AHSItem[] => [
+    {
+      id: 'ahs_sni_001', code: 'A.1.1', category: 'A. PEKERJAAN PERSIAPAN', name: 'Pembersihan Lapangan', unit: 'm²',
+      components: [
+        { id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.05, unitPrice: 100000 },
+        { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.005, unitPrice: 150000 },
+      ],
+      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
+    },
+    {
+      id: 'ahs_sni_002', code: 'B.1.1', category: 'B. PEKERJAAN TANAH', name: 'Galian Tanah Biasa Sedalam 1m', unit: 'm³',
+      components: [
+        { id: 1, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.75, unitPrice: 100000 },
+        { id: 2, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.025, unitPrice: 150000 },
+      ],
+      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
+    },
+    {
+      id: 'ahs_sni_003', code: 'C.1.1', category: 'C. PEKERJAAN PASANGAN', name: 'Pasang 1m² Dinding Bata Merah 1:4', unit: 'm²',
+      components: [
+        { id: 1, type: 'bahan', name: 'Bata Merah', unit: 'bh', coefficient: 70, unitPrice: 800 },
+        { id: 2, type: 'bahan', name: 'Semen PC 50kg', unit: 'zak', coefficient: 0.23, unitPrice: 65000 },
+        { id: 3, type: 'bahan', name: 'Pasir Pasang', unit: 'm³', coefficient: 0.043, unitPrice: 250000 },
+        { id: 4, type: 'upah', name: 'Tukang Batu', unit: 'OH', coefficient: 0.2, unitPrice: 150000 },
+        { id: 5, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.2, unitPrice: 100000 },
+        { id: 6, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.01, unitPrice: 150000 },
+      ],
+      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
+    },
+    {
+      id: 'ahs_sni_004', code: 'C.2.1', category: 'C. PEKERJAAN PASANGAN', name: 'Plesteran 1:4', unit: 'm²',
+      components: [
+        { id: 1, type: 'bahan', name: 'Semen PC 50kg', unit: 'zak', coefficient: 0.13, unitPrice: 65000 },
+        { id: 2, type: 'bahan', name: 'Pasir Pasang', unit: 'm³', coefficient: 0.024, unitPrice: 250000 },
+        { id: 3, type: 'upah', name: 'Tukang Batu', unit: 'OH', coefficient: 0.15, unitPrice: 150000 },
+        { id: 4, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.2, unitPrice: 100000 },
+        { id: 5, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.01, unitPrice: 150000 },
+      ],
+      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
+    },
+    {
+      id: 'ahs_sni_005', code: 'D.1.1', category: 'D. PEKERJAAN BETON', name: 'Beton Mutu K-225', unit: 'm³',
+      components: [
+        { id: 1, type: 'bahan', name: 'Semen PC 50kg', unit: 'zak', coefficient: 7.84, unitPrice: 65000 },
+        { id: 2, type: 'bahan', name: 'Pasir Beton', unit: 'm³', coefficient: 0.52, unitPrice: 300000 },
+        { id: 3, type: 'bahan', name: 'Kerikil/Split', unit: 'm³', coefficient: 0.78, unitPrice: 350000 },
+        { id: 4, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 1.65, unitPrice: 100000 },
+        { id: 5, type: 'upah', name: 'Tukang Batu', unit: 'OH', coefficient: 0.275, unitPrice: 150000 },
+        { id: 6, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.083, unitPrice: 150000 },
+      ],
+      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
+    },
+    {
+      id: 'ahs_sni_006', code: 'E.1.1', category: 'E. PEKERJAAN LANTAI', name: 'Pasang Keramik Lantai 40x40', unit: 'm²',
+      components: [
+        { id: 1, type: 'bahan', name: 'Keramik 40x40', unit: 'm²', coefficient: 1.05, unitPrice: 85000 },
+        { id: 2, type: 'bahan', name: 'Semen PC 50kg', unit: 'zak', coefficient: 0.2, unitPrice: 65000 },
+        { id: 3, type: 'bahan', name: 'Pasir Pasang', unit: 'm³', coefficient: 0.045, unitPrice: 250000 },
+        { id: 4, type: 'bahan', name: 'Semen Warna/Nat', unit: 'kg', coefficient: 0.5, unitPrice: 15000 },
+        { id: 5, type: 'upah', name: 'Tukang Batu', unit: 'OH', coefficient: 0.2, unitPrice: 150000 },
+        { id: 6, type: 'upah', name: 'Pekerja', unit: 'OH', coefficient: 0.35, unitPrice: 100000 },
+        { id: 7, type: 'upah', name: 'Mandor', unit: 'OH', coefficient: 0.018, unitPrice: 150000 },
+      ],
+      isCustom: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'
+    },
+  ];
 
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
 
@@ -857,6 +957,15 @@ const App = () => {
                   )}
                 </div>
               </div>
+            </main>
+          )}
+
+          {view === 'ahs-library' && (
+            <main className="space-y-6">
+              <AHSLibraryView
+                ahsItems={ahsItems}
+                onSave={saveAhsItems}
+              />
             </main>
           )}
 

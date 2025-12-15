@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut } from 'lucide-react';
+import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface SidebarProps {
@@ -12,6 +12,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogout, userRole }) => {
     const canAccessManagement = () => userRole === 'super_admin';
+    const canEditProject = () => userRole === 'super_admin' || userRole === 'kontraktor';
 
     return (
         <aside className="hidden md:flex flex-col w-64 bg-white border-r fixed inset-y-0 z-20 print:hidden">
@@ -25,6 +26,11 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogou
                 <button onClick={() => setView('project-list')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'project-list' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
                     <LayoutDashboard size={20} /> Dashboard
                 </button>
+                {canEditProject() && (
+                    <button onClick={() => setView('ahs-library')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'ahs-library' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        <FileSpreadsheet size={20} /> Library AHS
+                    </button>
+                )}
                 {canAccessManagement() && (
                     <button onClick={() => setView('user-management')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'user-management' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
                         <Users size={20} /> User Management

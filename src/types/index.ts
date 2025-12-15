@@ -112,3 +112,41 @@ export type LandingPageConfig = {
   portfolioItems: PortfolioItem[];
   theme?: LandingTheme;
 };
+
+// ========== AHS (ANALISA HARGA SATUAN) ==========
+
+export type AHSComponentType = 'bahan' | 'upah' | 'alat';
+
+export type AHSComponent = {
+  id: number;
+  type: AHSComponentType;
+  name: string;           // Nama komponen (e.g., "Semen PC 50kg")
+  unit: string;           // Satuan (kg, m³, OH)
+  coefficient: number;    // Koefisien per satuan pekerjaan
+  unitPrice: number;      // Harga satuan komponen
+  // Total = coefficient * unitPrice (calculated)
+};
+
+export type AHSItem = {
+  id: string;
+  code: string;           // Kode item (e.g., "A.1.1")
+  category: string;       // Kategori (e.g., "Pekerjaan Persiapan")
+  name: string;           // Nama pekerjaan (e.g., "Pas. 1m² Dinding Bata")
+  unit: string;           // Satuan pekerjaan (m², m³, unit)
+  components: AHSComponent[];
+  isCustom: boolean;      // true if user-created, false if from SNI
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Helper: Calculate total price dari AHS Item
+export const calculateAHSTotal = (item: AHSItem): number => {
+  return item.components.reduce((sum, comp) => sum + (comp.coefficient * comp.unitPrice), 0);
+};
+
+// Helper: Calculate subtotal per type
+export const calculateAHSSubtotal = (item: AHSItem, type: AHSComponentType): number => {
+  return item.components
+    .filter(comp => comp.type === type)
+    .reduce((sum, comp) => sum + (comp.coefficient * comp.unitPrice), 0);
+};
