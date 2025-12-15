@@ -247,14 +247,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
             {activeTab === 'progress' && (
                 <div className="space-y-6">
-                    {/* Gantt Chart Section */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <h3 className="font-bold text-lg text-slate-700 mb-4 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan (Gantt Chart)</h3>
-                        <div className="overflow-x-auto">
-                            <div className="min-w-[800px]">
+                    {/* Gantt Chart Section - Hidden on mobile for client view */}
+                    <div className={`bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 overflow-hidden ${isClientView ? 'hidden md:block' : ''}`}>
+                        <h3 className="font-bold text-base md:text-lg text-slate-700 mb-4 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan</h3>
+                        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                            <div className="min-w-[600px] md:min-w-[800px]">
                                 <div className="flex border-b border-slate-100 pb-2 mb-2">
-                                    <div className="w-1/4 font-bold text-xs text-slate-500">Item Pekerjaan</div>
-                                    <div className="w-3/4 flex relative h-6">
+                                    <div className="w-1/3 md:w-1/4 font-bold text-xs text-slate-500">Item Pekerjaan</div>
+                                    <div className="w-2/3 md:w-3/4 flex relative h-6">
                                         {[...Array(12)].map((_, i) => (
                                             <div key={i} className="flex-1 border-l border-slate-100 text-[10px] text-slate-400 pl-1">
                                                 Mgg {i + 1}
@@ -292,8 +292,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                                         return (
                                             <div key={item.id} className="flex items-center group hover:bg-slate-50 rounded-lg p-1">
-                                                <div className="w-1/4 text-xs font-medium truncate pr-2">{item.name}</div>
-                                                <div className="w-3/4 relative h-6 bg-slate-50 rounded-full overflow-hidden">
+                                                <div className="w-1/3 md:w-1/4 text-xs font-medium truncate pr-2">{item.name}</div>
+                                                <div className="w-2/3 md:w-3/4 relative h-6 bg-slate-50 rounded-full overflow-hidden">
                                                     <div
                                                         className={`absolute top-1 bottom-1 rounded-full opacity-80 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
                                                         style={{ left: `${startOffset}%`, width: `${width}%` }}
@@ -317,19 +317,61 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         </div>
                     </div>
 
+                    {/* Mobile Progress Summary for Client View */}
+                    {isClientView && (
+                        <div className="md:hidden bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 className="font-bold text-base text-slate-700 mb-3 flex items-center gap-2">
+                                <History size={18} /> Progress Pekerjaan
+                            </h3>
+                            <div className="space-y-3">
+                                {activeProject.rabItems.slice(0, 5).map((item, idx) => (
+                                    <div key={item.id} className="flex items-center gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-medium text-slate-700 truncate">{item.name}</div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                                <div
+                                                    className={`h-2 rounded-full transition-all ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
+                                                    style={{ width: `${item.progress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <span className={`text-xs px-2 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            {item.progress}%
+                                        </span>
+                                    </div>
+                                ))}
+                                {activeProject.rabItems.length > 5 && (
+                                    <div className="text-center text-xs text-slate-400 pt-2 border-t">
+                                        +{activeProject.rabItems.length - 5} item lainnya
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-3"><SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} /></div>
                         <div className="lg:col-span-3">
-                            <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-lg text-slate-700">Rincian RAB</h3>{!isClientView && canEditProject && <div className="flex gap-2"><button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-green-100 text-green-700 px-3 py-2 rounded-lg font-bold border border-green-200 hover:bg-green-200 flex items-center gap-1"><Upload size={14} /> Import Excel</button><button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1"><Sparkles size={14} /> Auto RAB</button><button onClick={() => { /* handleAddCCO prop */ }} className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-bold border border-orange-200">+ CCO</button><button onClick={() => { setSelectedRabItem(null); setModalType('newRAB'); setShowModal(true); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold">+ Item</button></div>}</div>
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                                <h3 className="font-bold text-lg text-slate-700">Rincian RAB</h3>
+                                {!isClientView && canEditProject && (
+                                    <div className="flex flex-wrap gap-2">
+                                        <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-green-100 text-green-700 px-3 py-2 rounded-lg font-bold border border-green-200 hover:bg-green-200 flex items-center gap-1"><Upload size={14} /> Import</button>
+                                        <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1"><Sparkles size={14} /> Auto RAB</button>
+                                        <button onClick={() => { /* handleAddCCO prop */ }} className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-bold border border-orange-200">+ CCO</button>
+                                        <button onClick={() => { setSelectedRabItem(null); setModalType('newRAB'); setShowModal(true); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold">+ Item</button>
+                                    </div>
+                                )}
+                            </div>
                             <div className="space-y-4 pb-20">
                                 {Object.keys(rabGroups).sort().map(category => (
                                     <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
-                                        <div className="bg-slate-50 p-4 font-bold text-sm text-slate-700 border-b flex justify-between"><span>{category}</span></div>
+                                        <div className="bg-slate-50 p-3 md:p-4 font-bold text-sm text-slate-700 border-b flex justify-between"><span>{category}</span></div>
                                         {(!isClientView && rabViewMode === 'internal') && (
-                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className={`p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}><div className="flex justify-between mb-2"><span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span><span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span></div><div className="flex justify-between text-xs text-slate-500 mb-3"><span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span><span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mb-3"><div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div></div>{canEditProject && (<div className="flex justify-end gap-2"><button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button><button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14} /></button><button onClick={() => prepareEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14} /></button><button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14} /></button></div>)}</div>))}</div>
+                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className={`p-3 md:p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}><div className="flex justify-between mb-2"><span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span><span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span></div><div className="flex flex-col sm:flex-row justify-between text-xs text-slate-500 mb-3 gap-1"><span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span><span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mb-3"><div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div></div>{canEditProject && (<div className="flex flex-wrap justify-end gap-2"><button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button><button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14} /></button><button onClick={() => prepareEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14} /></button><button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14} /></button></div>)}</div>))}</div>
                                         )}
                                         {rabViewMode === 'client' && (
-                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className="p-4 text-sm flex justify-between items-center hover:bg-slate-50"><div><div className="font-bold text-slate-800">{item.name}</div><div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div></div><div className="text-right"><div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div></div></div>))}<div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">Subtotal: {formatRupiah(rabGroups[category].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</div></div>
+                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className="p-3 md:p-4 text-sm flex justify-between items-center hover:bg-slate-50"><div className="min-w-0 flex-1"><div className="font-bold text-slate-800 truncate">{item.name}</div><div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div></div><div className="text-right ml-2 flex-shrink-0"><div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div></div></div>))}<div className="p-3 md:p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">Subtotal: {formatRupiah(rabGroups[category].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</div></div>
                                         )}
                                     </div>
                                 ))}
