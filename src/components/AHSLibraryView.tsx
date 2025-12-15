@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Search, Plus, Edit, Trash2, Package, Users, Wrench,
     ChevronDown, ChevronRight, Copy, FileSpreadsheet, X, RefreshCw
@@ -31,7 +31,15 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
     const [showEditor, setShowEditor] = useState(false);
     const [editingItem, setEditingItem] = useState<AHSItem | null>(null);
 
+    // Pagination Logic
+    const [pageAHS, setPageAHS] = useState(1);
+    const [pageRes, setPageRes] = useState(1);
+    const itemsPerPage = 50;
 
+    useEffect(() => {
+        setPageAHS(1);
+        setPageRes(1);
+    }, [searchQuery, selectedCategory, activeTab]);
 
     // === AHS LOGIC ===
     const ahsCategories = [...new Set(ahsItems.map(item => item.category))].sort();
@@ -40,8 +48,12 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
         const matchesCategory = !selectedCategory || item.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
+
+    const paginatedAHS = filteredAHS.slice((pageAHS - 1) * itemsPerPage, pageAHS * itemsPerPage);
+    const totalPageAHS = Math.ceil(filteredAHS.length / itemsPerPage);
+
     const groupedAHS: Record<string, AHSItem[]> = {};
-    filteredAHS.forEach(item => { if (!groupedAHS[item.category]) groupedAHS[item.category] = []; groupedAHS[item.category].push(item); });
+    paginatedAHS.forEach(item => { if (!groupedAHS[item.category]) groupedAHS[item.category] = []; groupedAHS[item.category].push(item); });
 
     // === RESOURCE LOGIC ===
     const resCategories = [...new Set(resources.map(item => item.category))].sort();
@@ -50,6 +62,9 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
         const matchesCategory = !selectedCategory || item.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
+
+    const paginatedResources = filteredResources.slice((pageRes - 1) * itemsPerPage, pageRes * itemsPerPage);
+    const totalPageRes = Math.ceil(filteredResources.length / itemsPerPage);
 
     // Handlers
     const toggleExpanded = (id: string) => { const newSet = new Set(expandedItems); if (newSet.has(id)) newSet.delete(id); else newSet.add(id); setExpandedItems(newSet); };
@@ -110,6 +125,40 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
 
             onSave(updatedAHSList);
             alert(`Sukses! ${impactedAHS.length} Item Analisa telah diperbarui.`);
+        }
+    };
+
+    // Logic: Sync ALL Resources
+    const handleSyncAll = () => {
+        if (!confirm("PERINGATAN: Aksi ini akan menyamakan SEMUA harga komponen di AHS dengan Database Harga Dasar.\n\nProses mungkin memakan waktu.\nLanjutkan?")) return;
+
+        let updatedCount = 0;
+        const resMap = new Map();
+        resources.forEach(r => resMap.set(r.name.trim().toLowerCase(), r.price));
+
+        const updatedAHSList = ahsItems.map(item => {
+            let itemUpdated = false;
+            const newComponents = item.components.map(comp => {
+                const masterPrice = resMap.get(comp.name.trim().toLowerCase());
+                if (masterPrice !== undefined && masterPrice !== comp.unitPrice) {
+                    itemUpdated = true;
+                    return { ...comp, unitPrice: masterPrice };
+                }
+                return comp;
+            });
+
+            if (itemUpdated) {
+                updatedCount++;
+                return { ...item, components: newComponents, updatedAt: new Date().toISOString() };
+            }
+            return item;
+        });
+
+        if (updatedCount > 0) {
+            onSave(updatedAHSList);
+            alert(`Sukses! ${updatedCount} Item AHS berhasil disinkronisasi.`);
+        } else {
+            alert("Semua data sudah sinkron.");
         }
     };
 
@@ -265,46 +314,78 @@ const AHSLibraryView: React.FC<AHSLibraryViewProps> = ({
                             </div>
                         </div>
                     ))}
+
+                    {/* Pagination Controls */}
+                    {filteredAHS.length > 0 && totalPageAHS > 1 && (
+                        <div className="p-4 bg-white rounded-xl shadow-sm border flex justify-center items-center gap-4">
+                            <button disabled={pageAHS === 1} onClick={() => setPageAHS(p => p - 1)} className="px-3 py-1 border rounded bg-white hover:bg-slate-50 disabled:opacity-50 text-sm font-medium">Prev</button>
+                            <span className="text-sm text-slate-600 font-medium">Halaman {pageAHS} dari {totalPageAHS}</span>
+                            <button disabled={pageAHS === totalPageAHS} onClick={() => setPageAHS(p => p + 1)} className="px-3 py-1 border rounded bg-white hover:bg-slate-50 disabled:opacity-50 text-sm font-medium">Next</button>
+                        </div>
+                    )}
+
                     {filteredAHS.length === 0 && <div className="text-center py-12 text-slate-400"><FileSpreadsheet size={48} className="mx-auto mb-4 opacity-50" /><p>Tidak ada item AHS ditemukan</p></div>}
                 </div>
             )}
 
             {/* RESOURCES TAB CONTENT */}
             {activeTab === 'resources' && (
-                <div className="bg-white rounded-xl border shadow-sm">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 text-slate-500 font-bold border-b">
-                            <tr>
-                                <th className="p-4">Sumber Daya / Uraian</th>
-                                <th className="p-4">Kategori</th>
-                                <th className="p-4 w-24 text-center">Satuan</th>
-                                <th className="p-4 w-40 text-right">Harga Dasar</th>
-                                <th className="p-4 w-28 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {filteredResources.slice(0, 50).map(res => (
-                                <tr key={res.id} className="hover:bg-slate-50">
-                                    <td className="p-4 font-medium text-slate-800">{res.name}</td>
-                                    <td className="p-4 text-slate-500 text-xs"><span className="bg-slate-100 px-2 py-1 rounded">{res.category}</span></td>
-                                    <td className="p-4 text-center">{res.unit}</td>
-                                    <td className="p-4 text-right font-mono font-bold text-slate-700" onClick={() => {
-                                        const newP = prompt(`Update harga untuk ${res.name}:`, res.price.toString());
-                                        if (newP && !isNaN(Number(newP))) handleUpdateResourcePrice(res, Number(newP));
-                                    }}>
-                                        <span className="cursor-pointer border-b border-dashed border-slate-300 hover:border-blue-500">{formatRupiah(res.price)}</span>
-                                    </td>
-                                    <td className="p-4 text-center flex justify-center gap-1">
-                                        <button onClick={() => triggerSmartSync(res, true)} className="text-blue-500 hover:bg-blue-50 p-1 rounded" title="Sync harga ke Analisa AHS"><RefreshCw size={16} /></button>
-                                        <button onClick={() => {
-                                            if (confirm(`Hapus ${res.name}?`)) onSaveResources(resources.filter(r => r.id !== res.id));
-                                        }} className="text-red-500 hover:bg-red-50 p-1 rounded"><Trash2 size={16} /></button>
-                                    </td>
+                <div className="bg-white rounded-xl border shadow-sm flex flex-col">
+                    <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-center bg-slate-50 gap-3">
+                        <span className="font-bold text-slate-700">Daftar Harga Dasar Upah & Bahan</span>
+                        <button
+                            onClick={handleSyncAll}
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-700 shadow-sm w-full sm:w-auto justify-center"
+                            title="Update semua harga AHS sesuai harga dasar saat ini"
+                        >
+                            <RefreshCw size={16} /> Sync Semua ke AHS
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 text-slate-500 font-bold border-b">
+                                <tr>
+                                    <th className="p-4">Sumber Daya / Uraian</th>
+                                    <th className="p-4">Kategori</th>
+                                    <th className="p-4 w-24 text-center">Satuan</th>
+                                    <th className="p-4 w-40 text-right">Harga Dasar</th>
+                                    <th className="p-4 w-28 text-center">Aksi</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {filteredResources.length > 50 && <div className="p-4 text-center text-xs text-slate-400 italic">Menampilkan 50 dari {filteredResources.length} item. Gunakan pencarian untuk spesifik.</div>}
+                            </thead>
+                            <tbody className="divide-y">
+                                {paginatedResources.map(res => (
+                                    <tr key={res.id} className="hover:bg-slate-50">
+                                        <td className="p-4 font-medium text-slate-800">{res.name}</td>
+                                        <td className="p-4 text-slate-500 text-xs"><span className="bg-slate-100 px-2 py-1 rounded">{res.category}</span></td>
+                                        <td className="p-4 text-center">{res.unit}</td>
+                                        <td className="p-4 text-right font-mono font-bold text-slate-700" onClick={() => {
+                                            const newP = prompt(`Update harga untuk ${res.name}:`, res.price.toString());
+                                            if (newP && !isNaN(Number(newP))) handleUpdateResourcePrice(res, Number(newP));
+                                        }}>
+                                            <span className="cursor-pointer border-b border-dashed border-slate-300 hover:border-blue-500">{formatRupiah(res.price)}</span>
+                                        </td>
+                                        <td className="p-4 text-center flex justify-center gap-1">
+                                            <button onClick={() => triggerSmartSync(res, true)} className="text-blue-500 hover:bg-blue-50 p-1 rounded" title="Sync satu item ini"><RefreshCw size={16} /></button>
+                                            <button onClick={() => {
+                                                if (confirm(`Hapus ${res.name}?`)) onSaveResources(resources.filter(r => r.id !== res.id));
+                                            }} className="text-red-500 hover:bg-red-50 p-1 rounded" title="Hapus Item"><Trash2 size={16} /></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalPageRes > 1 && (
+                        <div className="p-4 border-t flex justify-center items-center gap-4 bg-slate-50">
+                            <button disabled={pageRes === 1} onClick={() => setPageRes(p => p - 1)} className="px-3 py-1 border rounded bg-white hover:bg-slate-100 disabled:opacity-50 text-sm font-medium">Prev</button>
+                            <span className="text-sm text-slate-600 font-medium">Halaman {pageRes} dari {totalPageRes}</span>
+                            <button disabled={pageRes === totalPageRes} onClick={() => setPageRes(p => p + 1)} className="px-3 py-1 border rounded bg-white hover:bg-slate-100 disabled:opacity-50 text-sm font-medium">Next</button>
+                        </div>
+                    )}
+
                     {filteredResources.length === 0 && <div className="p-8 text-center text-slate-500">Tidak ada sumber daya ditemukan.</div>}
                 </div>
             )}

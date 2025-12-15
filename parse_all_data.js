@@ -5,118 +5,163 @@ import fs from 'fs';
 console.log("Loading AHSP.xlsx...");
 const wb = XLSX.readFile('AHSP.xlsx');
 
-// --- PART 1: PARSE SUMBER DAYA DASAR (SHEET 0) ---
-console.log("Parsing Sumber Daya Dasar...");
+// --- PART 1: PARSE SUMBER DAYA DASAR ---
+// Cari sheet yang namanya mengandung Upah/Bahan
+const resourceSheets = wb.SheetNames.filter(name => {
+    const n = name.toLowerCase();
+    return n.includes('bahan') || n.includes('material') || n.includes('upah') || n.includes('tenaga') || n.includes('alat');
+});
+
+console.log(`Found Resource Sheets: ${resourceSheets.join(', ')}`);
 const resources = [];
-const shdSheet = wb.Sheets[wb.SheetNames[0]];
-const shdData = XLSX.utils.sheet_to_json(shdSheet, { header: 1 });
 
-// Cari header row dulu (biasanya ada 'No', 'Uraian', 'Satuan', 'Harga')
-let headerRowIdx = -1;
-for (let i = 0; i < 20; i++) {
-    const row = shdData[i];
-    if (row && row.some(cell => String(cell).toLowerCase().includes('uraian'))) {
-        headerRowIdx = i;
-        break;
+resourceSheets.forEach(sheetName => {
+    console.log(`Processing Sheet: ${sheetName}`);
+    const ws = wb.Sheets[sheetName];
+    // header: 1 means getting array of arrays
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+    // Step 1: Find Header Row (Look for 'Satuan' and 'Harga', must be multi-column)
+    let headerIdx = -1;
+    for (let i = 0; i < 20; i++) {
+        const row = data[i];
+        if (row && row.length > 2 && row.some(c => String(c).toLowerCase().includes('satuan')) && row.some(c => String(c).toLowerCase().includes('harga'))) {
+            headerIdx = i;
+            break;
+        }
     }
-}
 
-if (headerRowIdx !== -1) {
+    if (headerIdx === -1) {
+        console.log(`Header not found in sheet ${sheetName}`);
+        return;
+    }
+
+    // Step 2: Map Columns
+    const headerRow = data[headerIdx].map(x => String(x).toLowerCase());
+    const idxUnit = headerRow.findIndex(h => h.includes('satuan'));
+    const idxPrice = headerRow.findIndex(h => h.includes('harga'));
+    // Infer Name column relative to Unit (usually 1 column before, or find 'uraian')
+    let idxName = headerRow.findIndex(h => h.includes('uraian') || h.includes('nama'));
+    if (idxName === -1) idxName = idxUnit - 1; // Fallback
+
+    console.log(`Header found at row ${headerIdx}. Indices -> Name: ${idxName}, Unit: ${idxUnit}, Price: ${idxPrice}`);
+
+    if (idxName === -1 || idxPrice === -1) {
+        console.log("Critical columns missing (Name/Price)");
+        return;
+    }
+
     let currentCategory = 'UMUM';
-    // Mapping kolom: [No, Uraian, Kode, Satuan, Harga, Ket] 
-    // Format bisa beda2 dikit, kita cari index kolomnya
-    const header = shdData[headerRowIdx].map(x => String(x).toLowerCase());
-    const idxName = header.findIndex(h => h.includes('uraian'));
-    const idxUnit = header.findIndex(h => h.includes('satuan'));
-    const idxPrice = header.findIndex(h => h.includes('harga'));
-    const idxCode = header.findIndex(h => h.includes('kode'));
+    // Default type based on sheet name
+    let defaultType = 'bahan';
+    const sn = sheetName.toLowerCase();
+    if (sn.includes('upah')) defaultType = 'upah';
+    else if (sn.includes('alat')) defaultType = 'alat';
 
-    for (let i = headerRowIdx + 1; i < shdData.length; i++) {
-        const row = shdData[i];
+    for (let i = headerIdx + 1; i < data.length; i++) {
+        const row = data[i];
         if (!row || row.length === 0) continue;
 
-        const name = row[idxName];
-        if (!name) continue;
+        // Clean values
+        const valName = row[idxName];
+        const valUnit = row[idxUnit];
+        const valPrice = row[idxPrice];
 
-        // Detect Sub-Header (kategori) - usually bold or only name filled
-        // Simplifikasi: Kalau kolom harga kosong tapi nama ada, anggap kategori
-        const price = parseFloat(row[idxPrice]);
-        if (!price && !row[idxUnit] && String(name).length > 3) {
-            currentCategory = String(name).replace(/^\d+[\.\)]\s*/, '').trim().toUpperCase();
+        // LOGIC: CATEGORY ROW
+        // Category rows usually have a value in Name column (or Name-1 column in some merges), but NO Price and NO Unit (or Unit is very short empty)
+        // Example: ["I.", "UPAH"] -> idxName might be 1 ("UPAH"). idxPrice is 3 (undefined).
+
+        // Normalize
+        const nameStr = String(valName || '').trim();
+        const unitStr = String(valUnit || '').trim();
+
+        let priceNum = 0;
+        if (typeof valPrice === 'number') priceNum = valPrice;
+        else if (valPrice) priceNum = parseFloat(String(valPrice).replace(/[^0-9.]/g, ''));
+
+        if (!nameStr) continue;
+
+        // Is Category?
+        // Criteria: Valid Name, No Unit (or very short), No Price
+        if ((!priceNum || isNaN(priceNum)) && unitStr.length < 2) {
+            // Check if it looks like Roman numeral or "A. "
+            // Or just take it as category
+            if (nameStr.length > 2) {
+                // Remove leading numbering like "I. ", "A. "
+                currentCategory = nameStr.replace(/^[IVX0-9A-Z]+\.\s*/, '').trim().toUpperCase();
+                // console.log(`   > New Category: ${currentCategory}`);
+            }
             continue;
         }
 
-        if (price > 0) {
-            let type = 'bahan';
-            // Guess type from category or unit
-            const catLower = currentCategory.toLowerCase();
-            const unitLower = String(row[idxUnit] || '').toLowerCase();
+        // Is Item?
+        if (priceNum > 0) {
+            let type = defaultType;
+            // Refine type based on Category keywords
+            const cat = currentCategory.toLowerCase();
+            const u = unitStr.toLowerCase();
 
-            if (catLower.includes('upah') || catLower.includes('tenaga') || unitLower === 'oh' || unitLower === 'jam') {
-                type = 'upah';
-            } else if (catLower.includes('alat') || catLower.includes('sewa')) {
-                type = 'alat';
+            if (cat.includes('upah') || u === 'oh' || u === 'jam') type = 'upah';
+            else if (cat.includes('alat') || u.includes('sewa')) type = 'alat';
+            else if (cat.includes('bahan') || cat.includes('material')) type = 'bahan';
+
+            // Push
+            // Safe ID generation
+            const cleanName = nameStr.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase().slice(0, 40);
+            if (cleanName.length < 2) continue;
+
+            if (!resources.some(r => r.name === nameStr)) {
+                resources.push({
+                    id: `res_${cleanName}_${i}`,
+                    name: nameStr,
+                    unit: unitStr || 'ls',
+                    price: priceNum,
+                    type: type,
+                    category: currentCategory,
+                    source: sheetName
+                });
             }
-
-            resources.push({
-                id: `res_${i}`,
-                name: String(name).trim(),
-                unit: String(row[idxUnit] || 'ls').trim(),
-                price: price,
-                type: type,
-                category: currentCategory,
-                source: 'AHSP 2024'
-            });
         }
     }
-}
+});
+
 console.log(`Parsed ${resources.length} base resources.`);
 fs.writeFileSync('src/data/defaultResources.json', JSON.stringify(resources, null, 2));
 
 
-// --- PART 2: PARSE AHS (SHEET 2 onwards) ---
+// --- PART 2: PARSE AHS ---
 console.log("Parsing AHS...");
 const allAHS = [];
 const categoryLetters = 'ABCDEFGHIJKLMNOPQRSTUVW';
 
 // Helper to detect work item (AHS Header)
-// Improved regex to catch "1 m2", "1m2", "1 m'", "1 buah", "1 titik", etc.
 const isAHSHeader = (str) => {
     if (!str || str.length < 15) return false;
     const s = str.toLowerCase();
     return (
-        /pembuatan\s+\d/.test(s) ||
-        /pemasangan\s+\d/.test(s) ||
-        /penggalian\s+\d/.test(s) ||
-        /pengurugan\s+\d/.test(s) ||
-        /pembongkaran\s+\d/.test(s) ||
-        /pengecatan\s+\d/.test(s) ||
-        /pembersihan\s+/.test(s) ||
-        /\d\s*m[23']/.test(s) // catches "1 m2", "1m3"
+        /pembuatan\s+\d/.test(s) || /pemasangan\s+\d/.test(s) || /penggalian\s+\d/.test(s) ||
+        /pengurugan\s+\d/.test(s) || /pembongkaran\s+\d/.test(s) || /pengecatan\s+\d/.test(s) ||
+        /pembersihan\s+/.test(s) || /\d\s*m[23']/.test(s)
     );
 };
 
-// Skip sheet 0 (SHD) and 1 (Analysis intro usually)
-// But we check content to be sure. Usually AHS sheets start from index 2 ("Pekerjaan Persiapan")
-const ahsSheets = wb.SheetNames.slice(2);
+// Skip known non-AHS sheets
+// We know "Upah Bahan" ... sheets are Resources.
+// We exclude resource sheets from AHS parsing
+const ahsSheets = wb.SheetNames.filter(n => !resourceSheets.includes(n));
 
 ahsSheets.forEach((sheetName, sIdx) => {
-    // Filter sheet name if needed
     if (sheetName.toLowerCase().includes('sheet')) return;
 
     const ws = wb.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-    // Find Headers
     const itemIndices = [];
     data.forEach((row, idx) => {
         if (row && row[0] && isAHSHeader(String(row[0]))) {
             itemIndices.push(idx);
         }
     });
-
-    // If no explicit headers found but lots of rows, maybe it's one big items list without typical headers
-    // But usually SNI format is strictly followed.
 
     const catLetter = categoryLetters[sIdx] || 'Z';
     const catName = `${catLetter}. ${sheetName.toUpperCase()}`;
@@ -125,12 +170,9 @@ ahsSheets.forEach((sheetName, sIdx) => {
         const nextIdx = itemIndices[i + 1] || data.length;
         const rows = data.slice(startIdx, nextIdx);
 
-        // Header info
         const nameRaw = String(rows[0][0]).trim();
-        // Clean name (remove newlines)
         const name = nameRaw.replace(/\r?\n|\r/g, ' ');
 
-        // Guess unit
         let unit = 'ls';
         if (name.includes(' m2') || name.includes(' m²')) unit = 'm²';
         else if (name.includes(' m3') || name.includes(' m³')) unit = 'm³';
@@ -138,13 +180,11 @@ ahsSheets.forEach((sheetName, sIdx) => {
         else if (name.includes(' kg')) unit = 'kg';
         else if (name.includes(' buah') || name.includes(' bh')) unit = 'bh';
         else if (name.includes(' titik')) unit = 'ttk';
-        else if (name.includes(' unit')) unit = 'unit';
 
         const components = [];
         let section = 'unknown'; // upah, bahan, alat
         let compId = 1;
 
-        // Start checking rows below header
         for (let r = 1; r < rows.length; r++) {
             const row = rows[r];
             if (!row || row.length < 3) continue;
@@ -152,15 +192,13 @@ ahsSheets.forEach((sheetName, sIdx) => {
             const col0 = String(row[0]).trim().toUpperCase();
             const col1 = String(row[1]).trim().toUpperCase();
 
-            // Section detection
             if (col0.includes('TENAGA') || col1.includes('TENAGA')) { section = 'upah'; continue; }
             if (col0.includes('BAHAN') || col1.includes('BAHAN')) { section = 'bahan'; continue; }
             if (col0.includes('PERALATAN') || col1.includes('PERALATAN')) { section = 'alat'; continue; }
-            if (col0.includes('JUMLAH') || col1.includes('JUMLAH')) break; // End of item
+            if (col0.includes('JUMLAH') || col1.includes('JUMLAH')) break;
 
-            // Valid component row? Needs Name (col1), Unit (col2), Coef (col3), Price (col4)
-            // Sometimes: Col 1=Name, Col 2=Unit, Col 3=Coef, Col 4=Price
-            // Just check if Col 3 is number (coef)
+            // In AHS, Col 3 is usually Coef, Col 4 is Price
+            // Data array is 0-indexed.
             const coef = parseFloat(row[3]);
             const price = parseFloat(row[4]);
 
@@ -194,5 +232,4 @@ ahsSheets.forEach((sheetName, sIdx) => {
 
 console.log(`Parsed ${allAHS.length} AHS items.`);
 fs.writeFileSync('src/data/defaultAHS.json', JSON.stringify(allAHS, null, 2));
-
 console.log("Done! Files saved to src/data/");
