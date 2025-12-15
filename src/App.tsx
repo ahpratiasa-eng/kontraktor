@@ -30,6 +30,7 @@ import type {
   Project, AppUser, RABItem, Transaction, Material,
   MaterialLog, Worker, TaskLog, UserRole, LandingPageConfig, AHSItem, PricingResource
 } from './types';
+import { calculateAHSTotal } from './types';
 import defaultAHSData from './data/defaultAHS.json';
 import defaultResourceData from './data/defaultResources.json';
 import { compressImage } from './utils/imageHelper';
@@ -574,38 +575,87 @@ const App = () => {
     if (!aiPrompt) return alert("Masukkan deskripsi proyek dulu!");
     setIsGeneratingAI(true);
 
+    const integrateWithAHS = (items: any[]) => {
+      if (!ahsItems || ahsItems.length === 0) return items;
+
+      return items.map(item => {
+        // Simple keyword matching
+        const keywords = item.name.toLowerCase().replace(/[^\w\s]/gi, '').split(' ').filter((k: string) => k.length > 3);
+        let bestMatch: AHSItem | null = null;
+        let maxScore = 0;
+
+        ahsItems.forEach(ahs => {
+          let score = 0;
+          const ahsName = ahs.name.toLowerCase();
+
+          // 1. Strict Category Match Boost
+          if (item.category && ahs.category && item.category.split('.')[0] === ahs.category.split('.')[0]) {
+            score += 2;
+          }
+
+          // 2. Keyword Match
+          let matchedKeywords = 0;
+          keywords.forEach((k: string) => {
+            if (ahsName.includes(k)) matchedKeywords++;
+          });
+          score += matchedKeywords * 3;
+
+          // Threshold & Selection
+          if (score > maxScore && matchedKeywords >= 1) {
+            maxScore = score;
+            bestMatch = ahs;
+          }
+        });
+
+        if (bestMatch) {
+          console.log(`AI Match: ${item.name} -> ${bestMatch!.name}`);
+          return {
+            ...item,
+            name: bestMatch!.name,
+            unit: bestMatch!.unit,
+            unitPrice: calculateAHSTotal(bestMatch!),
+            ahsItemId: bestMatch!.id
+          };
+        }
+        return item;
+      });
+    };
+
     // Fallback Logic
     const runOffline = () => {
       const items = generateOfflineRAB(aiPrompt);
-      const newItems = items.map((i: any) => ({ ...i, id: Date.now() + Math.random(), progress: 0, isAddendum: false }));
+      const matchedItems = integrateWithAHS(items);
+      const newItems = matchedItems.map((i: any) => ({ ...i, id: Date.now() + Math.random(), progress: 0, isAddendum: false }));
       if (activeProject) {
         updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
-        alert(`Mode Estimasi Cepat: Berhasil membuat ${newItems.length} item RAB (Offline Mode).`);
+        alert(`Mode Estimasi Cepat: Berhasil membuat ${newItems.length} item RAB (Offline Mode). Beberapa item mungkin telah disesuaikan dengan AHS.`);
         setShowModal(false);
       }
     };
 
     const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
     try {
-      // Use correct gemini-1.5-flash model
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Buat RAB konstruksi JSON array (category, name, unit, volume:number, unitPrice:number) untuk: ${aiPrompt}. Volume harus logis. No markdown.` }] }] })
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Buatkan RAB konstruksi lengkap untuk: ${aiPrompt}. \nOutput JSON array of objects: {category, name, unit, volume, unitPrice}. \nGunakan Bahasa Indonesia. Gunakan harga standar Jakarta 2024. \nKategori harus urut abjad: A. PERSIAPAN, B. TANAH, C. STRUKTUR, D. DINDING, dll. HANYA JSON RAW tanpa markdown.` }] }] })
       });
 
       if (!response.ok) throw new Error("API Error");
       const data = await response.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      const cleanJson = text.replace(/```json|```/g, '').trim();
+      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
       const items = JSON.parse(cleanJson);
 
       if (!Array.isArray(items)) throw new Error("Invalid Format");
 
-      const newItems = items.map((i: any) => ({ ...i, id: Date.now() + Math.random(), progress: 0, isAddendum: false }));
+      const matchedItems = integrateWithAHS(items);
+      const newItems = matchedItems.map((i: any) => ({ ...i, id: Date.now() + Math.random(), progress: 0, isAddendum: false }));
+
       if (activeProject) {
         updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
-        alert(`Berhasil generate RAB!`);
+        alert(`Berhasil generate RAB! Beberapa item otomatis terhubung ke AHS.`);
         setShowModal(false);
       }
     } catch (e) {
