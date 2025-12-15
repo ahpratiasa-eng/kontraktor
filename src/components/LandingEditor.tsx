@@ -10,9 +10,11 @@ import {
     Instagram,
     MapPin,
     FileText,
-    Loader2
+    Loader2,
+    Palette,
+    Check
 } from 'lucide-react';
-import type { LandingPageConfig, PortfolioItem } from '../types';
+import type { LandingPageConfig, PortfolioItem, LandingTheme } from '../types';
 import { compressImage } from '../utils/imageHelper';
 
 interface LandingEditorProps {
@@ -24,7 +26,14 @@ interface LandingEditorProps {
 const LandingEditor: React.FC<LandingEditorProps> = ({ config, onSave, onClose }) => {
     const [formData, setFormData] = useState<LandingPageConfig>(config);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'general' | 'portfolio'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'portfolio' | 'theme'>('general');
+
+    const themes: { id: LandingTheme; name: string; desc: string; colors: string[] }[] = [
+        { id: 'dark-orange', name: 'Bold Orange', desc: 'Tema gelap dengan aksen orange/amber yang bold dan profesional', colors: ['#0f172a', '#f97316', '#fbbf24'] },
+        { id: 'light-blue', name: 'Clean Blue', desc: 'Tema terang dengan warna biru yang bersih dan modern', colors: ['#ffffff', '#3b82f6', '#0ea5e9'] },
+        { id: 'dark-green', name: 'Nature Green', desc: 'Tema gelap dengan aksen hijau yang natural dan elegan', colors: ['#0f172a', '#22c55e', '#10b981'] },
+        { id: 'light-elegant', name: 'Elegant White', desc: 'Tema terang minimalis dengan warna netral yang elegan', colors: ['#fafafa', '#1e293b', '#64748b'] },
+    ];
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -108,7 +117,7 @@ const LandingEditor: React.FC<LandingEditorProps> = ({ config, onSave, onClose }
                             }`}
                     >
                         <FileText className="w-4 h-4 inline mr-2" />
-                        Informasi Umum
+                        Umum
                     </button>
                     <button
                         onClick={() => setActiveTab('portfolio')}
@@ -118,7 +127,17 @@ const LandingEditor: React.FC<LandingEditorProps> = ({ config, onSave, onClose }
                             }`}
                     >
                         <Image className="w-4 h-4 inline mr-2" />
-                        Portofolio ({formData.portfolioItems.length})
+                        Portofolio
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('theme')}
+                        className={`flex-1 py-4 text-center font-bold transition-colors ${activeTab === 'theme'
+                            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                            : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                    >
+                        <Palette className="w-4 h-4 inline mr-2" />
+                        Tema
                     </button>
                 </div>
 
@@ -297,6 +316,53 @@ const LandingEditor: React.FC<LandingEditorProps> = ({ config, onSave, onClose }
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    )}
+
+                    {activeTab === 'theme' && (
+                        <div className="space-y-4">
+                            <p className="text-slate-600 mb-6">Pilih tema untuk tampilan landing page Anda.</p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {themes.map((theme) => (
+                                    <button
+                                        key={theme.id}
+                                        onClick={() => setFormData({ ...formData, theme: theme.id })}
+                                        className={`relative p-4 rounded-2xl border-2 text-left transition-all ${(formData.theme || 'dark-orange') === theme.id
+                                                ? 'border-blue-500 bg-blue-50 shadow-lg'
+                                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        {/* Selected Indicator */}
+                                        {(formData.theme || 'dark-orange') === theme.id && (
+                                            <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                                                <Check className="w-4 h-4 text-white" />
+                                            </div>
+                                        )}
+
+                                        {/* Theme Preview */}
+                                        <div className="flex gap-2 mb-3">
+                                            {theme.colors.map((color, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="w-10 h-10 rounded-lg shadow-sm border border-slate-200"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                        </div>
+
+                                        {/* Theme Info */}
+                                        <h3 className="font-bold text-slate-800">{theme.name}</h3>
+                                        <p className="text-sm text-slate-500 mt-1">{theme.desc}</p>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                                <p className="text-sm text-amber-800">
+                                    💡 <strong>Tips:</strong> Tema "Bold Orange" cocok untuk kesan profesional dan modern. "Clean Blue" lebih formal dan bersih. "Nature Green" memberikan kesan ramah lingkungan.
+                                </p>
+                            </div>
                         </div>
                     )}
                 </div>

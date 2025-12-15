@@ -10,7 +10,6 @@ import {
     X,
     Smartphone,
     Hammer,
-    Home,
     Instagram,
     Phone,
     MapPin,

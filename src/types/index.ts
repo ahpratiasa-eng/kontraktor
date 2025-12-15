@@ -101,6 +101,8 @@ export type PortfolioItem = {
   location: string;
 };
 
+export type LandingTheme = 'dark-orange' | 'light-blue' | 'dark-green' | 'light-elegant';
+
 export type LandingPageConfig = {
   companyName: string;
   tagline: string;
@@ -108,4 +110,5 @@ export type LandingPageConfig = {
   whatsappNumber: string;
   instagramHandle: string;
   portfolioItems: PortfolioItem[];
+  theme?: LandingTheme;
 };
