@@ -18,6 +18,7 @@ interface ModalManagerProps {
     handlePayWorker: () => void;
     handleSaveWorker: () => void;
     handleStockMovement: () => void;
+    handleSaveMaterial: () => void;
     handleAddUser: () => void;
     handleGenerateRAB: () => void;
     saveAttendanceWithEvidence: () => void;
@@ -55,6 +56,11 @@ interface ModalManagerProps {
     stockNotes: string; setStockNotes: (s: string) => void;
     selectedMaterial: Material | null;
 
+    inputMaterialName: string; setInputMaterialName: (s: string) => void;
+    inputMaterialUnit: string; setInputMaterialUnit: (s: string) => void;
+    inputMinStock: number; setInputMinStock: (n: number) => void;
+    inputInitialStock: number; setInputInitialStock: (n: number) => void;
+
     inputEmail: string; setInputEmail: (s: string) => void;
     inputRole: UserRole; setInputRole: (r: UserRole) => void;
 
@@ -82,13 +88,14 @@ interface ModalManagerProps {
 const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const {
         modalType, showModal, setShowModal,
-        handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB,
+        handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleSaveMaterial, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB,
         inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate,
         rabCategory, setRabCategory, rabItemName, setRabItemName, rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice,
         progressInput, setProgressInput, progressDate, setProgressDate, progressNote, setProgressNote,
         paymentAmount, setPaymentAmount,
         inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate, inputMandorRate, setInputMandorRate,
         stockType, setStockType, stockQty, setStockQty, stockDate, setStockDate, stockNotes, setStockNotes, selectedMaterial,
+        inputMaterialName, setInputMaterialName, inputMaterialUnit, setInputMaterialUnit, inputMinStock, setInputMinStock, inputInitialStock, setInputInitialStock,
         inputEmail, setInputEmail, inputRole, setInputRole,
         aiPrompt, setAiPrompt, isGeneratingAI,
         attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, evidenceLocation, handlePhotoUpload, isGettingLoc,
@@ -467,6 +474,25 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <input type="date" className="w-full p-3 border rounded-xl" value={stockDate} onChange={e => setStockDate(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Catatan / Keterangan" value={stockNotes} onChange={e => setStockNotes(e.target.value)} />
                             <button onClick={handleStockMovement} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg">Simpan Stok</button>
+                        </div>
+                    )}
+
+                    {modalType === 'newMaterial' && (
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-xl mb-4">Tambah Material Baru</h3>
+                            <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-800 mb-2">
+                                <p>Material yang ditambahkan di sini akan masuk ke Stok Lapangan.</p>
+                            </div>
+                            <input className="w-full p-3 border rounded-xl" placeholder="Nama Material (misal: Semen Tiga Roda)" value={inputMaterialName} onChange={e => setInputMaterialName(e.target.value)} />
+                            <div className="flex gap-2">
+                                <input className="flex-1 p-3 border rounded-xl" placeholder="Satuan (misal: sak, m3)" value={inputMaterialUnit} onChange={e => setInputMaterialUnit(e.target.value)} />
+                                <NumberInput className="flex-1 p-3 border rounded-xl" placeholder="Min. Stock Alert" value={inputMinStock} onChange={setInputMinStock} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold ml-1">Stok Awal (Opsional)</label>
+                                <NumberInput className="w-full p-3 border rounded-xl" placeholder="Stok saat ini" value={inputInitialStock} onChange={setInputInitialStock} />
+                            </div>
+                            <button onClick={handleSaveMaterial} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">Simpan Material</button>
                         </div>
                     )}
 

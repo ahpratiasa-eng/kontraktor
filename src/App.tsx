@@ -97,6 +97,12 @@ const App = () => {
   const [stockNotes, setStockNotes] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
 
+  // Material Creation State
+  const [inputMaterialName, setInputMaterialName] = useState('');
+  const [inputMaterialUnit, setInputMaterialUnit] = useState('pcs');
+  const [inputMinStock, setInputMinStock] = useState(10);
+  const [inputInitialStock, setInputInitialStock] = useState(0);
+
   const [inputEmail, setInputEmail] = useState('');
   const [inputRole, setInputRole] = useState<UserRole>('pengawas');
 
@@ -380,6 +386,37 @@ const App = () => {
   const handleEditWorker = (w: Worker) => { setSelectedWorkerId(w.id); setInputName(w.name); setInputWorkerRole(w.role); setInputWageUnit(w.wageUnit); setInputRealRate(w.realRate); setInputMandorRate(w.mandorRate); setModalType('newWorker'); setShowModal(true); };
   const handleDeleteWorker = (w: Worker) => { if (!activeProject) return; if (confirm(`Yakin hapus ${w.name}?`)) { const updatedWorkers = activeProject.workers.filter((worker: Worker) => worker.id !== w.id); updateProject({ workers: updatedWorkers }); } };
   const handleStockMovement = () => { if (!activeProject || !selectedMaterial || stockQty <= 0) return; const updatedMaterials = activeProject.materials.map((m: Material) => { if (m.id === selectedMaterial.id) return { ...m, stock: stockType === 'in' ? m.stock + stockQty : m.stock - stockQty }; return m; }); const newLog: MaterialLog = { id: Date.now(), materialId: selectedMaterial.id, date: stockDate, type: stockType, quantity: stockQty, notes: stockNotes || '-', actor: user?.displayName || 'User' }; updateProject({ materials: updatedMaterials, materialLogs: [newLog, ...(activeProject.materialLogs || [])] }); setShowModal(false); setStockQty(0); setStockNotes(''); };
+
+  const handleSaveMaterial = () => {
+    if (!activeProject || !inputMaterialName) return;
+    const newMaterial: Material = {
+      id: Date.now(),
+      name: inputMaterialName,
+      unit: inputMaterialUnit || 'pcs',
+      stock: inputInitialStock,
+      minStock: inputMinStock,
+    };
+
+    // Initial Stock Log
+    let newLogs: MaterialLog[] = [];
+    if (inputInitialStock > 0) {
+      newLogs = [{
+        id: Date.now(),
+        materialId: newMaterial.id,
+        date: new Date().toISOString().split('T')[0],
+        type: 'in',
+        quantity: inputInitialStock,
+        notes: 'Stok Awal',
+        actor: user?.displayName || 'System'
+      }];
+    }
+
+    updateProject({
+      materials: [...(activeProject.materials || []), newMaterial],
+      materialLogs: [...(activeProject.materialLogs || []), ...newLogs]
+    });
+    setShowModal(false);
+  };
   const handleSoftDeleteProject = async (p: Project) => { if (confirm(`Yakin ingin memindahkan proyek "${p.name}" ke Sampah?`)) { try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: true }); } catch (e) { alert("Gagal menghapus."); } } };
   const handleRestoreProject = async (p: Project) => { try { await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: false }); } catch (e) { alert("Gagal restore."); } };
   const handlePermanentDeleteProject = async (p: Project) => { if (confirm(`PERINGATAN: Proyek "${p.name}" akan dihapus SELAMANYA dan tidak bisa dikembalikan. Lanjutkan?`)) { try { await deleteDoc(doc(db, 'app_data', appId, 'projects', p.id)); } catch (e) { alert("Gagal hapus permanen."); } } };
@@ -480,6 +517,13 @@ const App = () => {
       setInputWageUnit('Harian');
       setInputRealRate(0);
       setInputMandorRate(0);
+    }
+    // Reset material form
+    if (type === 'newMaterial') {
+      setInputMaterialName('');
+      setInputMaterialUnit('pcs');
+      setInputMinStock(10);
+      setInputInitialStock(0);
     }
     setModalType(type);
     setShowModal(true);
@@ -1051,6 +1095,7 @@ const App = () => {
         handlePayWorker={handlePayWorker}
         handleSaveWorker={handleSaveWorker}
         handleStockMovement={handleStockMovement}
+        handleSaveMaterial={handleSaveMaterial}
         handleAddUser={handleAddUser}
         handleGenerateRAB={handleGenerateRAB}
         handleImportRAB={handleImportRAB}
@@ -1081,6 +1126,10 @@ const App = () => {
         stockDate={stockDate} setStockDate={setStockDate}
         stockNotes={stockNotes} setStockNotes={setStockNotes}
         selectedMaterial={selectedMaterial}
+        inputMaterialName={inputMaterialName} setInputMaterialName={setInputMaterialName}
+        inputMaterialUnit={inputMaterialUnit} setInputMaterialUnit={setInputMaterialUnit}
+        inputMinStock={inputMinStock} setInputMinStock={setInputMinStock}
+        inputInitialStock={inputInitialStock} setInputInitialStock={setInputInitialStock}
         inputEmail={inputEmail} setInputEmail={setInputEmail}
         inputRole={inputRole} setInputRole={setInputRole}
         aiPrompt={aiPrompt} setAiPrompt={setAiPrompt}
