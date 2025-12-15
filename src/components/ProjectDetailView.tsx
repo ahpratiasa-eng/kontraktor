@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote,
-    ImageIcon, ExternalLink, Upload
+    ImageIcon, ExternalLink, Upload, Lock
 } from 'lucide-react';
 import { NumberInput, TransactionGroup } from './UIComponents';
 import SCurveChart from './SCurveChart';
@@ -368,7 +368,36 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
                                         <div className="bg-slate-50 p-3 md:p-4 font-bold text-sm text-slate-700 border-b flex justify-between"><span>{category}</span></div>
                                         {(!isClientView && rabViewMode === 'internal') && (
-                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className={`p-3 md:p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}><div className="flex justify-between mb-2"><span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span><span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span></div><div className="flex flex-col sm:flex-row justify-between text-xs text-slate-500 mb-3 gap-1"><span>{item.volume} {item.unit} x {formatRupiah(item.unitPrice)}</span><span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mb-3"><div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div></div>{canEditProject && (<div className="flex flex-wrap justify-end gap-2"><button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button><button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14} /></button><button onClick={() => prepareEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14} /></button><button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14} /></button></div>)}</div>))}</div>
+                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (
+                                                <div key={item.id} className={`p-3 md:p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}>
+                                                    <div className="flex justify-between mb-2">
+                                                        <span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span>
+                                                        <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span>
+                                                    </div>
+                                                    <div className="flex flex-col sm:flex-row justify-between text-xs text-slate-500 mb-3 gap-1">
+                                                        <span className="flex items-center gap-1">
+                                                            {item.volume} {item.unit} x {formatRupiah(item.unitPrice)}
+                                                            {item.priceLockedAt && (
+                                                                <span className="text-amber-500 cursor-help" title={`Harga terkunci pada: ${new Date(item.priceLockedAt).toLocaleDateString('id-ID')} ${new Date(item.priceLockedAt).toLocaleTimeString('id-ID')}`}>
+                                                                    <Lock size={12} />
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                        <span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                                                        <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div>
+                                                    </div>
+                                                    {canEditProject && (
+                                                        <div className="flex flex-wrap justify-end gap-2">
+                                                            <button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button>
+                                                            <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14} /></button>
+                                                            <button onClick={() => prepareEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14} /></button>
+                                                            <button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14} /></button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}</div>
                                         )}
                                         {rabViewMode === 'client' && (
                                             <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className="p-3 md:p-4 text-sm flex justify-between items-center hover:bg-slate-50"><div className="min-w-0 flex-1"><div className="font-bold text-slate-800 truncate">{item.name}</div><div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div></div><div className="text-right ml-2 flex-shrink-0"><div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div></div></div>))}<div className="p-3 md:p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">Subtotal: {formatRupiah(rabGroups[category].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</div></div>

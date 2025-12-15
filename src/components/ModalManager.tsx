@@ -74,6 +74,8 @@ interface ModalManagerProps {
 
     // AHS Integration
     ahsItems: AHSItem[];
+    selectedAhsId: string | null;
+    setSelectedAhsId: (id: string | null) => void;
 }
 
 const ModalManager: React.FC<ModalManagerProps> = (props) => {
@@ -96,12 +98,14 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
     // State for AHS picker in RAB modal
     const [showAhsPicker, setShowAhsPicker] = useState(false);
     const [ahsSearch, setAhsSearch] = useState('');
+    const { selectedAhsId, setSelectedAhsId } = props;
 
     const handleSelectAHS = (ahs: AHSItem) => {
         setRabCategory(ahs.category);
         setRabItemName(ahs.name);
         setRabUnit(ahs.unit);
         setRabPrice(calculateAHSTotal(ahs));
+        setSelectedAhsId(ahs.id);  // Save which AHS item was used
         setShowAhsPicker(false);
         setAhsSearch('');
     };

@@ -72,6 +72,7 @@ const App = () => {
   const [rabVol, setRabVol] = useState(0);
   const [rabPrice, setRabPrice] = useState(0);
   const [selectedRabItem, setSelectedRabItem] = useState<RABItem | null>(null);
+  const [selectedAhsId, setSelectedAhsId] = useState<string | null>(null);
 
   const [progressInput, setProgressInput] = useState(0);
   const [progressDate, setProgressDate] = useState(new Date().toISOString().split('T')[0]);
@@ -286,9 +287,28 @@ const App = () => {
 
   const handleSaveRAB = () => {
     if (!activeProject) return;
-    const newItem: RABItem = { id: selectedRabItem ? selectedRabItem.id : Date.now(), category: rabCategory, name: rabItemName, unit: rabUnit, volume: rabVol, unitPrice: rabPrice, progress: selectedRabItem?.progress || 0, isAddendum: selectedRabItem?.isAddendum || false };
+    const isNewItem = !selectedRabItem;
+    const newItem: RABItem = {
+      id: selectedRabItem ? selectedRabItem.id : Date.now(),
+      category: rabCategory,
+      name: rabItemName,
+      unit: rabUnit,
+      volume: rabVol,
+      unitPrice: rabPrice,
+      progress: selectedRabItem?.progress || 0,
+      isAddendum: selectedRabItem?.isAddendum || false,
+      // Keep original lock date if editing, otherwise set new lock date for new items
+      priceLockedAt: isNewItem ? new Date().toISOString() : (selectedRabItem?.priceLockedAt || new Date().toISOString()),
+      // Keep original AHS reference if editing, otherwise use current selection
+      ahsItemId: isNewItem ? (selectedAhsId || undefined) : (selectedRabItem?.ahsItemId || selectedAhsId || undefined)
+    };
     const newItems = selectedRabItem ? activeProject.rabItems.map((i: RABItem) => i.id === newItem.id ? newItem : i) : [...activeProject.rabItems, newItem];
-    updateProject({ rabItems: newItems }); setShowModal(false); setRabItemName(''); setRabVol(0); setRabPrice(0);
+    updateProject({ rabItems: newItems });
+    setShowModal(false);
+    setRabItemName('');
+    setRabVol(0);
+    setRabPrice(0);
+    setSelectedAhsId(null);  // Reset AHS selection
   };
 
 
@@ -1050,6 +1070,8 @@ const App = () => {
         selectedRabItem={selectedRabItem}
         selectedWorkerId={selectedWorkerId}
         ahsItems={ahsItems}
+        selectedAhsId={selectedAhsId}
+        setSelectedAhsId={setSelectedAhsId}
       />
 
       {/* LANDING PAGE EDITOR MODAL */}
