@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Building2,
     BarChart3,
     Wallet,
     FileCheck,
@@ -17,7 +16,8 @@ import {
     ChevronRight,
     Star,
     CheckCircle2,
-    ArrowRight
+    ArrowRight,
+    Building2
 } from 'lucide-react';
 import type { LandingPageConfig, LandingTheme } from '../types';
 
@@ -150,9 +150,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, config }) => {
             <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled ? `${t.navBg} backdrop-blur-xl border-b ${t.isDark ? 'border-white/10' : 'border-slate-200'} py-4` : 'bg-transparent py-6'}`}>
                 <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`bg-gradient-to-br ${t.accentGradient} p-2.5 rounded-xl shadow-lg`}>
-                            <Building2 className="text-white w-6 h-6" />
-                        </div>
+                        <img src="/logo.png" alt={companyName} className="w-10 h-10 rounded-xl object-contain" />
                         <span className={`text-2xl font-bold tracking-tight ${t.text}`}>{companyName}</span>
                     </div>
 
@@ -379,9 +377,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, config }) => {
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-3">
-                            <div className={`bg-gradient-to-br ${t.accentGradient} p-2 rounded-xl`}>
-                                <Building2 className="text-white w-5 h-5" />
-                            </div>
+                            <img src="/logo.png" alt={companyName} className="w-8 h-8 rounded-lg object-contain" />
                             <span className={`font-bold ${t.text}`}>{companyName}</span>
                         </div>
 
