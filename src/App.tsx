@@ -461,7 +461,7 @@ const App = () => {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
-  const saveAttendanceWithEvidence = () => {
+  const saveAttendanceWithEvidence = async () => {
     if (!activeProject) return;
     if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; }
     if (!evidenceLocation) { alert("Lokasi wajib terdeteksi!"); return; }
@@ -475,13 +475,26 @@ const App = () => {
       if (status === 'Hadir' || status === 'Lembur' || status === 'Setengah') presentCount++;
     });
 
-    let newEvidences = activeProject.attendanceEvidences || [];
-    if (evidencePhoto || evidenceLocation) {
-      newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: evidencePhoto, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences];
+    // Upload photo to Firebase Storage (if it's base64)
+    let photoUrl = evidencePhoto;
+    if (evidencePhoto.startsWith('data:image/')) {
+      try {
+        const { uploadAttendancePhoto } = await import('./utils/storageHelper');
+        photoUrl = await uploadAttendancePhoto(evidencePhoto, activeProject.id, attendanceDate);
+      } catch (e) {
+        console.error('Failed to upload photo to storage, using base64 fallback:', e);
+        // Fallback to base64 if upload fails
+      }
     }
 
-    updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences });
+    let newEvidences = activeProject.attendanceEvidences || [];
+    if (photoUrl || evidenceLocation) {
+      newEvidences = [{ id: Date.now(), date: attendanceDate, photoUrl: photoUrl, location: evidenceLocation, uploader: user?.displayName || 'Unknown', timestamp: new Date().toISOString() }, ...newEvidences];
+    }
+
+    await updateProject({ attendanceLogs: [...activeProject.attendanceLogs, ...newLogs], attendanceEvidences: newEvidences });
     setShowModal(false);
+    setEvidencePhoto(null); // Clear after save
 
     // WhatsApp Notification Logic (Versi KONTRAKTOR - Internal)
     if (confirm("Absensi tersimpan. Kirim laporan harian ke Grup/Bos (Kontraktor)?")) {

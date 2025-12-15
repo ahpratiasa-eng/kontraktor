@@ -44,13 +44,25 @@ const ProjectGallery: React.FC<ProjectGalleryProps> = ({ project, updateProject,
         const stats = calculateProjectHealth(project); // Capture current progress
 
         try {
+            // Dynamic import for tree-shaking
+            const { uploadGalleryPhoto } = await import('../utils/storageHelper');
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const compressed = await compressImage(file, 1200, 0.7); // 1200px max, 70% quality
 
+                // Upload to Firebase Storage
+                let imageUrl = compressed;
+                try {
+                    imageUrl = await uploadGalleryPhoto(compressed, project.id);
+                } catch (uploadErr) {
+                    console.error('Failed to upload to storage, using base64:', uploadErr);
+                    // Fallback to base64 if storage fails
+                }
+
                 newItems.push({
                     id: Date.now() + Math.random(),
-                    url: compressed,
+                    url: imageUrl,
                     caption: '',
                     date: new Date().toISOString(),
                     uploader: 'User',
