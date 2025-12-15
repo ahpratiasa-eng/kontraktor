@@ -107,6 +107,7 @@ export const useProjects = (user: any, isClientView: boolean, clientProjectId?: 
         activeProjectId,
         setActiveProjectId,
         isSyncing,
+        setIsSyncing,
         updateProject,
         createProject,
         softDeleteProject,

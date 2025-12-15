@@ -41,15 +41,18 @@ export const useAuth = () => {
                     const userDoc = await getDoc(doc(db, 'app_users', firebaseUser.email || ''));
                     if (userDoc.exists()) {
                         setUserRole(userDoc.data().role as UserRole);
+                        setAuthStatus('connected');
                     } else {
-                        // Default role for new users
-                        setUserRole('kontraktor');
+                        // Strict mode: Reject undefined users
+                        await signOut(auth);
+                        alert(`Email ${firebaseUser.email} tidak terdaftar.`);
+                        setUser(null);
+                        setUserRole(null);
+                        setAuthStatus('connected'); // Connected but logged out effectively
                     }
-                    setAuthStatus('connected');
                 } catch (e) {
                     console.error('Failed to fetch user role:', e);
-                    setUserRole('kontraktor');
-                    setAuthStatus('connected');
+                    setAuthStatus('error');
                 }
             } else {
                 setUser(null);
@@ -63,7 +66,7 @@ export const useAuth = () => {
 
     // Subscribe to app users (for user management)
     useEffect(() => {
-        if (!user || isClientView) return;
+        if (!user || isClientView || userRole !== 'super_admin') return;
 
         const unsubscribe = onSnapshot(
             query(collection(db, 'app_users')),
@@ -74,7 +77,7 @@ export const useAuth = () => {
         );
 
         return () => unsubscribe();
-    }, [user, isClientView]);
+    }, [user, isClientView, userRole]);
 
     // Handlers
     const handleLogin = async () => {

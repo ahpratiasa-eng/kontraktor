@@ -64,6 +64,18 @@ export const uploadGalleryPhoto = async (
 };
 
 /**
+ * Upload portfolio photo for landing page
+ * @param base64Data - Base64 image
+ * @returns Download URL
+ */
+export const uploadPortfolioPhoto = async (
+    base64Data: string
+): Promise<string> => {
+    const filename = `portfolio_${Date.now()}.webp`;
+    return uploadImage(base64Data, `landing/portfolio`, filename);
+};
+
+/**
  * Delete an image from Firebase Storage
  * @param url - Full download URL of the image
  */

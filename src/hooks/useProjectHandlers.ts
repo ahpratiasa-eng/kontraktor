@@ -1,4 +1,4 @@
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import type {
     Project, RABItem, Transaction, Worker, Material, MaterialLog, TaskLog, AHSItem
@@ -10,8 +10,8 @@ import { compressImage } from '../utils/imageHelper';
 interface UseProjectHandlersProps {
     user: any;
     activeProject: Project | null;
-    activeProjectId: string | null;
     updateProject: (data: Partial<Project>) => Promise<void>;
+    setActiveProjectId: (id: string | null) => void;
     setShowModal: (show: boolean) => void;
     setModalType: (type: string) => void;
     ahsItems: AHSItem[];
@@ -82,7 +82,6 @@ interface UseProjectHandlersProps {
     setEvidenceLocation: (v: string | null) => void;
     setIsGettingLoc: (v: boolean) => void;
     setIsGeneratingAI: (v: boolean) => void;
-    setActiveProjectId: (v: string | null) => void;
 }
 
 export const useProjectHandlers = (props: UseProjectHandlersProps) => {
@@ -99,8 +98,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         setRabCategory, setRabItemName, setRabUnit, setRabVol, setRabPrice, setSelectedRabItem, setSelectedAhsId,
         setSelectedWorkerId,
         setInputWorkerRole, setInputWageUnit, setInputRealRate, setInputMandorRate,
-        setStockQty, setStockNotes, setEvidencePhoto, setEvidenceLocation, setIsGettingLoc, setIsGeneratingAI,
-        setActiveProjectId
+        setStockQty, setStockNotes, setEvidencePhoto, setEvidenceLocation, setIsGettingLoc, setIsGeneratingAI, setActiveProjectId
     } = props;
 
     // ========== RAB Handlers ==========
@@ -644,6 +642,40 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         setShowModal(true);
     };
 
+    // ========== Deleters & Helpers ==========
+    const handleSoftDeleteProject = async (p: Project) => {
+        if (confirm(`Yakin ingin memindahkan proyek "${p.name}" ke Sampah?`)) {
+            try {
+                await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: true });
+            } catch (e) {
+                alert("Gagal menghapus.");
+            }
+        }
+    };
+
+    const handleRestoreProject = async (p: Project) => {
+        try {
+            await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: false });
+        } catch (e) {
+            alert("Gagal restore.");
+        }
+    };
+
+    const handlePermanentDeleteProject = async (p: Project) => {
+        if (confirm(`PERINGATAN: Proyek "${p.name}" akan dihapus SELAMANYA dan tidak bisa dikembalikan. Lanjutkan?`)) {
+            try {
+                await deleteDoc(doc(db, 'app_data', appId, 'projects', p.id));
+            } catch (e) {
+                alert("Gagal hapus permanen.");
+            }
+        }
+    };
+
+    const getFilteredEvidence = () => {
+        if (!activeProject || !activeProject.attendanceEvidences) return [];
+        return activeProject.attendanceEvidences;
+    };
+
     return {
         // RAB
         handleSaveRAB,
@@ -653,6 +685,9 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         // Project
         handleSaveProject,
         prepareEditProject,
+        handleSoftDeleteProject,
+        handleRestoreProject,
+        handlePermanentDeleteProject,
         // Worker
         handlePayWorker,
         handleSaveWorker,
@@ -665,6 +700,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         handleGetLocation,
         handlePhotoUpload,
         saveAttendanceWithEvidence,
+        getFilteredEvidence,
         // Owner Report
         handleReportToOwner,
         // AI RAB

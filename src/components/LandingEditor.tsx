@@ -84,7 +84,17 @@ const LandingEditor: React.FC<LandingEditorProps> = ({ config, onSave, onClose }
 
         try {
             const compressed = await compressImage(file, 800, 0.7);
-            updatePortfolioItem(id, 'imageUrl', compressed);
+
+            // Try uploading to Storage
+            let imageUrl = compressed;
+            try {
+                const { uploadPortfolioPhoto } = await import('../utils/storageHelper');
+                imageUrl = await uploadPortfolioPhoto(compressed);
+            } catch (storageErr) {
+                console.error("Storage upload failed, falling back to base64:", storageErr);
+            }
+
+            updatePortfolioItem(id, 'imageUrl', imageUrl);
         } catch (err) {
             alert('Gagal memproses gambar');
         }
@@ -329,8 +339,8 @@ const LandingEditor: React.FC<LandingEditorProps> = ({ config, onSave, onClose }
                                         key={theme.id}
                                         onClick={() => setFormData({ ...formData, theme: theme.id })}
                                         className={`relative p-4 rounded-2xl border-2 text-left transition-all ${(formData.theme || 'dark-orange') === theme.id
-                                                ? 'border-blue-500 bg-blue-50 shadow-lg'
-                                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                            ? 'border-blue-500 bg-blue-50 shadow-lg'
+                                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                                             }`}
                                     >
                                         {/* Selected Indicator */}
