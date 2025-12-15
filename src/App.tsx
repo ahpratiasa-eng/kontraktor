@@ -280,6 +280,7 @@ const App = () => {
               setView={setView}
               isClientView={isClientView}
               canViewInternalRAB={canViewInternalRAB()}
+              landingConfig={landingConfig}
             />
           )}
         </div>

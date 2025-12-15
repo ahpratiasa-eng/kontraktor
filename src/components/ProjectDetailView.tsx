@@ -11,15 +11,17 @@ import {
 } from '../utils/helpers';
 import type { Project, RABItem, GroupedTransaction, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
+import PayrollSummary from './PayrollSummary';
 import type { UserRole } from '../types';
 
 interface ProjectDetailViewProps {
     activeProject: Project;
     activeTab: string;
+    // ... existing props ...
     userRole: UserRole | null;
     setView: (view: any) => void;
     updateProject: (data: Partial<Project>) => void;
-    // Modal Triggers
+    // ... existing props ...
     openModal: (type: string) => void;
     setModalType: (type: string) => void;
     setShowModal: (show: boolean) => void;
@@ -29,16 +31,16 @@ interface ProjectDetailViewProps {
     setSelectedWorkerId: (id: number | null) => void;
     setPaymentAmount: (amount: number) => void;
     setSelectedMaterial: (m: Material | null) => void;
-    // Handlers from App (those that require global state or modal state)
+    // ... existing props ...
     deleteRABItem: (id: number) => void;
     handleEditWorker: (w: Worker) => void;
     handleDeleteWorker: (w: Worker) => void;
-    // Permissions
+    // ... existing props ...
     canAccessFinance: boolean;
     canAccessWorkers: boolean;
     canSeeMoney: boolean;
     canEditProject: boolean;
-    // Pengawas-specific restrictions (mencegah kecurangan)
+    // ... existing props ...
     canViewKurvaS?: boolean;            // Pengawas tidak bisa lihat Kurva S
     canViewInternalRAB?: boolean;       // Pengawas tidak bisa lihat detail RAB internal
     canAddWorkers?: boolean;            // Pengawas tidak bisa tambah tukang sendiri
@@ -63,6 +65,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
     const [logisticsTab, setLogisticsTab] = useState<'stock' | 'recap'>('stock');
+    const [financeTab, setFinanceTab] = useState<'transactions' | 'payroll'>('transactions');
 
     // Enforce Client View Mode
     React.useEffect(() => {
@@ -467,26 +470,58 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             )}
 
             {activeTab === 'finance' && canAccessFinance && (
-                <div className="max-w-2xl mx-auto">
-                    <div className="bg-white p-6 rounded-2xl border shadow-sm mb-6">
-                        <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-xl">
-                            <button onClick={() => setTxType('expense')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${txType === 'expense' ? 'bg-white shadow text-red-600' : 'text-slate-500'}`}>Pengeluaran</button>
-                            <button onClick={() => setTxType('income')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${txType === 'income' ? 'bg-white shadow text-green-600' : 'text-slate-500'}`}>Pemasukan</button>
+                <div className="max-w-5xl mx-auto">
+                    {/* Sub Navigation */}
+                    <div className="flex gap-2 bg-slate-100 p-1 rounded-xl w-fit mb-6 mx-auto md:mx-0">
+                        <button
+                            onClick={() => setFinanceTab('transactions')}
+                            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${financeTab === 'transactions' ? 'bg-white shadow text-blue-600' : 'text-slate-500'}`}
+                        >
+                            Transaksi Harian
+                        </button>
+                        <button
+                            onClick={() => setFinanceTab('payroll')}
+                            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${financeTab === 'payroll' ? 'bg-white shadow text-blue-600' : 'text-slate-500'}`}
+                        >
+                            Gaji & Hutang Tukang
+                        </button>
+                    </div>
+
+                    {financeTab === 'transactions' && (
+                        <div className="max-w-2xl mx-auto">
+                            <div className="bg-white p-6 rounded-2xl border shadow-sm mb-6">
+                                <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-xl">
+                                    <button onClick={() => setTxType('expense')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${txType === 'expense' ? 'bg-white shadow text-red-600' : 'text-slate-500'}`}>Pengeluaran</button>
+                                    <button onClick={() => setTxType('income')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${txType === 'income' ? 'bg-white shadow text-green-600' : 'text-slate-500'}`}>Pemasukan</button>
+                                </div>
+                                <form onSubmit={handleTransaction} className="space-y-4">
+                                    <select name="cat" className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none">
+                                        {txType === 'expense' ? <><option>Material</option><option>Upah Tukang</option><option>Operasional</option></> : <option>Termin/DP</option>}
+                                    </select>
+                                    <input required name="desc" placeholder="Keterangan" className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none" />
+                                    <NumberInput className="w-full p-3 border border-slate-200 rounded-xl text-sm font-bold outline-none" placeholder="Nominal" value={amount} onChange={setAmount} />
+                                    <button className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg">Simpan</button>
+                                </form>
+                            </div>
+                            <div className="space-y-3">
+                                {getGroupedTransactions(activeProject.transactions).map((group: GroupedTransaction) => (
+                                    <TransactionGroup key={group.id} group={group} isExpanded={expandedGroups[group.id]} onToggle={() => toggleGroup(group.id)} />
+                                ))}
+                            </div>
                         </div>
-                        <form onSubmit={handleTransaction} className="space-y-4">
-                            <select name="cat" className="w-full p-3 border border-slate-200 rounded-xl text-sm bg-white outline-none">
-                                {txType === 'expense' ? <><option>Material</option><option>Upah Tukang</option><option>Operasional</option></> : <option>Termin/DP</option>}
-                            </select>
-                            <input required name="desc" placeholder="Keterangan" className="w-full p-3 border border-slate-200 rounded-xl text-sm outline-none" />
-                            <NumberInput className="w-full p-3 border border-slate-200 rounded-xl text-sm font-bold outline-none" placeholder="Nominal" value={amount} onChange={setAmount} />
-                            <button className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg">Simpan</button>
-                        </form>
-                    </div>
-                    <div className="space-y-3">
-                        {getGroupedTransactions(activeProject.transactions).map((group: GroupedTransaction) => (
-                            <TransactionGroup key={group.id} group={group} isExpanded={expandedGroups[group.id]} onToggle={() => toggleGroup(group.id)} />
-                        ))}
-                    </div>
+                    )}
+
+                    {financeTab === 'payroll' && (
+                        <PayrollSummary
+                            project={activeProject}
+                            onPayWorker={(worker) => {
+                                setSelectedWorkerId(worker.id);
+                                const f = calculateWorkerFinancials(activeProject, worker.id);
+                                setPaymentAmount(f.balance > 0 ? f.balance : 0);
+                                openModal('payWorker');
+                            }}
+                        />
+                    )}
                 </div>
             )}
 
