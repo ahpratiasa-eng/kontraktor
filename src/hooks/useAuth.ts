@@ -34,9 +34,15 @@ export const useAuth = () => {
 
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
+                // Skip verification for anonymous users (client portal)
+                if (firebaseUser.isAnonymous) {
+                    setAuthStatus('connected');
+                    return;
+                }
+
+                // For Google login users - verify they are in app_users
                 setUser(firebaseUser);
 
-                // Check user role in app_users collection
                 try {
                     const userDoc = await getDoc(doc(db, 'app_users', firebaseUser.email || ''));
 
@@ -61,16 +67,20 @@ export const useAuth = () => {
                             setAuthStatus('connected');
                             alert(`Selamat datang! Anda terdaftar sebagai Super Admin pertama.`);
                         } else {
-                            // Not the first user and not registered - reject
+                            // REJECT: Not registered and not the first user
+                            console.warn(`Unauthorized login attempt: ${firebaseUser.email}`);
                             await signOut(auth);
-                            alert(`Email ${firebaseUser.email} tidak terdaftar dalam sistem.\n\nHubungi Super Admin untuk mendaftarkan akun Anda.`);
                             setUser(null);
                             setUserRole(null);
                             setAuthStatus('connected');
+                            alert(`⛔ Akses Ditolak!\n\nEmail ${firebaseUser.email} tidak terdaftar dalam sistem.\n\nHubungi Super Admin untuk mendapatkan akses.`);
                         }
                     }
                 } catch (e) {
-                    console.error('Failed to check user authorization:', e);
+                    console.error('Auth check failed:', e);
+                    await signOut(auth);
+                    setUser(null);
+                    setUserRole(null);
                     setAuthStatus('error');
                 }
             } else {
