@@ -99,43 +99,39 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         <div
                             key={p.id}
                             onClick={() => { setActiveProjectId(p.id); setView('project-detail'); }}
-                            className="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-slate-100 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden group"
+                            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 active:scale-[0.98] transition-all cursor-pointer relative"
                         >
-                            {/* Card Decoration */}
-                            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full -mr-3 -mt-3 opacity-50"></div>
-
-                            {/* Header */}
-                            <div className="flex justify-between items-start mb-3 relative z-10">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-800 rounded-xl flex items-center justify-center text-white font-bold text-lg md:text-xl shadow-lg shrink-0">
+                            {/* Header - Name and Status */}
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                    <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0">
                                         {p.name.substring(0, 1)}
                                     </div>
-                                    <div className="min-w-0">
-                                        <h3 className="font-bold text-base md:text-lg text-slate-800 leading-tight truncate">{p.name}</h3>
-                                        <p className="text-xs text-slate-500 mt-0.5 truncate">{p.client}</p>
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="font-bold text-sm text-slate-800 leading-tight truncate">{p.name}</h3>
+                                        <p className="text-[11px] text-slate-500 truncate">{p.client}</p>
                                     </div>
                                 </div>
-
                                 {health.issues.length === 0 ? (
-                                    <span className="bg-green-100 text-green-700 text-[9px] md:text-[10px] px-2 md:px-3 py-1 md:py-1.5 rounded-full font-bold shadow-sm shrink-0 ml-2">
-                                        On Schedule
+                                    <span className="bg-green-100 text-green-700 text-[8px] px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">
+                                        On Track
                                     </span>
                                 ) : (
-                                    <span className={`text-[9px] md:text-[10px] px-2 md:px-3 py-1 md:py-1.5 rounded-full font-bold shadow-sm flex items-center gap-1 shrink-0 ml-2 ${health.issues.includes('Terlambat') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                    <span className={`text-[8px] px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 ${health.issues.includes('Terlambat') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
                                         {health.issues[0]}
                                     </span>
                                 )}
                             </div>
 
                             {/* Progress Bar */}
-                            <div className="mb-2 relative z-10">
-                                <div className="flex justify-between text-xs mb-1">
-                                    <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Progress Fisik</span>
-                                    <span className="font-bold text-slate-800 text-sm">{stats.prog.toFixed(0)}%</span>
+                            <div className="mb-2">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-slate-400 font-medium uppercase tracking-wider text-[9px]">Progress</span>
+                                    <span className="font-bold text-slate-800 text-xs">{stats.prog.toFixed(0)}%</span>
                                 </div>
-                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${health.isCritical ? 'bg-red-500' : 'bg-blue-600'}`}
+                                        className={`h-full rounded-full ${health.isCritical ? 'bg-red-500' : 'bg-blue-600'}`}
                                         style={{ width: `${stats.prog}%` }}
                                     ></div>
                                 </div>
@@ -143,16 +139,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
                             {/* Budget Bar - Only show if budget exists */}
                             {p.budgetLimit > 0 && (
-                                <div className="mb-3 relative z-10">
-                                    <div className="flex justify-between text-xs mb-1">
-                                        <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Budget</span>
-                                        <span className={`font-bold text-[10px] ${isOverbudget ? 'text-red-600' : 'text-slate-600'}`}>
-                                            {isOverbudget ? 'OVERBUDGET!' : `${budgetUsedPercent.toFixed(0)}%`}
+                                <div className="mb-2">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-slate-400 font-medium uppercase tracking-wider text-[9px]">Budget</span>
+                                        <span className={`font-bold text-[9px] ${isOverbudget ? 'text-red-600' : 'text-slate-600'}`}>
+                                            {isOverbudget ? 'OVER!' : `${budgetUsedPercent.toFixed(0)}%`}
                                         </span>
                                     </div>
                                     <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-1000 ${isOverbudget ? 'bg-red-500' : 'bg-green-500'}`}
+                                            className={`h-full rounded-full ${isOverbudget ? 'bg-red-500' : 'bg-green-500'}`}
                                             style={{ width: `${budgetUsedPercent}%` }}
                                         ></div>
                                     </div>
@@ -160,18 +156,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             )}
 
                             {/* Footer / Last Update */}
-                            <div className="flex items-center gap-2 pt-3 border-t border-slate-50 relative z-10">
-                                <Clock size={12} className="text-slate-400 shrink-0" />
-                                <span className="text-[10px] md:text-xs text-slate-500 line-clamp-1 italic">{lastUpdate}</span>
+                            <div className="flex items-center gap-1.5 pt-2 mt-1 border-t border-slate-100">
+                                <Clock size={10} className="text-slate-400 shrink-0" />
+                                <span className="text-[9px] text-slate-400 truncate">{lastUpdate}</span>
                             </div>
 
                             {/* Trash Button for Edit Mode */}
                             {canEditProject && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleSoftDeleteProject(p); }}
-                                    className="absolute bottom-3 right-3 text-slate-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-full transition-colors z-20"
+                                    className="absolute top-3 right-3 text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-full transition-colors"
                                 >
-                                    <Trash2 size={16} />
+                                    <Trash2 size={14} />
                                 </button>
                             )}
                         </div>
