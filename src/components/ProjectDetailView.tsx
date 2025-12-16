@@ -13,6 +13,7 @@ import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
 import PayrollSummary from './PayrollSummary';
 import { generateDailyReport } from '../utils/pdfGenerator';
+import { transformGDriveUrl } from '../utils/storageHelper';
 import type { UserRole } from '../types';
 
 interface ProjectDetailViewProps {
@@ -282,7 +283,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     {/* Hero Section */}
                     <div className="relative min-h-[320px] rounded-3xl overflow-hidden shadow-lg mb-6 group">
                         <img
-                            src={activeProject.heroImage || "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1000&q=80"}
+                            src={activeProject.heroImage ? transformGDriveUrl(activeProject.heroImage) : "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1000&q=80"}
                             alt="Project Hero"
                             className="absolute inset-0 w-full h-full object-cover"
                         />

@@ -3,6 +3,7 @@ import { Camera, Trash2, X, Plus, Filter, Link as LinkIcon, ExternalLink, Settin
 import type { Project, GalleryItem } from '../types';
 import { compressImage } from '../utils/imageHelper';
 import { calculateProjectHealth } from '../utils/helpers';
+import { transformGDriveUrl } from '../utils/storageHelper';
 
 interface ProjectGalleryProps {
     project: Project;
@@ -244,7 +245,7 @@ const ProjectGallery: React.FC<ProjectGalleryProps> = ({ project, updateProject,
                             className="group relative aspect-square bg-slate-100 rounded-xl overflow-hidden cursor-pointer border hover:border-blue-400 transition shadow-sm hover:shadow-md"
                             onClick={() => setSelectedImage(item)}
                         >
-                            <img src={item.url} className="w-full h-full object-cover transition duration-300 group-hover:scale-110" loading="lazy" referrerPolicy="no-referrer" />
+                            <img src={transformGDriveUrl(item.url)} className="w-full h-full object-cover transition duration-300 group-hover:scale-110" loading="lazy" referrerPolicy="no-referrer" />
 
                             {/* Progress Badge */}
                             {item.progress !== undefined && (
@@ -274,7 +275,7 @@ const ProjectGallery: React.FC<ProjectGalleryProps> = ({ project, updateProject,
 
                     <div className="max-w-4xl w-full max-h-screen flex flex-col items-center" onClick={e => e.stopPropagation()}>
                         <img
-                            src={selectedImage.url}
+                            src={transformGDriveUrl(selectedImage.url)}
                             className="max-w-full max-h-[80vh] rounded-lg shadow-2xl border border-white/10"
                             referrerPolicy="no-referrer"
                         />

@@ -2,6 +2,48 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { storage, appId } from '../lib/firebase';
 
 /**
+ * Transform Google Drive URL to a format that can be displayed in <img> tags
+ * Handles various GDrive URL formats and converts to lh3.googleusercontent.com format
+ */
+export const transformGDriveUrl = (url: string): string => {
+    if (!url) return url;
+
+    // Already transformed or not a GDrive URL
+    if (url.includes('lh3.googleusercontent.com')) return url;
+    if (!url.includes('drive.google.com') && !url.includes('googleusercontent')) return url;
+
+    // Extract file ID from various Google Drive URL formats
+    let fileId = '';
+
+    // Format: https://drive.google.com/uc?id=FILE_ID
+    // Format: https://drive.google.com/uc?export=view&id=FILE_ID
+    const ucMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (ucMatch) {
+        fileId = ucMatch[1];
+    }
+
+    // Format: https://drive.google.com/file/d/FILE_ID/view
+    const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileMatch) {
+        fileId = fileMatch[1];
+    }
+
+    // Format: https://drive.google.com/open?id=FILE_ID
+    const openMatch = url.match(/open\?id=([a-zA-Z0-9_-]+)/);
+    if (openMatch) {
+        fileId = openMatch[1];
+    }
+
+    if (fileId) {
+        // Use lh3.googleusercontent.com format which works reliably for <img>
+        return `https://lh3.googleusercontent.com/d/${fileId}`;
+    }
+
+    // Fallback: return original
+    return url;
+};
+
+/**
  * Upload an image to Firebase Storage and return the download URL
  * @param base64Data - Base64 encoded image string
  * @param path - Storage path (e.g., 'projects/abc123/gallery')
