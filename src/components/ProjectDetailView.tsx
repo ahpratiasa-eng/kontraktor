@@ -440,7 +440,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 <div className="space-y-6 pb-24">
                     {/* Gantt Chart Section */}
                     {canViewInternalRAB && (
-                        <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                                 <h3 className="font-bold text-base md:text-lg text-slate-700 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan</h3>
                                 {!isClientView && (
@@ -450,8 +450,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 )}
                             </div>
 
-                            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-2">
-                                <div className="min-w-[600px] md:min-w-full">
+                            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-2 scrollbar-thin">
+                                <div className="min-w-[500px]">
                                     <div className="flex border-b border-slate-100 pb-2 mb-2 sticky top-0 bg-white z-10">
                                         <div className="w-1/3 md:w-1/4 font-bold text-xs text-slate-500 shrink-0">Item Pekerjaan</div>
                                         <div className="w-2/3 md:w-3/4 flex relative h-6">
