@@ -766,13 +766,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 <div className="flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-8 mb-6 relative z-10 w-full">
                                     <div className="min-w-0">
                                         <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pemasukan</p>
-                                        <p className="text-lg md:text-xl font-bold text-green-400 break-words">
+                                        <p className="text-lg md:text-xl font-bold text-green-400 break-all">
                                             + {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0))}
                                         </p>
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pengeluaran</p>
-                                        <p className="text-lg md:text-xl font-bold text-red-400 break-words">
+                                        <p className="text-lg md:text-xl font-bold text-red-400 break-all">
                                             - {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0))}
                                         </p>
                                     </div>
@@ -785,7 +785,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         const bal = inc - exp;
                                         return (
                                             <div className="min-w-0 w-full md:w-auto text-left md:text-right">
-                                                <span className={`text-xl md:text-2xl font-black break-words ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                                                <span className={`text-xl md:text-2xl font-black break-all ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
                                                     {bal >= 0 ? '+' : '-'} {formatRupiah(Math.abs(bal))}
                                                 </span>
                                             </div>
