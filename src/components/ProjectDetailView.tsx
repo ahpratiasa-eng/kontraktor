@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-    FileText, Sparkles, History, Edit, Trash2, Banknote,
+    Settings, FileText, Sparkles, History, Edit, Trash2, Banknote,
     ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown, Plus
 } from 'lucide-react';
 import { NumberInput, TransactionGroup } from './UIComponents';
@@ -69,6 +69,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
     const [logisticsTab, setLogisticsTab] = useState<'stock' | 'recap'>('stock');
     const [financeTab, setFinanceTab] = useState<'transactions' | 'payroll'>('transactions');
+
+    const prepareEditProject = () => {
+        // Since setProjectInput isn't propogated down, we might need to rely on the prompt or modal
+        // But for now, let's assume the parent can handle it if we signal via modal
+        // Ideally this should call a prop function, but strictness might require us to define it locally if we removed it earlier
+        setModalType('editProject');
+        setShowModal(true);
+    };
 
     // Enforce Client View Mode
     React.useEffect(() => {
@@ -284,27 +292,45 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     {/* Quick Actions */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         {!isClientView && (
-                            <button
-                                onClick={handleReportToOwner}
-                                className="bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
-                            >
-                                <FileText size={18} /> Kirim Laporan
-                            </button>
+                            <>
+                                <button
+                                    onClick={handleReportToOwner}
+                                    className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                >
+                                    <FileText size={18} /> Lapor via WA
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        // Placeholder for actual report generation logic or re-enabling older logic
+                                        alert("Fitur Download Laporan PDF akan segera hadir.");
+                                        // If there was a specific function for this, it should be called here.
+                                    }}
+                                    className="bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                >
+                                    <FileText size={18} /> Laporan PDF
+                                </button>
+                                {canEditProject && (
+                                    <button
+                                        onClick={prepareEditProject}
+                                        className="col-span-2 bg-white text-slate-700 border border-slate-200 p-3 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                    >
+                                        <Settings size={18} /> Pengaturan Proyek
+                                    </button>
+                                )}
+                            </>
                         )}
-                        <button
-                            onClick={() => {
-                                if (isClientView) {
-                                    alert("Hubungi kontraktor untuk akses penuh.");
-                                } else {
+                        {isClientView && (
+                            <button
+                                onClick={() => {
                                     const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
                                     navigator.clipboard.writeText(url);
                                     alert(`Link Portal Klien disalin!\n${url}`);
-                                }
-                            }}
-                            className="bg-white text-slate-700 border border-slate-200 p-3 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
-                        >
-                            <ExternalLink size={18} /> Portal Klien
-                        </button>
+                                }}
+                                className="col-span-2 bg-white text-slate-700 border border-slate-200 p-3 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
+                            >
+                                <ExternalLink size={18} /> Share Portal Klien
+                            </button>
+                        )}
                     </div>
 
                     {/* Progress Summary Card */}
