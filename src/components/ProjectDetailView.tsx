@@ -763,17 +763,17 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     <TrendingUp size={100} />
                                 </div>
                                 <h3 className="text-slate-300 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4">Total Arus Kas (Cash Flow)</h3>
-                                <div className="flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-8 mb-6 relative z-10 w-full">
-                                    <div className="min-w-0">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-6 relative z-10 w-full">
+                                    <div className="min-w-0 overflow-hidden">
                                         <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pemasukan</p>
-                                        <p className="text-lg md:text-xl font-bold text-green-400 break-all">
-                                            + {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0))}
+                                        <p className="text-lg md:text-xl font-bold text-green-400 break-all whitespace-normal">
+                                            + {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0)).replace(/\u00A0/g, ' ')}
                                         </p>
                                     </div>
-                                    <div className="min-w-0">
+                                    <div className="min-w-0 overflow-hidden">
                                         <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pengeluaran</p>
-                                        <p className="text-lg md:text-xl font-bold text-red-400 break-all">
-                                            - {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0))}
+                                        <p className="text-lg md:text-xl font-bold text-red-400 break-all whitespace-normal">
+                                            - {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0)).replace(/\u00A0/g, ' ')}
                                         </p>
                                     </div>
                                 </div>
@@ -784,9 +784,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         const exp = (activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
                                         const bal = inc - exp;
                                         return (
-                                            <div className="min-w-0 w-full md:w-auto text-left md:text-right">
-                                                <span className={`text-xl md:text-2xl font-black break-all ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
-                                                    {bal >= 0 ? '+' : '-'} {formatRupiah(Math.abs(bal))}
+                                            <div className="min-w-0 w-full md:w-auto text-left md:text-right overflow-hidden">
+                                                <span className={`text-xl md:text-2xl font-black break-all whitespace-normal ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                                                    {bal >= 0 ? '+' : '-'} {formatRupiah(Math.abs(bal)).replace(/\u00A0/g, ' ')}
                                                 </span>
                                             </div>
                                         );
