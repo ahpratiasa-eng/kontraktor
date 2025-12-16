@@ -250,7 +250,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full max-w-full overflow-x-hidden pt-1">
             {/* Desktop Navigation Tabs */}
             <div className="hidden md:flex items-center gap-1 border-b border-slate-200 mb-6 overflow-x-auto pb-1">
                 {tabs.map(tab => (
@@ -756,9 +756,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     </div>
 
                     {financeTab === 'transactions' && (
-                        <div className="max-w-2xl mx-auto">
+                        <div className="max-w-2xl mx-auto w-full">
                             {/* NEW: Total Cash Flow Summary Card */}
-                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 md:p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden">
+                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 md:p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden w-full max-w-full">
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
                                     <TrendingUp size={100} />
                                 </div>
@@ -794,9 +794,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 </div>
                             </div>
 
-                            <div className="bg-white p-5 rounded-3xl border shadow-sm mb-6">
+                            <div className="bg-white p-5 rounded-3xl border shadow-sm mb-6 w-full max-w-full">
                                 <h3 className="font-bold text-slate-800 mb-4">Catat Transaksi Baru</h3>
-                                <div className="flex gap-2 mb-4 bg-slate-50 p-1.5 rounded-2xl border">
+                                <div className="flex gap-2 mb-4 bg-slate-50 p-1.5 rounded-2xl border w-full">
                                     <button onClick={() => setTxType('expense')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${txType === 'expense' ? 'bg-white shadow text-red-600' : 'text-slate-400'}`}>Pengeluaran</button>
                                     <button onClick={() => setTxType('income')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${txType === 'income' ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}>Pemasukan</button>
                                 </div>
@@ -824,7 +824,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 </form>
                             </div>
 
-                            <div className="space-y-6 pb-20">
+                            <div className="space-y-6 pb-20 w-full max-w-full">
                                 <h3 className="font-bold text-slate-700 px-2">Riwayat Transaksi</h3>
 
                                 {/* MONTHLY TABS LOGIC */}
@@ -847,7 +847,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     return (
                                         <>
                                             {/* Horizontal Scrollable Tabs */}
-                                            <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar snap-x px-2">
+                                            <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar snap-x px-2 w-full max-w-full">
                                                 {groups.map((g) => (
                                                     <button
                                                         key={g.monthLabel}
@@ -863,7 +863,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             </div>
 
                                             {/* Active Month Content */}
-                                            <div className="bg-white rounded-3xl border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                                            <div className="bg-white rounded-3xl border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 w-full max-w-full">
                                                 <div className="bg-slate-50 p-4 border-b flex justify-between items-center">
                                                     <div className="flex items-center gap-2">
                                                         <div className="bg-white p-2 rounded-xl border shadow-sm text-slate-500"><Calendar size={18} /></div>
