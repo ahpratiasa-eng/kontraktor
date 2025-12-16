@@ -30,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({
 
     return (
         <header className="bg-white px-4 py-3 sticky top-0 z-10 shadow-sm flex justify-between items-center print:hidden">
-            {view === 'project-list' || view === 'user-management' || view === 'trash-bin' ? (
+            {view === 'project-list' ? (
                 <div className="flex items-center gap-2 font-bold text-slate-800 md:hidden">
                     <Building2 className="text-blue-600" />
                     <div className="flex flex-col">

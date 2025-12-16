@@ -683,7 +683,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         try {
             await updateDoc(doc(db, 'app_data', appId, 'projects', activeProject.id), { rabItems: updatedItems });
             setShowModal(false);
-            if (setModalType) setModalType(null);
+            if (setModalType) setModalType(''); // Fix TS error: string | null mismatch
         } catch (error) {
             console.error("Error save schedule:", error);
             alert("Gagal menyimpan jadwal.");

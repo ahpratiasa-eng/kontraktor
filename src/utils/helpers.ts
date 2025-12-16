@@ -1,4 +1,4 @@
-import type { Project, Transaction, GroupedTransaction, AttendanceLog, RABItem, MonthlyTransactionGroup, DailyTransactionGroup } from '../types';
+import type { Project, Transaction, GroupedTransaction, AttendanceLog, RABItem, MonthlyTransactionGroup } from '../types';
 
 export const formatNumber = (num: number | string) => {
   if (!num) return '';
