@@ -757,11 +757,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                     {financeTab === 'transactions' && (
                         <div className="max-w-2xl mx-auto w-full">
-                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 md:p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden w-full max-w-full">
+                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 md:p-6 rounded-3xl shadow-md mb-6 relative overflow-hidden w-full max-w-full">
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
                                     <TrendingUp size={100} />
                                 </div>
-                                <h3 className="text-slate-300 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4">Total Arus Kas (v2)</h3>
+                                <h3 className="text-slate-300 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4">Total Arus Kas (Cash Flow)</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-6 relative z-10 w-full">
                                     <div className="min-w-0 overflow-hidden">
                                         <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pemasukan</p>
