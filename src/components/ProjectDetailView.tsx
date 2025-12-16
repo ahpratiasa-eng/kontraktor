@@ -440,7 +440,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 <div className="space-y-6 pb-24">
                     {/* Gantt Chart Section */}
                     {canViewInternalRAB && (
-                        <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200">
+                        <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 w-full max-w-full overflow-hidden">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                                 <h3 className="font-bold text-base md:text-lg text-slate-700 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan</h3>
                                 {!isClientView && (
@@ -451,104 +451,139 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             </div>
 
                             {(() => {
-                                // Calculate project duration in weeks
+                                // Calculate project duration
                                 const pStart = new Date(activeProject.startDate).getTime();
                                 const pEnd = new Date(activeProject.endDate).getTime();
                                 const durationDays = Math.ceil((pEnd - pStart) / (1000 * 60 * 60 * 24));
                                 const totalWeeks = Math.max(4, Math.ceil(durationDays / 7));
-                                // Min width per week for readability
-                                const minWidthPerWeek = 50; // pixels
-                                const timelineWidth = totalWeeks * minWidthPerWeek;
+                                const needsScroll = totalWeeks > 8;
+                                const displayedItems = activeProject.rabItems.slice(0, showAllGantt ? undefined : 5);
 
                                 return (
-                                    <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-2 scrollbar-thin">
-                                        <div style={{ minWidth: Math.max(400, timelineWidth) }}>
-                                            <div className="flex border-b border-slate-100 pb-2 mb-2 sticky top-0 bg-white z-10">
-                                                <div className="w-40 md:w-48 font-bold text-xs text-slate-500 shrink-0">Item Pekerjaan</div>
-                                                <div className="flex-1 flex relative h-6">
-                                                    {[...Array(totalWeeks)].map((_, i) => (
-                                                        <div
-                                                            key={i}
-                                                            className="border-l border-slate-100 text-[9px] text-slate-400 pl-0.5 whitespace-nowrap"
-                                                            style={{ width: minWidthPerWeek }}
-                                                        >
-                                                            {totalWeeks <= 12 ? `Mgg ${i + 1}` : (i + 1)}
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                    <div className="relative w-full border border-slate-200 rounded-2xl overflow-hidden grid grid-cols-[9rem_minmax(0,1fr)] md:grid-cols-[14rem_minmax(0,1fr)]">
+
+                                        {/* SCROLL HINT (Right Side) */}
+                                        {needsScroll && (
+                                            <div className="md:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none z-20 flex items-center justify-center col-start-2">
+                                                <span className="text-blue-500 text-lg font-bold animate-pulse">›</span>
                                             </div>
-                                            <div className="space-y-4">
-                                                {activeProject.rabItems.slice(0, showAllGantt ? undefined : 5).map((item, idx) => {
-                                                    // Stable Gantt Calculation
-                                                    let startOffset = 0;
-                                                    let width = 0;
+                                        )}
 
-                                                    const pStart = new Date(activeProject.startDate).getTime();
-                                                    const pEnd = new Date(activeProject.endDate).getTime();
-                                                    const totalDuration = pEnd - pStart;
-
-                                                    if (item.startDate && item.endDate && totalDuration > 0) {
-                                                        const iStart = new Date(item.startDate).getTime();
-                                                        const iEnd = new Date(item.endDate).getTime();
-                                                        startOffset = ((iStart - pStart) / totalDuration) * 100;
-                                                        width = ((iEnd - iStart) / totalDuration) * 100;
-                                                    } else {
-                                                        // Fallback: Deterministic Stagger based on Index
-                                                        startOffset = Math.min((idx * 15), 80);
-                                                        width = 15;
-                                                    }
-
-                                                    // Safety Clamps
-                                                    if (startOffset < 0) startOffset = 0;
-                                                    if (startOffset > 100) startOffset = 100;
-                                                    if (width < 5) width = 5;
-                                                    if (startOffset + width > 100) width = 100 - startOffset;
-
-                                                    return (
-                                                        <div
-                                                            key={item.id}
-                                                            onClick={() => !isClientView && prepareEditSchedule(item)}
-                                                            className={`flex items-center rounded-lg p-1 transition-colors ${!isClientView ? 'cursor-pointer hover:bg-blue-50 group' : ''}`}
-                                                        >
-                                                            <div className="w-40 md:w-48 text-xs font-medium truncate pr-2 shrink-0">{item.name}</div>
-                                                            <div className="flex-1 relative h-6 bg-slate-50 rounded-full overflow-hidden">
-                                                                {/* Plan Bar (Lighter) */}
-                                                                <div
-                                                                    className={`absolute top-1 bottom-1 rounded-full opacity-30 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
-                                                                    style={{ left: `${startOffset}%`, width: `${width}%` }}
-                                                                />
-                                                                {/* Progress/Realization Bar (Darker & Animated) */}
-                                                                <div
-                                                                    className={`absolute top-1 bottom-1 rounded-full ${['bg-blue-600', 'bg-green-600', 'bg-orange-600', 'bg-purple-600'][idx % 4]}`}
-                                                                    style={{
-                                                                        left: `${startOffset}%`,
-                                                                        width: `${width * (item.progress / 100)}%`
-                                                                    }}
-                                                                >
-                                                                    {width * (item.progress / 100) > 10 && (
-                                                                        <span className="text-[8px] text-white px-1 font-bold flex items-center h-full overflow-hidden whitespace-nowrap">
-                                                                            {item.progress}%
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                                {/* If progress is 0 or very small, show label outside or just on hover? For now keep simple. */}
-                                                                {!isClientView && (
-                                                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] font-bold text-slate-500 bg-white/80 transition-opacity">
-                                                                        Atur Jadwal
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                                {activeProject.rabItems.length > 5 && (
-                                                    <button
-                                                        onClick={() => setShowAllGantt(!showAllGantt)}
-                                                        className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 py-2 border-t border-slate-100 transition-colors"
+                                        {/* --- LEFT COLUMN: FIXED LABELS --- */}
+                                        <div className="bg-white border-r border-slate-100 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+                                            {/* Header Label */}
+                                            <div className="h-10 border-b border-slate-100 px-4 flex items-center font-bold text-xs text-slate-500 bg-slate-50/50">
+                                                Item Pekerjaan
+                                            </div>
+                                            {/* Item Rows */}
+                                            <div className="p-4 space-y-4 bg-white">
+                                                {displayedItems.map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        onClick={() => !isClientView && prepareEditSchedule(item)}
+                                                        className={`h-8 flex items-center text-xs font-medium text-slate-700 truncate cursor-pointer transition-colors hover:text-blue-600 ${!isClientView ? 'group' : ''}`}
+                                                        title={item.name}
                                                     >
-                                                        {showAllGantt ? 'Tutup Tampilan Ringkas' : `Lihat Semua (${activeProject.rabItems.length} items)`}
-                                                    </button>
+                                                        {item.name}
+                                                    </div>
+                                                ))}
+                                                {/* Button Spacer */}
+                                                {activeProject.rabItems.length > 5 && (
+                                                    <div className="h-8 mt-2" />
                                                 )}
+                                            </div>
+                                        </div>
+
+                                        {/* --- RIGHT COLUMN: SCROLLABLE GANTT CHART --- */}
+                                        <div className="overflow-x-auto timeline-scroll bg-white relative w-full">
+                                            {/* Inner responsive container */}
+                                            <div className="min-w-full w-max">
+
+                                                {/* Header Weeks */}
+                                                <div className="h-10 border-b border-slate-100 flex items-center bg-slate-50/30">
+                                                    <div className="flex-1 flex px-2 md:px-4">
+                                                        {[...Array(totalWeeks)].map((_, i) => (
+                                                            <div
+                                                                key={i}
+                                                                // Flex layout: share space but keep min width
+                                                                className="flex-1 min-w-[50px] md:min-w-[70px] border-l border-slate-100 first:border-l-0 text-[10px] text-slate-400 pl-2 py-1 flex items-center"
+                                                            >
+                                                                {totalWeeks <= 12 ? `Mgg ${i + 1}` : (i + 1)}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Data Rows */}
+                                                <div className="p-4 space-y-4">
+                                                    {displayedItems.map((item, idx) => {
+                                                        // Progress Calculation
+                                                        let startOffset = 0;
+                                                        let width = 0;
+                                                        const pStart = new Date(activeProject.startDate).getTime();
+                                                        const pEnd = new Date(activeProject.endDate).getTime();
+                                                        const totalDuration = pEnd - pStart;
+
+                                                        if (item.startDate && item.endDate && totalDuration > 0) {
+                                                            const iStart = new Date(item.startDate).getTime();
+                                                            const iEnd = new Date(item.endDate).getTime();
+                                                            startOffset = ((iStart - pStart) / totalDuration) * 100;
+                                                            width = ((iEnd - iStart) / totalDuration) * 100;
+                                                        } else {
+                                                            startOffset = Math.min((idx * 15), 80);
+                                                            width = 15;
+                                                        }
+
+                                                        if (startOffset < 0) startOffset = 0;
+                                                        if (startOffset > 100) startOffset = 100;
+                                                        if (width < 5) width = 5;
+                                                        if (startOffset + width > 100) width = 100 - startOffset;
+
+                                                        return (
+                                                            <div
+                                                                key={item.id}
+                                                                onClick={() => !isClientView && prepareEditSchedule(item)}
+                                                                className={`h-8 flex items-center rounded-lg px-2 md:px-4 transition-colors ${!isClientView ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+                                                            >
+                                                                <div className="flex-1 relative h-5 bg-slate-100/80 rounded-full overflow-hidden w-full">
+                                                                    {/* Plan Bar */}
+                                                                    <div
+                                                                        className={`absolute top-0 bottom-0 opacity-30 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
+                                                                        style={{ left: `${startOffset}%`, width: `${width}%` }}
+                                                                    />
+                                                                    {/* Realization Bar */}
+                                                                    <div
+                                                                        className={`absolute top-0 bottom-0 ${['bg-blue-600', 'bg-green-600', 'bg-orange-600', 'bg-purple-600'][idx % 4]}`}
+                                                                        style={{
+                                                                            left: `${startOffset}%`,
+                                                                            width: `${width * (item.progress / 100)}%`
+                                                                        }}
+                                                                    >
+                                                                        {width * (item.progress / 100) > 10 && (
+                                                                            <span className="text-[9px] text-white px-1 font-bold flex items-center h-full overflow-hidden whitespace-nowrap">
+                                                                                {item.progress}%
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+
+                                                    {/* View All Button inside the scrollable area usually stretches it, but we want it sticky or full width. 
+                                                        Simple solution: Put it here, it will be scrollable. User sees it at bottom left usually.
+                                                    */}
+                                                    {activeProject.rabItems.length > 5 && (
+                                                        <div className="h-8 mt-2 flex items-center">
+                                                            <button
+                                                                onClick={() => setShowAllGantt(!showAllGantt)}
+                                                                className="text-xs font-bold text-blue-600 hover:text-blue-800 whitespace-nowrap"
+                                                            >
+                                                                {showAllGantt ? 'Tutup Ringkas' : `+ ${activeProject.rabItems.length - 5} item lainnya`}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -556,6 +591,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             })()}
                         </div>
                     )}
+
 
                     {/* Mobile Progress Summary for Client View */}
                     {isClientView && (
