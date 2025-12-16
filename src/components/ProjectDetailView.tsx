@@ -420,7 +420,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         </div>
 
                         {/* Mini SCurve */}
-                        <div className="h-32 w-full">
+                        <div className="w-full">
                             <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
                         </div>
                     </div>

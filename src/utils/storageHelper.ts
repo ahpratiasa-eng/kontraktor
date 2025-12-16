@@ -139,6 +139,25 @@ export const uploadPortfolioPhoto = async (
 };
 
 /**
+ * Upload project cover photo
+ * @param base64Data - Base64 image
+ * @param projectId - Project ID (optional, will use timestamp if not provided)
+ * @returns Download URL
+ */
+export const uploadProjectCover = async (
+    base64Data: string,
+    projectId?: string
+): Promise<string> => {
+    const scriptUrl = getGDriveScript();
+    const filename = `cover_${projectId || 'new'}_${Date.now()}.webp`;
+
+    if (scriptUrl) {
+        return uploadToGoogleDrive(base64Data, scriptUrl, filename);
+    }
+    return uploadImage(base64Data, `projects/${projectId || 'new'}/cover`, filename);
+};
+
+/**
  * Delete an image from Firebase Storage
  * @param url - Full download URL of the image
  */

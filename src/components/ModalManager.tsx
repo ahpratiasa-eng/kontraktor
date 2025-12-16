@@ -179,7 +179,62 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Mulai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /></div>
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Selesai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /></div>
                             </div>
-                            <input className="w-full p-3 border rounded-xl" placeholder="URL Foto Sampul (Opsional)" value={inputHeroImage} onChange={e => setInputHeroImage(e.target.value)} />
+
+                            {/* Hero Image Upload */}
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold ml-1">Foto Sampul Proyek</label>
+                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center hover:bg-slate-50 transition relative overflow-hidden bg-slate-50">
+                                    {inputHeroImage ? (
+                                        <>
+                                            <img src={inputHeroImage} className="w-full h-40 object-cover rounded-lg mb-2" />
+                                            <button
+                                                onClick={() => setInputHeroImage('')}
+                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md"
+                                                title="Hapus Foto"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="py-8 text-center pointer-events-none">
+                                            <Camera className="mx-auto text-slate-400 mb-2" size={32} />
+                                            <p className="text-sm text-slate-500">Upload Foto Sampul</p>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            try {
+                                                // Dynamic imports
+                                                const { compressImage } = await import('../utils/imageHelper');
+                                                const { uploadProjectCover } = await import('../utils/storageHelper');
+
+                                                // Show loading state if needed (optional since we don't have local loading state here easily without adding it)
+                                                // For now, simple alert or blocking might be needed or just let it run
+                                                // Let's add a temporary loading text
+
+                                                const compressed = await compressImage(file, 1920, 0.9);
+                                                const url = await uploadProjectCover(compressed);
+                                                setInputHeroImage(url);
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert('Gagal upload foto sampul.');
+                                            }
+                                        }}
+                                    />
+                                    {/* Overlay for "Change" if image exists */}
+                                    {inputHeroImage && (
+                                        <div className="absolute bottom-2 right-2 pointer-events-none">
+                                            <span className="bg-black/50 text-white text-xs px-2 py-1 rounded">Ganti</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
                             <NumberInput placeholder="Budget Limit (Opsional)" className="w-full p-3 border rounded-xl" value={inputBudget} onChange={setInputBudget} />
                             <button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">Buat Proyek</button>
                         </div>
@@ -218,10 +273,51 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                 <label className="text-xs font-bold text-slate-600 ml-1">Budget Limit (Rp)</label>
                                 <NumberInput placeholder="Masukkan budget limit" className="w-full p-3 border rounded-xl" value={inputBudget} onChange={setInputBudget} />
                             </div>
+
+                            {/* Hero Image Check/Upload */}
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-600 ml-1">URL Foto Sampul</label>
-                                <input className="w-full p-3 border rounded-xl" placeholder="https://..." value={inputHeroImage} onChange={e => setInputHeroImage(e.target.value)} />
+                                <label className="text-xs font-bold text-slate-600 ml-1">Foto Sampul</label>
+                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center hover:bg-slate-50 transition relative overflow-hidden bg-slate-50">
+                                    {inputHeroImage ? (
+                                        <>
+                                            <img src={inputHeroImage} className="w-full h-40 object-cover rounded-lg mb-2" />
+                                            <button
+                                                onClick={() => setInputHeroImage('')}
+                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md z-10"
+                                                title="Hapus Foto"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="py-8 text-center pointer-events-none">
+                                            <Camera className="mx-auto text-slate-400 mb-2" size={32} />
+                                            <p className="text-sm text-slate-500">Upload Foto Sampul</p>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            try {
+                                                const { compressImage } = await import('../utils/imageHelper');
+                                                const { uploadProjectCover } = await import('../utils/storageHelper');
+
+                                                const compressed = await compressImage(file, 1920, 0.9);
+                                                const url = await uploadProjectCover(compressed, activeProject?.id);
+                                                setInputHeroImage(url);
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert('Gagal upload foto sampul.');
+                                            }
+                                        }}
+                                    />
+                                </div>
                             </div>
+
                             <button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 mt-2">Simpan Perubahan</button>
                         </div>
                     )}
