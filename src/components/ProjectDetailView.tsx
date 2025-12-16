@@ -69,6 +69,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
     const [logisticsTab, setLogisticsTab] = useState<'stock' | 'recap'>('stock');
+    const [financeMonthTab, setFinanceMonthTab] = useState<string>(''); // '' means latest or all
     const [financeTab, setFinanceTab] = useState<'transactions' | 'payroll'>('transactions');
 
     // Enforce Client View Mode
@@ -756,6 +757,41 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                     {financeTab === 'transactions' && (
                         <div className="max-w-2xl mx-auto">
+                            {/* NEW: Total Cash Flow Summary Card */}
+                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <TrendingUp size={100} />
+                                </div>
+                                <h3 className="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Total Arus Kas (Cash Flow)</h3>
+                                <div className="grid grid-cols-2 gap-8 mb-6 relative z-10">
+                                    <div>
+                                        <p className="text-xs text-slate-400 mb-1">Total Pemasukan</p>
+                                        <p className="text-xl font-bold text-green-400">
+                                            + {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0))}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-400 mb-1">Total Pengeluaran</p>
+                                        <p className="text-xl font-bold text-red-400">
+                                            - {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0))}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="border-t border-slate-700 pt-4 flex justify-between items-center relative z-10">
+                                    <span className="text-sm font-medium text-slate-300">Sisa Kas (Balance)</span>
+                                    {(() => {
+                                        const inc = (activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+                                        const exp = (activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+                                        const bal = inc - exp;
+                                        return (
+                                            <span className={`text-2xl font-black ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                                                {bal >= 0 ? '+' : '-'} {formatRupiah(Math.abs(bal))}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+
                             <div className="bg-white p-5 rounded-3xl border shadow-sm mb-6">
                                 <h3 className="font-bold text-slate-800 mb-4">Catat Transaksi Baru</h3>
                                 <div className="flex gap-2 mb-4 bg-slate-50 p-1.5 rounded-2xl border">
@@ -788,69 +824,92 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                             <div className="space-y-6 pb-20">
                                 <h3 className="font-bold text-slate-700 px-2">Riwayat Transaksi</h3>
-                                {getMonthlyGroupedTransactions(activeProject.transactions).map((group) => (
-                                    <div key={group.monthLabel} className="bg-white rounded-3xl border shadow-sm overflow-hidden">
-                                        {/* Month Header */}
-                                        <div className="bg-slate-50 p-4 border-b flex justify-between items-center group-hover:bg-slate-100 transition-colors">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-white p-2 rounded-xl border shadow-sm text-slate-500">
-                                                    <Calendar size={18} />
-                                                </div>
-                                                <span className="font-bold text-slate-700 text-sm md:text-base">{group.monthLabel}</span>
+
+                                {/* MONTHLY TABS LOGIC */}
+                                {(() => {
+                                    const groups = getMonthlyGroupedTransactions(activeProject.transactions || []);
+
+                                    if (groups.length === 0) return (
+                                        <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-3xl bg-slate-50/50">
+                                            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
+                                                <History size={24} />
                                             </div>
-                                            <div className="text-right text-[10px] md:text-xs">
-                                                <span className="text-green-600 block font-bold mb-0.5">+ {formatRupiah(group.totalIncome)}</span>
-                                                <span className="text-red-500 block font-bold">- {formatRupiah(group.totalExpense)}</span>
-                                            </div>
+                                            <p className="text-sm font-bold">Belum ada transaksi</p>
                                         </div>
+                                    );
 
-                                        {/* Daily Groups */}
-                                        <div className="p-2 md:p-4 space-y-6 relative">
-                                            {group.days.map((day, dIdx) => (
-                                                <div key={day.date} className="relative">
-                                                    {/* Timeline Line */}
-                                                    {dIdx !== group.days.length - 1 && (
-                                                        <div className="absolute left-[19px] top-8 bottom-[-24px] w-0.5 bg-slate-100"></div>
-                                                    )}
+                                    // Determine active tab
+                                    const activeKey = financeMonthTab || groups[0].monthLabel;
+                                    const activeGroup = groups.find(g => g.monthLabel === activeKey) || groups[0];
 
-                                                    <div className="flex items-center gap-3 mb-3">
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.1)] ml-3.5"></div>
-                                                        <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider bg-white pr-2">
-                                                            {day.displayDate}
-                                                        </div>
+                                    return (
+                                        <>
+                                            {/* Horizontal Scrollable Tabs */}
+                                            <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar snap-x px-2">
+                                                {groups.map((g) => (
+                                                    <button
+                                                        key={g.monthLabel}
+                                                        onClick={() => setFinanceMonthTab(g.monthLabel)}
+                                                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border snap-start whitespace-nowrap ${activeKey === g.monthLabel
+                                                                ? 'bg-slate-800 text-white border-slate-800 shadow-md'
+                                                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                                            }`}
+                                                    >
+                                                        {g.monthLabel}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            {/* Active Month Content */}
+                                            <div className="bg-white rounded-3xl border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                                                <div className="bg-slate-50 p-4 border-b flex justify-between items-center">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="bg-white p-2 rounded-xl border shadow-sm text-slate-500"><Calendar size={18} /></div>
+                                                        <span className="font-bold text-slate-700 text-sm md:text-base">{activeGroup.monthLabel}</span>
                                                     </div>
+                                                    <div className="text-right text-[10px] md:text-xs">
+                                                        <span className="text-green-600 block font-bold mb-0.5">+ {formatRupiah(activeGroup.totalIncome)}</span>
+                                                        <span className="text-red-500 block font-bold">- {formatRupiah(activeGroup.totalExpense)}</span>
+                                                    </div>
+                                                </div>
 
-                                                    <div className="space-y-2.5 pl-4 md:pl-10">
-                                                        {day.transactions.map((t) => (
-                                                            <div key={t.id} className="flex justify-between items-center p-3 md:p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] group">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className={`p-2.5 rounded-2xl flex-shrink-0 transition-colors ${t.type === 'income' ? 'bg-green-50 text-green-600 group-hover:bg-green-100' : 'bg-red-50 text-red-600 group-hover:bg-red-100'}`}>
-                                                                        {t.type === 'income' ? <TrendingUp size={18} /> : <Banknote size={18} />}
-                                                                    </div>
-                                                                    <div className="min-w-0">
-                                                                        <div className="font-bold text-slate-700 text-xs md:text-sm line-clamp-1">{t.category}</div>
-                                                                        <div className="text-[10px] md:text-xs text-slate-400 line-clamp-1 truncate">{t.description}</div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className={`font-bold text-xs md:text-sm whitespace-nowrap pl-2 ${t.type === 'expense' ? 'text-slate-800' : 'text-green-600'}`}>
-                                                                    {t.type === 'expense' ? '-' : '+'} {formatRupiah(t.amount)}
+                                                <div className="p-2 md:p-4 space-y-6 relative">
+                                                    {activeGroup.days.map((day, dIdx) => (
+                                                        <div key={day.date} className="relative">
+                                                            {dIdx !== activeGroup.days.length - 1 && (
+                                                                <div className="absolute left-[19px] top-8 bottom-[-24px] w-0.5 bg-slate-100"></div>
+                                                            )}
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.1)] ml-3.5"></div>
+                                                                <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider bg-white pr-2">
+                                                                    {day.displayDate}
                                                                 </div>
                                                             </div>
-                                                        ))}
-                                                    </div>
+                                                            <div className="space-y-2.5 pl-4 md:pl-10">
+                                                                {day.transactions.map((t) => (
+                                                                    <div key={t.id} className="flex justify-between items-center p-3 md:p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] group">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className={`p-2.5 rounded-2xl flex-shrink-0 transition-colors ${t.type === 'income' ? 'bg-green-50 text-green-600 group-hover:bg-green-100' : 'bg-red-50 text-red-600 group-hover:bg-red-100'}`}>
+                                                                                {t.type === 'income' ? <TrendingUp size={18} /> : <Banknote size={18} />}
+                                                                            </div>
+                                                                            <div className="min-w-0">
+                                                                                <div className="font-bold text-slate-700 text-xs md:text-sm line-clamp-1">{t.category}</div>
+                                                                                <div className="text-[10px] md:text-xs text-slate-400 line-clamp-1 truncate">{t.description}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className={`font-bold text-xs md:text-sm whitespace-nowrap pl-2 ${t.type === 'expense' ? 'text-slate-800' : 'text-green-600'}`}>
+                                                                            {t.type === 'expense' ? '-' : '+'} {formatRupiah(t.amount)}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                                {activeProject.transactions.length === 0 && (
-                                    <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-3xl bg-slate-50/50">
-                                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
-                                            <History size={24} />
-                                        </div>
-                                        <p className="font-medium text-xs">Belum ada transaksi tercatat.</p>
-                                    </div>
-                                )}
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
                     )}
