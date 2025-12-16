@@ -450,93 +450,110 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 )}
                             </div>
 
-                            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-2 scrollbar-thin">
-                                <div className="min-w-[500px]">
-                                    <div className="flex border-b border-slate-100 pb-2 mb-2 sticky top-0 bg-white z-10">
-                                        <div className="w-1/3 md:w-1/4 font-bold text-xs text-slate-500 shrink-0">Item Pekerjaan</div>
-                                        <div className="w-2/3 md:w-3/4 flex relative h-6">
-                                            {[...Array(8)].map((_, i) => (
-                                                <div key={i} className="flex-1 border-l border-slate-100 text-[9px] text-slate-400 pl-0.5 whitespace-nowrap">
-                                                    Mgg {i + 1}
+                            {(() => {
+                                // Calculate project duration in weeks
+                                const pStart = new Date(activeProject.startDate).getTime();
+                                const pEnd = new Date(activeProject.endDate).getTime();
+                                const durationDays = Math.ceil((pEnd - pStart) / (1000 * 60 * 60 * 24));
+                                const totalWeeks = Math.max(4, Math.ceil(durationDays / 7));
+                                // Min width per week for readability
+                                const minWidthPerWeek = 50; // pixels
+                                const timelineWidth = totalWeeks * minWidthPerWeek;
+
+                                return (
+                                    <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-2 scrollbar-thin">
+                                        <div style={{ minWidth: Math.max(400, timelineWidth) }}>
+                                            <div className="flex border-b border-slate-100 pb-2 mb-2 sticky top-0 bg-white z-10">
+                                                <div className="w-40 md:w-48 font-bold text-xs text-slate-500 shrink-0">Item Pekerjaan</div>
+                                                <div className="flex-1 flex relative h-6">
+                                                    {[...Array(totalWeeks)].map((_, i) => (
+                                                        <div
+                                                            key={i}
+                                                            className="border-l border-slate-100 text-[9px] text-slate-400 pl-0.5 whitespace-nowrap"
+                                                            style={{ width: minWidthPerWeek }}
+                                                        >
+                                                            {totalWeeks <= 12 ? `Mgg ${i + 1}` : (i + 1)}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
+                                            </div>
+                                            <div className="space-y-4">
+                                                {activeProject.rabItems.slice(0, showAllGantt ? undefined : 5).map((item, idx) => {
+                                                    // Stable Gantt Calculation
+                                                    let startOffset = 0;
+                                                    let width = 0;
+
+                                                    const pStart = new Date(activeProject.startDate).getTime();
+                                                    const pEnd = new Date(activeProject.endDate).getTime();
+                                                    const totalDuration = pEnd - pStart;
+
+                                                    if (item.startDate && item.endDate && totalDuration > 0) {
+                                                        const iStart = new Date(item.startDate).getTime();
+                                                        const iEnd = new Date(item.endDate).getTime();
+                                                        startOffset = ((iStart - pStart) / totalDuration) * 100;
+                                                        width = ((iEnd - iStart) / totalDuration) * 100;
+                                                    } else {
+                                                        // Fallback: Deterministic Stagger based on Index
+                                                        startOffset = Math.min((idx * 15), 80);
+                                                        width = 15;
+                                                    }
+
+                                                    // Safety Clamps
+                                                    if (startOffset < 0) startOffset = 0;
+                                                    if (startOffset > 100) startOffset = 100;
+                                                    if (width < 5) width = 5;
+                                                    if (startOffset + width > 100) width = 100 - startOffset;
+
+                                                    return (
+                                                        <div
+                                                            key={item.id}
+                                                            onClick={() => !isClientView && prepareEditSchedule(item)}
+                                                            className={`flex items-center rounded-lg p-1 transition-colors ${!isClientView ? 'cursor-pointer hover:bg-blue-50 group' : ''}`}
+                                                        >
+                                                            <div className="w-40 md:w-48 text-xs font-medium truncate pr-2 shrink-0">{item.name}</div>
+                                                            <div className="flex-1 relative h-6 bg-slate-50 rounded-full overflow-hidden">
+                                                                {/* Plan Bar (Lighter) */}
+                                                                <div
+                                                                    className={`absolute top-1 bottom-1 rounded-full opacity-30 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
+                                                                    style={{ left: `${startOffset}%`, width: `${width}%` }}
+                                                                />
+                                                                {/* Progress/Realization Bar (Darker & Animated) */}
+                                                                <div
+                                                                    className={`absolute top-1 bottom-1 rounded-full ${['bg-blue-600', 'bg-green-600', 'bg-orange-600', 'bg-purple-600'][idx % 4]}`}
+                                                                    style={{
+                                                                        left: `${startOffset}%`,
+                                                                        width: `${width * (item.progress / 100)}%`
+                                                                    }}
+                                                                >
+                                                                    {width * (item.progress / 100) > 10 && (
+                                                                        <span className="text-[8px] text-white px-1 font-bold flex items-center h-full overflow-hidden whitespace-nowrap">
+                                                                            {item.progress}%
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {/* If progress is 0 or very small, show label outside or just on hover? For now keep simple. */}
+                                                                {!isClientView && (
+                                                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] font-bold text-slate-500 bg-white/80 transition-opacity">
+                                                                        Atur Jadwal
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {activeProject.rabItems.length > 5 && (
+                                                    <button
+                                                        onClick={() => setShowAllGantt(!showAllGantt)}
+                                                        className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 py-2 border-t border-slate-100 transition-colors"
+                                                    >
+                                                        {showAllGantt ? 'Tutup Tampilan Ringkas' : `Lihat Semua (${activeProject.rabItems.length} items)`}
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-4">
-                                        {activeProject.rabItems.slice(0, showAllGantt ? undefined : 5).map((item, idx) => {
-                                            // Stable Gantt Calculation
-                                            let startOffset = 0;
-                                            let width = 0;
-
-                                            const pStart = new Date(activeProject.startDate).getTime();
-                                            const pEnd = new Date(activeProject.endDate).getTime();
-                                            const totalDuration = pEnd - pStart;
-
-                                            if (item.startDate && item.endDate && totalDuration > 0) {
-                                                const iStart = new Date(item.startDate).getTime();
-                                                const iEnd = new Date(item.endDate).getTime();
-                                                startOffset = ((iStart - pStart) / totalDuration) * 100;
-                                                width = ((iEnd - iStart) / totalDuration) * 100;
-                                            } else {
-                                                // Fallback: Deterministic Stagger based on Index
-                                                startOffset = Math.min((idx * 15), 80);
-                                                width = 15;
-                                            }
-
-                                            // Safety Clamps
-                                            if (startOffset < 0) startOffset = 0;
-                                            if (startOffset > 100) startOffset = 100;
-                                            if (width < 5) width = 5;
-                                            if (startOffset + width > 100) width = 100 - startOffset;
-
-                                            return (
-                                                <div
-                                                    key={item.id}
-                                                    onClick={() => !isClientView && prepareEditSchedule(item)}
-                                                    className={`flex items-center rounded-lg p-1 transition-colors ${!isClientView ? 'cursor-pointer hover:bg-blue-50 group' : ''}`}
-                                                >
-                                                    <div className="w-1/3 md:w-1/4 text-xs font-medium truncate pr-2 shrink-0">{item.name}</div>
-                                                    <div className="w-2/3 md:w-3/4 relative h-6 bg-slate-50 rounded-full overflow-hidden">
-                                                        {/* Plan Bar (Lighter) */}
-                                                        <div
-                                                            className={`absolute top-1 bottom-1 rounded-full opacity-30 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
-                                                            style={{ left: `${startOffset}%`, width: `${width}%` }}
-                                                        />
-                                                        {/* Progress/Realization Bar (Darker & Animated) */}
-                                                        <div
-                                                            className={`absolute top-1 bottom-1 rounded-full ${['bg-blue-600', 'bg-green-600', 'bg-orange-600', 'bg-purple-600'][idx % 4]}`}
-                                                            style={{
-                                                                left: `${startOffset}%`,
-                                                                width: `${width * (item.progress / 100)}%`
-                                                            }}
-                                                        >
-                                                            {width * (item.progress / 100) > 10 && (
-                                                                <span className="text-[8px] text-white px-1 font-bold flex items-center h-full overflow-hidden whitespace-nowrap">
-                                                                    {item.progress}%
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        {/* If progress is 0 or very small, show label outside or just on hover? For now keep simple. */}
-                                                        {!isClientView && (
-                                                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] font-bold text-slate-500 bg-white/80 transition-opacity">
-                                                                Atur Jadwal
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                        {activeProject.rabItems.length > 5 && (
-                                            <button
-                                                onClick={() => setShowAllGantt(!showAllGantt)}
-                                                className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 py-2 border-t border-slate-100 transition-colors"
-                                            >
-                                                {showAllGantt ? 'Tutup Tampilan Ringkas' : `Lihat Semua (${activeProject.rabItems.length} items)`}
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                                );
+                            })()}
                         </div>
                     )}
 
