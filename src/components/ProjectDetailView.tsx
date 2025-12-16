@@ -919,23 +919,23 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                     {logisticsTab === 'recap' && (
                         <div className="bg-white rounded-3xl shadow-sm border p-6">
-                            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                                 <div>
                                     <h3 className="font-bold text-lg text-slate-700">Rekapitulasi Sumber Daya</h3>
                                     <p className="text-sm text-slate-500">Estimasi total kebutuhan berdasarkan koefisien AHS & Volume RAB.</p>
                                 </div>
-                                <button onClick={() => window.print()} className="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors">Print / PDF</button>
+                                <button onClick={() => window.print()} className="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors w-full sm:w-auto">Print / PDF</button>
                             </div>
 
-                            <div className="overflow-x-auto -mx-6 px-6 pb-2">
+                            <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
                                 <table className="w-full text-sm min-w-[600px]">
                                     <thead className="bg-slate-50 text-slate-600 border-b">
                                         <tr>
-                                            <th className="p-3 text-left first:rounded-tl-xl">Nama Sumber Daya</th>
-                                            <th className="p-3 text-center w-32">Jenis</th>
-                                            <th className="p-3 text-right w-32">Total Kebutuhan</th>
-                                            <th className="p-3 text-center w-24">Satuan</th>
-                                            <th className="p-3 text-left w-1/3 last:rounded-tr-xl">Digunakan Pada (Analisa)</th>
+                                            <th className="p-3 text-left first:rounded-tl-xl whitespace-nowrap">Nama Sumber Daya</th>
+                                            <th className="p-3 text-center w-32 whitespace-nowrap">Jenis</th>
+                                            <th className="p-3 text-right w-32 whitespace-nowrap">Total Kebutuhan</th>
+                                            <th className="p-3 text-center w-24 whitespace-nowrap">Satuan</th>
+                                            <th className="p-3 text-left w-1/3 last:rounded-tr-xl min-w-[200px]">Digunakan Pada (Analisa)</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
@@ -951,7 +951,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                 <td className="p-3 text-center text-slate-500">{item.unit}</td>
                                                 <td className="p-3 text-xs text-slate-500">
                                                     <div className="flex flex-wrap gap-1">
-                                                        {item.items.slice(0, 3).map((r, i) => <span key={i} className="bg-slate-100 px-2 py-0.5 rounded-md border text-[10px]">{r}</span>)}
+                                                        {item.items.slice(0, 3).map((r, i) => <span key={i} className="bg-slate-100 px-2 py-0.5 rounded-md border text-[10px] whitespace-nowrap">{r}</span>)}
                                                         {item.items.length > 3 && <span className="text-slate-400 text-[10px]">+{item.items.length - 3} lainnya</span>}
                                                     </div>
                                                 </td>
