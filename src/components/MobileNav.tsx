@@ -88,6 +88,14 @@ const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, us
                         {activeTab === 'progress' && <span className="text-[10px] font-bold">Kurva S</span>}
                     </button>
                 )}
+
+                <button
+                    onClick={() => setActiveTab('gallery')}
+                    className={`flex flex-col items-center gap-1 transition-all duration-300 ${activeTab === 'gallery' ? 'text-blue-400 scale-110' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                    <ImageIcon size={activeTab === 'gallery' ? 24 : 20} strokeWidth={activeTab === 'gallery' ? 2.5 : 2} />
+                    {activeTab === 'gallery' && <span className="text-[10px] font-bold">Galeri</span>}
+                </button>
             </div>
         </nav>
     );
