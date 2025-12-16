@@ -55,6 +55,8 @@ interface ModalManagerProps {
     transactionDesc: string; setTransactionDesc: (s: string) => void;
     transactionAmount: number; setTransactionAmount: (n: number) => void;
     transactionDate: string; setTransactionDate: (s: string) => void;
+    transactionType?: 'expense' | 'income'; setTransactionType?: (t: 'expense' | 'income') => void;
+    transactionCategory?: string; setTransactionCategory?: (s: string) => void;
 
     inputWorkerRole: string; setInputWorkerRole: (s: string) => void;
     inputWageUnit: string; setInputWageUnit: (s: string) => void;
@@ -94,6 +96,9 @@ interface ModalManagerProps {
     resources: PricingResource[]; // Standard prices (SHD)
     selectedAhsId: string | null;
     setSelectedAhsId: (id: string | null) => void;
+
+    transactionProof?: string | null;
+    setTransactionProof?: (s: string | null) => void;
 }
 
 const ModalManager: React.FC<ModalManagerProps> = (props) => {
@@ -105,7 +110,9 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         rabCategory, setRabCategory, rabItemName, setRabItemName, rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice,
         progressInput, setProgressInput, progressDate, setProgressDate, progressNote, setProgressNote,
         paymentAmount, setPaymentAmount,
-        transactionDesc, setTransactionDesc, transactionAmount, setTransactionAmount, transactionDate, setTransactionDate, // NEW props
+        transactionDesc, setTransactionDesc, transactionAmount, setTransactionAmount, transactionDate, setTransactionDate,
+        transactionType = 'expense', setTransactionType, transactionCategory, setTransactionCategory,
+        transactionProof, setTransactionProof,
         inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate, inputMandorRate, setInputMandorRate,
         stockType, setStockType, stockQty, setStockQty, stockDate, setStockDate, stockNotes, setStockNotes, selectedMaterial,
         inputMaterialName, setInputMaterialName, inputMaterialUnit, setInputMaterialUnit, inputMinStock, setInputMinStock, inputInitialStock, setInputInitialStock,
@@ -122,9 +129,42 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const [ahsSearch, setAhsSearch] = useState('');
 
     // State for Resource picker in Worker modal
+
+
+    // State for Resource picker in Worker modal
     const [showResourcePicker, setShowResourcePicker] = useState(false);
     const [resourceSearch, setResourceSearch] = useState('');
     const [isManualInput, setIsManualInput] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleSaveAttendanceWrapper = async () => {
+        try {
+            setIsUploading(true);
+            // Simulate delay only if needed to show animation, but actual handler is async usually
+            // Wait, saveAttendanceWithEvidence is void in props but likely async in implementation.
+            // We can't await void. But if we assume it's fire-and-forget, we might just show loading for a few seconds?
+            // No, passed functions are usually async.
+            await (saveAttendanceWithEvidence as any)();
+        } catch (e) {
+            console.error(e);
+            alert("Gagal menyimpan absensi");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleSaveTransactionWrapper = async () => {
+        try {
+            setIsUploading(true);
+            await (handleSaveTransaction as any)();
+        } catch (e) {
+            console.error(e);
+            alert("Gagal menyimpan transaksi");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
 
 
     const handleSelectAHS = (ahs: AHSItem) => {
@@ -590,11 +630,12 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                 ))}
                             </div>
                             <button
-                                onClick={saveAttendanceWithEvidence}
-                                disabled={!evidencePhoto || !evidenceLocation}
-                                className={`w-full p-3 rounded-xl font-bold shadow-lg mt-4 transition-colors ${(!evidencePhoto || !evidenceLocation) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                onClick={handleSaveAttendanceWrapper}
+                                disabled={(!evidencePhoto || !evidenceLocation) || isUploading}
+                                className={`w-full p-3 rounded-xl font-bold shadow-lg mt-4 transition-colors flex items-center justify-center gap-2 ${(!evidencePhoto || !evidenceLocation) || isUploading ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                             >
-                                {(!evidencePhoto || !evidenceLocation) ? 'Foto & Lokasi Wajib Diisi' : 'Simpan Absensi'}
+                                {isUploading && <Loader2 className="animate-spin" size={20} />}
+                                {isUploading ? 'Menyimpan & Mengupload...' : ((!evidencePhoto || !evidenceLocation) ? 'Foto & Lokasi Wajib Diisi' : 'Simpan Absensi')}
                             </button>
                         </div>
                     )}
@@ -767,23 +808,64 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
 
                     {modalType === 'newTransaction' && (
                         <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-2 flex items-center gap-2">
-                                <Wallet className="text-blue-600" /> Catat Pengeluaran
+                            <h3 className={`font-bold text-xl mb-2 flex items-center gap-2 ${transactionType === 'income' ? 'text-green-700' : 'text-slate-800'}`}>
+                                <Wallet className={transactionType === 'income' ? 'text-green-600' : 'text-red-600'} />
+                                {transactionType === 'income' ? 'Catat Pemasukan' : 'Catat Pengeluaran'}
                             </h3>
 
-                            {/* AI SCANNER */}
-                            <div className="bg-blue-50 p-4 rounded-xl mb-2">
-                                <ReceiptScanner onScanComplete={(data) => {
-                                    setTransactionAmount(data.total);
-                                    setTransactionDate(data.date);
-                                    setTransactionDesc(data.description || 'Pengeluaran via Scan Struk');
-                                }} />
-                            </div>
+                            {/* AI SCANNER - ONLY FOR EXPENSE OR IF NEEDED */}
+                            {transactionType === 'expense' && (
+                                <div className="bg-slate-50 p-4 rounded-xl mb-2 border border-slate-100">
+                                    <ReceiptScanner onScanComplete={(data) => {
+                                        setTransactionAmount(data.total);
+                                        setTransactionDate(data.date);
+                                        setTransactionDesc(data.description || 'Pengeluaran via Scan Struk');
+                                        if (data.imageFile && setTransactionProof) {
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => setTransactionProof(reader.result as string);
+                                            reader.readAsDataURL(data.imageFile);
+                                        }
+                                    }} />
+                                    <p className="text-[10px] text-center text-slate-400 mt-2">Scan struk belanja material / operasional</p>
+                                </div>
+                            )}
+
+                            {transactionType === 'income' && (
+                                <div className="bg-green-50 p-4 rounded-xl mb-4 text-green-800 text-sm">
+                                    Catat pembayaran dari klien (DP, Termin, atau Pelunasan).
+                                </div>
+                            )}
 
                             <hr className="border-slate-100 my-2" />
 
-                            {/* MANUAL FORM (Auto-filled by AI) */}
                             <div className="space-y-3">
+                                {/* CATEGORY SELECTOR */}
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Kategori</label>
+                                    <select
+                                        className="w-full p-3 border rounded-xl bg-white"
+                                        value={transactionCategory}
+                                        onChange={e => setTransactionCategory && setTransactionCategory(e.target.value)}
+                                    >
+                                        {transactionType === 'expense' ? (
+                                            <>
+                                                <option value="Material">Material</option>
+                                                <option value="Upah Tukang">Upah Tukang</option>
+                                                <option value="Operasional">Operasional</option>
+                                                <option value="Sewa Alat">Sewa Alat</option>
+                                                <option value="Lainnya">Lainnya</option>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <option value="Termin">Termin</option>
+                                                <option value="DP">Uang Muka (DP)</option>
+                                                <option value="Pelunasan">Pelunasan</option>
+                                                <option value="Tambahan">Tambahan</option>
+                                            </>
+                                        )}
+                                    </select>
+                                </div>
+
                                 <div>
                                     <label className="text-xs font-bold text-slate-500 ml-1">Total Nominal (Rp)</label>
                                     <NumberInput
@@ -806,15 +888,20 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                     <label className="text-xs font-bold text-slate-500 ml-1">Keterangan / Deskripsi</label>
                                     <textarea
                                         className="w-full p-3 border rounded-xl h-24"
-                                        placeholder="Contoh: Beli paku 5kg, Makan siang tukang..."
+                                        placeholder={transactionType === 'income' ? "Contoh: Pembayaran Termin 1 (30%)" : "Contoh: Beli Semen 50 Sak"}
                                         value={transactionDesc}
                                         onChange={e => setTransactionDesc(e.target.value)}
                                     />
                                 </div>
                             </div>
 
-                            <button onClick={handleSaveTransaction} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 mt-2">
-                                Simpan Transaksi
+                            <button
+                                onClick={handleSaveTransactionWrapper}
+                                disabled={isUploading}
+                                className={`w-full text-white p-3 rounded-xl font-bold shadow-lg mt-2 flex items-center justify-center gap-2 ${transactionType === 'income' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                            >
+                                {isUploading && <Loader2 className="animate-spin" size={20} />}
+                                {isUploading ? 'Memproses...' : `Simpan ${transactionType === 'income' ? 'Pemasukan' : 'Pengeluaran'}`}
                             </button>
                         </div>
                     )}

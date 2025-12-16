@@ -222,8 +222,18 @@ export const generateInvoice = (
     doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
     // Save
-    const filename = `Invoice_${invoiceNumber.replace(/\//g, '-')}_${project.name.replace(/\s+/g, '_')}.pdf`;
-    doc.save(filename);
+    // Save
+    const safeProjectName = project.name.replace(/[^a-zA-Z0-9\s-_]/g, '').replace(/\s+/g, '_');
+    const safeInvoiceNum = invoiceNumber.replace(/[^a-zA-Z0-9\s-_]/g, '-');
+    const filename = `Invoice_${safeInvoiceNum}_${safeProjectName}.pdf`;
+
+    try {
+        doc.save(filename);
+    } catch (err) {
+        console.error("PDF Save failed:", err);
+        // Fallback or rethrow
+        throw new Error("Gagal menyimpan file PDF. Coba gunakan browser lain atau nama proyek yang lebih sederhana.");
+    }
 
     return invoiceNumber;
 };

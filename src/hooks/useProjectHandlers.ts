@@ -65,9 +65,13 @@ interface UseProjectHandlersProps {
     transactionDesc: string;
     transactionAmount: number;
     transactionDate: string;
+    transactionType?: 'expense' | 'income';
+    transactionCategory?: string;
+    transactionProof?: string | null;
     setTransactionDesc: (v: string) => void;
     setTransactionAmount: (v: number) => void;
     setTransactionDate: (v: string) => void;
+    setTransactionProof?: (v: string | null) => void;
 
     setInputStartDate: (v: string) => void;
     setInputEndDate: (v: string) => void;
@@ -256,7 +260,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
     };
 
     // ========== Transaction Handlers (NEW) ==========
-    const handleSaveTransaction = () => {
+    const handleSaveTransaction = async () => {
         if (!activeProject) return;
         if (paymentAmount <= 0 && (!props.transactionAmount || props.transactionAmount <= 0)) {
             // Fallback check if paymentAmount is reused, but we should use transactionAmount
@@ -270,13 +274,30 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         const finalDate = props.transactionDate || new Date().toISOString().split('T')[0];
         const finalDesc = props.transactionDesc || 'Pengeluaran Umum';
 
+        const finalCategory = props.transactionCategory || (props.transactionType === 'income' ? 'Termin' : 'Pengeluaran Umum');
+
+        // Handle Proof Upload
+        let proofUrl = props.transactionProof || undefined;
+        if (props.transactionProof && props.transactionProof.startsWith('data:image/')) {
+            try {
+                const { uploadGalleryPhoto } = await import('../utils/storageHelper');
+                // Use gallery bucket for transaction proofs too
+                proofUrl = await uploadGalleryPhoto(props.transactionProof, activeProject.id);
+            } catch (e) {
+                console.error("Proof upload failed", e);
+                // Fallback to base64 or keep as is, but base64 might be too large for Transaction list
+                // Ideally we should alert, but this is a handler.
+            }
+        }
+
         const newTx: Transaction = {
             id: Date.now(),
             date: finalDate,
-            category: 'Pengeluaran Umum',
+            category: finalCategory,
             description: finalDesc,
             amount: finalAmount,
-            type: 'expense',
+            type: props.transactionType || 'expense',
+            proofUrl: proofUrl,
         };
 
         updateProject({

@@ -8,12 +8,13 @@ import {
     formatRupiah, getStats, getMonthlyGroupedTransactions,
     calculateWorkerFinancials, calculateProjectHealth
 } from '../utils/helpers';
+import { transformGDriveUrl } from '../utils/storageHelper';
 import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
 import PayrollSummary from './PayrollSummary';
 import InvoiceTerminSection from './InvoiceTerminSection';
 import { generateDailyReport } from '../utils/pdfGenerator';
-import { transformGDriveUrl } from '../utils/storageHelper';
+
 import type { UserRole } from '../types';
 
 interface ProjectDetailViewProps {
@@ -54,6 +55,8 @@ interface ProjectDetailViewProps {
     prepareEditSchedule: (item: RABItem) => void;
     isClientView?: boolean;
     ahsItems: AHSItem[];
+    setTransactionType?: (type: 'expense' | 'income') => void;
+    setTransactionCategory?: (cat: string) => void;
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
@@ -65,7 +68,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
     setActiveTab, prepareEditProject, prepareEditRABItem, prepareEditSchedule, isClientView,
-    ahsItems
+    ahsItems, setTransactionType, setTransactionCategory
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
@@ -824,17 +827,37 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     <div className="flex gap-4">
                                         <button
                                             onClick={() => {
+                                                if (setTransactionType) setTransactionType('expense');
+                                                if (setTransactionCategory) setTransactionCategory('Material');
                                                 setModalType('newTransaction');
                                                 setShowModal(true);
                                             }}
-                                            className="flex-1 bg-gradient-to-br from-blue-600 to-blue-700 text-white p-4 rounded-2xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex flex-col items-center justify-center gap-2 group"
+                                            className="flex-1 bg-gradient-to-br from-red-600 to-red-700 text-white p-4 rounded-2xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex flex-col items-center justify-center gap-2 group"
                                         >
                                             <div className="p-3 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors">
                                                 <Camera size={24} />
                                             </div>
                                             <div>
                                                 <span className="block text-sm">Catat Pengeluaran</span>
-                                                <span className="text-[10px] font-normal opacity-80">(Scan Struk / Manual)</span>
+                                                <span className="text-[10px] font-normal opacity-80">(Material/Upah)</span>
+                                            </div>
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                if (setTransactionType) setTransactionType('income');
+                                                if (setTransactionCategory) setTransactionCategory('Termin');
+                                                setModalType('newTransaction');
+                                                setShowModal(true);
+                                            }}
+                                            className="flex-1 bg-gradient-to-br from-green-600 to-green-700 text-white p-4 rounded-2xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex flex-col items-center justify-center gap-2 group"
+                                        >
+                                            <div className="p-3 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors">
+                                                <TrendingUp size={24} />
+                                            </div>
+                                            <div>
+                                                <span className="block text-sm">Catat Pemasukan</span>
+                                                <span className="text-[10px] font-normal opacity-80">(DP/Termin)</span>
                                             </div>
                                         </button>
                                     </div>
@@ -1143,10 +1166,20 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                                     {getFilteredEvidence().map((ev: any) => (
                                         <div key={ev.id} className="relative rounded-2xl overflow-hidden border aspect-square group">
-                                            <img src={ev.photoUrl} alt="Bukti" className="w-full h-full object-cover" />
+                                            <img src={transformGDriveUrl(ev.photoUrl)} alt="Bukti" className="w-full h-full object-cover" />
                                             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-6 text-white translate-y-2 group-hover:translate-y-0 transition-transform">
                                                 <div className="text-[10px] font-medium opacity-80">{new Date(ev.date).toLocaleDateString('id-ID')}</div>
-                                                {ev.location && <div className="text-[10px] font-bold truncate flex items-center gap-1"><ExternalLink size={8} /> Lokasi</div>}
+                                                {ev.location && (
+                                                    <a
+                                                        href={`https://maps.google.com/?q=${ev.location}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[10px] font-bold truncate flex items-center gap-1 hover:text-blue-300 transition-colors cursor-pointer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <ExternalLink size={10} /> Lokasi
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
                                     ))}

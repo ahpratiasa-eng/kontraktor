@@ -79,7 +79,9 @@ const App = () => {
     inputEmail, setInputEmail, inputRole, setInputRole, aiPrompt, setAiPrompt, isGeneratingAI,
     attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto,
     evidenceLocation, isGettingLoc,
-    transactionDesc, setTransactionDesc, transactionAmount, setTransactionAmount, transactionDate, setTransactionDate
+    transactionDesc, setTransactionDesc, transactionAmount, setTransactionAmount, transactionDate, setTransactionDate,
+    transactionType, setTransactionType, transactionCategory, setTransactionCategory,
+    transactionProof, setTransactionProof,
   } = formStates;
 
   // AHS Library - now managed by useAHSLibrary hook (~60 lines moved)
@@ -416,7 +418,11 @@ const App = () => {
         transactionDesc={transactionDesc} setTransactionDesc={setTransactionDesc}
         transactionAmount={transactionAmount} setTransactionAmount={setTransactionAmount}
         transactionDate={transactionDate} setTransactionDate={setTransactionDate}
+        transactionType={transactionType} setTransactionType={setTransactionType}
+        transactionCategory={transactionCategory} setTransactionCategory={setTransactionCategory}
+        transactionProof={transactionProof} setTransactionProof={setTransactionProof}
       />
+
 
       {/* LANDING PAGE EDITOR MODAL */}
       {showLandingEditor && landingConfig && (

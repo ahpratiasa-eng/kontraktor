@@ -2,10 +2,11 @@ import React, { useState, useRef } from 'react';
 import Tesseract from 'tesseract.js';
 import { Camera, Loader2, X, RefreshCw } from 'lucide-react';
 
-interface ScannedData {
+export interface ScannedData {
     total: number;
     date: string;
     description: string;
+    imageFile: File;
 }
 
 interface ReceiptScannerProps {
@@ -40,7 +41,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
             console.log("OCR Result:", text);
 
             const parsedData = parseReceiptText(text);
-            onScanComplete(parsedData);
+            onScanComplete({ ...parsedData, imageFile });
         } catch (error) {
             console.error("OCR Error:", error);
             alert("Gagal membaca gambar. Pastikan gambar jelas.");
@@ -50,7 +51,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
     };
 
     // Logic Pintar Parsing Teks Struk
-    const parseReceiptText = (text: string): ScannedData => {
+    const parseReceiptText = (text: string): Omit<ScannedData, 'imageFile'> => {
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
         let foundTotal = 0;

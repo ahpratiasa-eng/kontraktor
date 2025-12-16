@@ -30,6 +30,7 @@ export type Transaction = {
   amount: number;
   type: 'expense' | 'income';
   workerId?: number;
+  proofUrl?: string; // URL of receipt photo or Google Drive link
 };
 
 export type Material = { id: number; name: string; unit: string; stock: number; minStock: number; };

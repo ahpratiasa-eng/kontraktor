@@ -72,12 +72,18 @@ export const useFormStates = () => {
     const [transactionDesc, setTransactionDesc] = useState('');
     const [transactionAmount, setTransactionAmount] = useState(0);
     const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
+    const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
+    const [transactionCategory, setTransactionCategory] = useState('');
+    const [transactionProof, setTransactionProof] = useState<string | null>(null);
 
     // Reset functions
     const resetTransactionForm = () => {
         setTransactionDesc('');
         setTransactionAmount(0);
         setTransactionDate(new Date().toISOString().split('T')[0]);
+        setTransactionCategory('');
+        setTransactionType('expense');
+        setTransactionProof(null);
     };
 
     const resetProjectForm = () => {
@@ -192,6 +198,9 @@ export const useFormStates = () => {
         transactionDesc, setTransactionDesc,
         transactionAmount, setTransactionAmount,
         transactionDate, setTransactionDate,
+        transactionType, setTransactionType,
+        transactionCategory, setTransactionCategory,
+        transactionProof, setTransactionProof,
         resetTransactionForm,
     };
 };

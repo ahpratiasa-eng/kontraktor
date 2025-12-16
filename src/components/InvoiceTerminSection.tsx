@@ -68,15 +68,20 @@ const InvoiceTerminSection: React.FC<InvoiceTerminSectionProps> = ({ project, up
 
     // Generate invoice for a term
     const handleGenerateInvoice = (term: PaymentTerm) => {
-        const invoiceNumber = generateInvoice(project, term);
+        try {
+            const invoiceNumber = generateInvoice(project, term);
 
-        // Update term status
-        const updatedTerms = (project.paymentTerms || []).map(t =>
-            t.id === term.id
-                ? { ...t, status: 'invoiced' as const, invoiceNumber, invoiceDate: new Date().toISOString().split('T')[0] }
-                : t
-        );
-        updateProject({ paymentTerms: updatedTerms });
+            // Update term status
+            const updatedTerms = (project.paymentTerms || []).map(t =>
+                t.id === term.id
+                    ? { ...t, status: 'invoiced' as const, invoiceNumber, invoiceDate: new Date().toISOString().split('T')[0] }
+                    : t
+            );
+            updateProject({ paymentTerms: updatedTerms });
+        } catch (error: any) {
+            console.error("Invoice Error:", error);
+            alert("Gagal memproses invoice: " + (error.message || "Terjadi kesalahan sistem"));
+        }
     };
 
     // Mark as paid
