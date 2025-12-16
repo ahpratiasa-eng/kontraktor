@@ -30,24 +30,22 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClien
 
     return (
         <div className="min-h-screen bg-white">
-            <header className="bg-slate-800 text-white px-4 py-4 flex items-center justify-between sticky top-0 shadow-md z-20 print:hidden">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1 rounded">
-                        <ArrowLeft />
+            <header className="bg-slate-800 text-white px-4 py-3 flex items-center justify-between sticky top-0 shadow-md z-20 print:hidden">
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1.5 rounded">
+                        <ArrowLeft size={20} />
                     </button>
-                    <div>
-                        <h2 className="font-bold uppercase tracking-wider text-sm">Laporan Detail</h2>
-                    </div>
+                    <h2 className="font-bold uppercase tracking-wider text-xs">Laporan Detail</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     {!isClientView && canViewInternalRAB && (
-                        <div className="bg-slate-700 p-1 rounded flex text-xs">
-                            <button onClick={() => setRabViewMode('client')} className={`px-3 py-1 rounded transition ${rabViewMode === 'client' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300 hover:text-white'}`}>Client</button>
-                            <button onClick={() => setRabViewMode('internal')} className={`px-3 py-1 rounded transition ${rabViewMode === 'internal' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300 hover:text-white'}`}>Internal</button>
+                        <div className="bg-slate-700 p-0.5 rounded flex text-[10px]">
+                            <button onClick={() => setRabViewMode('client')} className={`px-2 py-1 rounded transition ${rabViewMode === 'client' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300'}`}>Client</button>
+                            <button onClick={() => setRabViewMode('internal')} className={`px-2 py-1 rounded transition ${rabViewMode === 'internal' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300'}`}>Internal</button>
                         </div>
                     )}
-                    <button onClick={() => window.print()} className="bg-white text-slate-800 p-2 rounded-full hover:bg-slate-100 shadow-sm">
-                        <Printer size={20} />
+                    <button onClick={() => window.print()} className="bg-white text-slate-800 p-1.5 rounded-full hover:bg-slate-100 shadow-sm">
+                        <Printer size={16} />
                     </button>
                 </div>
             </header>
@@ -70,31 +68,37 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClien
                 </div>
             </div>
 
-            <main className="p-8 max-w-4xl mx-auto print:p-0 print:max-w-none">
-                <div className="border-b-2 border-slate-800 pb-6 mb-8 print:border-b-2 print:mb-4">
-                    <h1 className="text-4xl font-bold uppercase mb-2 print:text-2xl">{activeProject.name}</h1>
-                    <div className="flex justify-between text-sm text-slate-600 font-medium">
+            <main className="p-4 md:p-8 max-w-4xl mx-auto print:p-0 print:max-w-none pb-24">
+                {/* Project Header */}
+                <div className="border-b-2 border-slate-800 pb-4 mb-6 print:border-b-2 print:mb-4">
+                    <h1 className="text-xl md:text-3xl font-bold uppercase mb-2 print:text-2xl leading-tight">{activeProject.name}</h1>
+                    <div className="flex flex-col md:flex-row md:justify-between text-xs md:text-sm text-slate-600 font-medium gap-1">
                         <span>Klien: {activeProject.client}</span>
-                        <span className="print:hidden">{today}</span>
+                        <span className="print:hidden text-slate-400">{today}</span>
                         <span className="hidden print:inline">Lokasi: {activeProject.location}</span>
                     </div>
                 </div>
 
-                <div className="mb-8 print:break-inside-avoid">
-                    <h3 className="font-bold text-lg mb-4 border-b pb-2">Status Proyek</h3>
-                    <SCurveChart stats={stats} project={activeProject} />
+                {/* S-Curve Chart */}
+                <div className="mb-6 print:break-inside-avoid">
+                    <h3 className="font-bold text-base md:text-lg mb-3 border-b pb-2">Status Proyek</h3>
+                    <div className="overflow-x-auto -mx-4 px-4">
+                        <div className="min-w-[300px]">
+                            <SCurveChart stats={stats} project={activeProject} />
+                        </div>
+                    </div>
                 </div>
 
                 {rabViewMode === 'client' ? (
                     <>
-                        <div className="grid grid-cols-2 gap-6 mb-8 print:break-inside-avoid">
-                            <div className="bg-slate-50 p-4 border rounded-xl print:border-slate-300">
-                                <p className="text-xs uppercase text-slate-500 font-bold">Nilai Kontrak</p>
-                                <p className="text-2xl font-bold text-slate-800">{formatRupiah(stats.totalRAB)}</p>
+                        <div className="grid grid-cols-2 gap-3 md:gap-6 mb-6 print:break-inside-avoid">
+                            <div className="bg-slate-50 p-3 md:p-4 border rounded-xl print:border-slate-300">
+                                <p className="text-[10px] md:text-xs uppercase text-slate-500 font-bold">Nilai Kontrak</p>
+                                <p className="text-lg md:text-2xl font-bold text-slate-800">{formatRupiah(stats.totalRAB)}</p>
                             </div>
-                            <div className="bg-blue-50 p-4 border border-blue-100 rounded-xl print:border-slate-300 print:bg-slate-50">
-                                <p className="text-xs uppercase text-slate-500 font-bold">Prestasi Fisik</p>
-                                <p className="text-2xl font-bold text-blue-700 print:text-black">{formatRupiah(stats.prog / 100 * stats.totalRAB)}</p>
+                            <div className="bg-blue-50 p-3 md:p-4 border border-blue-100 rounded-xl print:border-slate-300 print:bg-slate-50">
+                                <p className="text-[10px] md:text-xs uppercase text-slate-500 font-bold">Prestasi Fisik</p>
+                                <p className="text-lg md:text-2xl font-bold text-blue-700 print:text-black">{formatRupiah(stats.prog / 100 * stats.totalRAB)}</p>
                             </div>
                         </div>
 
@@ -112,83 +116,87 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClien
                             </div>
                         </div>
 
-                        <h3 className="font-bold text-lg mb-4 border-b pb-2">Rincian Prestasi</h3>
+                        <h3 className="font-bold text-base md:text-lg mb-3 border-b pb-2">Rincian Prestasi</h3>
                         {Object.keys(rabGroups).map(cat => (
-                            <div key={cat} className="mb-6 print:break-inside-avoid">
-                                <div className="bg-slate-100 p-2 font-bold text-sm border">{cat}</div>
-                                <table className="w-full text-xs border border-t-0">
-                                    <thead>
-                                        <tr className="bg-slate-50">
-                                            <th className="border p-2 w-1/3 text-left">Item</th>
-                                            <th className="border p-2 text-right">Nilai</th>
-                                            <th className="border p-2 text-center">Bobot</th>
-                                            <th className="border p-2 text-center">Prog %</th>
-                                            <th className="border p-2 text-right">Prestasi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {rabGroups[cat].map(item => {
-                                            const total = item.volume * item.unitPrice;
-                                            const val = total * (item.progress / 100);
-                                            return (
-                                                <tr key={item.id}>
-                                                    <td className="border p-2">{item.name}</td>
-                                                    <td className="border p-2 text-right">{formatRupiah(total)}</td>
-                                                    <td className="border p-2 text-center">{((total / stats.totalRAB) * 100).toFixed(2)}%</td>
-                                                    <td className="border p-2 text-center font-bold">{item.progress}%</td>
-                                                    <td className="border p-2 text-right font-bold">{formatRupiah(val)}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                            <div key={cat} className="mb-4 print:break-inside-avoid">
+                                <div className="bg-slate-100 p-2 font-bold text-xs md:text-sm border rounded-t-lg">{cat}</div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-[10px] md:text-xs border border-t-0 min-w-[400px]">
+                                        <thead>
+                                            <tr className="bg-slate-50">
+                                                <th className="border p-1.5 md:p-2 text-left">Item</th>
+                                                <th className="border p-1.5 md:p-2 text-right">Nilai</th>
+                                                <th className="border p-1.5 md:p-2 text-center">Bobot</th>
+                                                <th className="border p-1.5 md:p-2 text-center">Prog</th>
+                                                <th className="border p-1.5 md:p-2 text-right">Prestasi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {rabGroups[cat].map(item => {
+                                                const total = item.volume * item.unitPrice;
+                                                const val = total * (item.progress / 100);
+                                                return (
+                                                    <tr key={item.id}>
+                                                        <td className="border p-1.5 md:p-2">{item.name}</td>
+                                                        <td className="border p-1.5 md:p-2 text-right whitespace-nowrap">{formatRupiah(total)}</td>
+                                                        <td className="border p-1.5 md:p-2 text-center">{((total / stats.totalRAB) * 100).toFixed(1)}%</td>
+                                                        <td className="border p-1.5 md:p-2 text-center font-bold">{item.progress}%</td>
+                                                        <td className="border p-1.5 md:p-2 text-right font-bold whitespace-nowrap">{formatRupiah(val)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         ))}
                     </>
                 ) : (
                     <>
-                        <div className="bg-orange-50 p-4 border border-orange-200 rounded-xl mb-6 print:break-inside-avoid print:bg-white print:border-black">
-                            <h3 className="font-bold text-lg text-orange-800 mb-2 flex items-center gap-2 print:text-black">⚠️ Laporan Internal (Cashflow & Detail)</h3>
-                            <div className="grid grid-cols-3 gap-6 text-sm">
-                                <div><p className="text-slate-500">Total RAB</p><p className="font-bold text-slate-800">{formatRupiah(stats.totalRAB)}</p></div>
-                                <div><p className="text-slate-500">Realisasi (Input)</p><p className="font-bold text-slate-800">{formatRupiah(activeProject.transactions?.reduce((a, b) => b.type === 'expense' ? a + b.amount : a, 0) || 0)}</p></div>
-                                <div><p className="text-slate-500">Estimasi Laba</p><p className="font-bold text-green-600 print:text-black">{formatRupiah(stats.totalRAB - (activeProject.transactions?.reduce((a, b) => b.type === 'expense' ? a + b.amount : a, 0) || 0))}</p></div>
+                        <div className="bg-orange-50 p-3 md:p-4 border border-orange-200 rounded-xl mb-4 print:break-inside-avoid print:bg-white print:border-black">
+                            <h3 className="font-bold text-sm md:text-base text-orange-800 mb-2 flex items-center gap-2 print:text-black">⚠️ Laporan Internal</h3>
+                            <div className="grid grid-cols-3 gap-2 md:gap-6 text-[10px] md:text-sm">
+                                <div><p className="text-slate-500">Total RAB</p><p className="font-bold text-slate-800 text-xs md:text-base">{formatRupiah(stats.totalRAB)}</p></div>
+                                <div><p className="text-slate-500">Realisasi</p><p className="font-bold text-slate-800 text-xs md:text-base">{formatRupiah(activeProject.transactions?.reduce((a, b) => b.type === 'expense' ? a + b.amount : a, 0) || 0)}</p></div>
+                                <div><p className="text-slate-500">Est. Laba</p><p className="font-bold text-green-600 print:text-black text-xs md:text-base">{formatRupiah(stats.totalRAB - (activeProject.transactions?.reduce((a, b) => b.type === 'expense' ? a + b.amount : a, 0) || 0))}</p></div>
                             </div>
                         </div>
 
                         {Object.keys(rabGroups).map(cat => (
-                            <div key={cat} className="mb-6 print:break-inside-avoid">
-                                <div className="bg-slate-100 p-2 font-bold text-sm border">{cat}</div>
-                                <table className="w-full text-xs border border-t-0">
-                                    <thead>
-                                        <tr className="bg-slate-50">
-                                            <th className="border p-2 w-1/4 text-left">Item</th>
-                                            <th className="border p-2 text-center">Vol</th>
-                                            <th className="border p-2 text-right">Hrg Satuan</th>
-                                            <th className="border p-2 text-right">Total RAB</th>
-                                            <th className="border p-2 text-center">Bobot</th>
-                                            <th className="border p-2 text-center">Prog %</th>
-                                            <th className="border p-2 text-right">Nilai Prog</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {rabGroups[cat].map(item => {
-                                            const total = item.volume * item.unitPrice;
-                                            const val = total * (item.progress / 100);
-                                            return (
-                                                <tr key={item.id}>
-                                                    <td className="border p-2">{item.name}</td>
-                                                    <td className="border p-2 text-center">{item.volume} {item.unit}</td>
-                                                    <td className="border p-2 text-right text-slate-500">{formatRupiah(item.unitPrice)}</td>
-                                                    <td className="border p-2 text-right font-bold">{formatRupiah(total)}</td>
-                                                    <td className="border p-2 text-center">{((total / stats.totalRAB) * 100).toFixed(2)}%</td>
-                                                    <td className="border p-2 text-center">{item.progress}%</td>
-                                                    <td className="border p-2 text-right font-bold text-blue-700 print:text-black">{formatRupiah(val)}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                            <div key={cat} className="mb-4 print:break-inside-avoid">
+                                <div className="bg-slate-100 p-2 font-bold text-xs md:text-sm border rounded-t-lg">{cat}</div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-[9px] md:text-xs border border-t-0 min-w-[500px]">
+                                        <thead>
+                                            <tr className="bg-slate-50">
+                                                <th className="border p-1.5 text-left">Item</th>
+                                                <th className="border p-1.5 text-center">Vol</th>
+                                                <th className="border p-1.5 text-right">Satuan</th>
+                                                <th className="border p-1.5 text-right">Total</th>
+                                                <th className="border p-1.5 text-center">Bobot</th>
+                                                <th className="border p-1.5 text-center">Prog</th>
+                                                <th className="border p-1.5 text-right">Nilai</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {rabGroups[cat].map(item => {
+                                                const total = item.volume * item.unitPrice;
+                                                const val = total * (item.progress / 100);
+                                                return (
+                                                    <tr key={item.id}>
+                                                        <td className="border p-1.5">{item.name}</td>
+                                                        <td className="border p-1.5 text-center whitespace-nowrap">{item.volume} {item.unit}</td>
+                                                        <td className="border p-1.5 text-right text-slate-500 whitespace-nowrap">{formatRupiah(item.unitPrice)}</td>
+                                                        <td className="border p-1.5 text-right font-bold whitespace-nowrap">{formatRupiah(total)}</td>
+                                                        <td className="border p-1.5 text-center">{((total / stats.totalRAB) * 100).toFixed(1)}%</td>
+                                                        <td className="border p-1.5 text-center">{item.progress}%</td>
+                                                        <td className="border p-1.5 text-right font-bold text-blue-700 print:text-black whitespace-nowrap">{formatRupiah(val)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         ))}
                     </>
