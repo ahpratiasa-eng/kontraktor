@@ -319,14 +319,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         )}
                         {isClientView && (
                             <button
-                                onClick={() => {
-                                    const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
-                                    navigator.clipboard.writeText(url);
-                                    alert(`Link Portal Klien disalin!\n${url}`);
-                                }}
-                                className="col-span-2 bg-white text-slate-700 border border-slate-200 p-3 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                onClick={() => setView('report-view')}
+                                className="col-span-2 bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
                             >
-                                <ExternalLink size={18} /> Share Portal Klien
+                                <FileText size={18} /> Lihat Laporan Detail
                             </button>
                         )}
                     </div>
