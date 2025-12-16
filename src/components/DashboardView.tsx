@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    Users, AlertTriangle, Trash2, Loader2, RefreshCw,
+    Users, Trash2, Loader2, RefreshCw,
     Clock, TrendingDown, CheckCircle, TrendingUp
 } from 'lucide-react';
 import type { Project } from '../types';
@@ -78,8 +78,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             <div className="p-1.5 bg-slate-700/50 rounded-lg"><Clock size={16} /></div>
                             <span className="text-xs font-bold uppercase tracking-wider">Potensi Pendapatan (RAB)</span>
                         </div>
-                        <div className="text-2xl md:text-3xl font-black mb-1">
-                            Rp {activeProjects.reduce((sum, p) => sum + (p.rabItems || []).reduce((s, r) => s + (r.unitPrice * r.volume), 0), 0).toLocaleString('id-ID')}
+                        <div className="text-xl md:text-2xl font-black mb-1 truncate">
+                            Rp {activeProjects.reduce((sum, p) => sum + (p.rabItems || []).reduce((s, r) => s + (r.unitPrice * r.volume), 0), 0).toLocaleString('id-ID', { maximumFractionDigits: 0 })}
                         </div>
                         <div className="text-xs text-slate-400">Total nilai kontrak berjalan</div>
                     </div>
@@ -95,8 +95,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             <div className="p-1.5 bg-red-50 rounded-lg text-red-500"><TrendingDown size={16} /></div>
                             <span className="text-xs font-bold uppercase tracking-wider">Total Pengeluaran</span>
                         </div>
-                        <div className="text-2xl md:text-3xl font-black text-slate-800 mb-1">
-                            Rp {activeProjects.reduce((sum, p) => sum + (p.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), 0).toLocaleString('id-ID')}
+                        <div className="text-xl md:text-2xl font-black text-slate-800 mb-1 truncate">
+                            Rp {activeProjects.reduce((sum, p) => sum + (p.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), 0).toLocaleString('id-ID', { maximumFractionDigits: 0 })}
                         </div>
                         <div className="text-xs text-slate-400">Biaya material & operasional & upah</div>
                     </div>
@@ -112,11 +112,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             <div className="p-1.5 bg-green-50 rounded-lg text-green-500"><CheckCircle size={16} /></div>
                             <span className="text-xs font-bold uppercase tracking-wider">Estimasi Profit</span>
                         </div>
-                        <div className="text-2xl md:text-3xl font-black text-green-600 mb-1">
+                        <div className="text-xl md:text-2xl font-black text-green-600 mb-1 truncate">
                             Rp {(
                                 activeProjects.reduce((sum, p) => sum + (p.rabItems || []).reduce((s, r) => s + (r.unitPrice * r.volume), 0), 0) -
                                 activeProjects.reduce((sum, p) => sum + (p.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), 0)
-                            ).toLocaleString('id-ID')}
+                            ).toLocaleString('id-ID', { maximumFractionDigits: 0 })}
                         </div>
                         <div className="text-xs text-slate-400">Margin keuntungan kasar</div>
                     </div>
