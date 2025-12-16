@@ -238,7 +238,7 @@ const App = () => {
             />
           )}
 
-          {view === 'project-detail' && activeProject && (
+          {view === 'project-detail' && activeProject && !isClientView && (
             <ProjectDetailView
               canAccessFinance={canAccessFinance()}
               canAccessWorkers={canAccessWorkers()}
@@ -287,6 +287,46 @@ const App = () => {
             </div>
           )}
         </div>
+
+        {/* CLIENT VIEW ProjectDetailView - Outside padded container for full width */}
+        {view === 'project-detail' && activeProject && isClientView && (
+          <div className="fixed inset-0 bg-slate-50 z-40 overflow-y-auto">
+            <ProjectDetailView
+              canAccessFinance={canAccessFinance()}
+              canAccessWorkers={canAccessWorkers()}
+              canSeeMoney={canSeeMoney()}
+              canEditProject={canEditProject()}
+              canViewKurvaS={canViewKurvaS()}
+              canViewInternalRAB={canViewInternalRAB()}
+              canAddWorkers={canAddWorkers()}
+              prepareEditProject={prepareEditProject}
+              prepareEditRABItem={prepareEditRABItem}
+              activeProject={activeProject}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              isClientView={isClientView}
+              userRole={userRole}
+              setView={setView}
+              updateProject={updateProject}
+              openModal={openModal}
+              setModalType={setModalType}
+              setShowModal={setShowModal}
+              setSelectedRabItem={setSelectedRabItem}
+              setProgressInput={setProgressInput}
+              setProgressDate={setProgressDate}
+              setSelectedWorkerId={setSelectedWorkerId}
+              setPaymentAmount={setPaymentAmount}
+              setSelectedMaterial={setSelectedMaterial}
+              deleteRABItem={deleteRABItem}
+              handleEditWorker={handleEditWorker}
+              handleDeleteWorker={handleDeleteWorker}
+              handleDeleteMaterial={handleDeleteMaterial}
+              handlePrepareEditMaterial={handlePrepareEditMaterial}
+              handleReportToOwner={handleReportToOwner}
+              ahsItems={ahsItems}
+            />
+          </div>
+        )}
 
         {/* REPORT VIEW - Outside padded container for full width */}
         {view === 'report-view' && activeProject && (canSeeMoney() || isClientView) && (
