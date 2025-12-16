@@ -418,17 +418,17 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             )}
 
             {activeTab === 'progress' && (
-                <div className="space-y-6">
+                <div className="space-y-6 pb-24">
                     {/* Gantt Chart Section - Hidden on mobile for client view */}
-                    <div className={`bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 overflow-hidden ${isClientView ? 'hidden md:block' : ''}`}>
+                    <div className={`bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 overflow-hidden ${isClientView ? 'hidden md:block' : ''}`}>
                         <h3 className="font-bold text-base md:text-lg text-slate-700 mb-4 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan</h3>
-                        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-                            <div className="min-w-[600px] md:min-w-[800px]">
-                                <div className="flex border-b border-slate-100 pb-2 mb-2">
-                                    <div className="w-1/3 md:w-1/4 font-bold text-xs text-slate-500">Item Pekerjaan</div>
-                                    <div className="w-2/3 md:w-3/4 flex relative h-6">
-                                        {[...Array(12)].map((_, i) => (
-                                            <div key={i} className="flex-1 border-l border-slate-100 text-[10px] text-slate-400 pl-1">
+                        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide pb-2">
+                            <div className="min-w-[500px]">
+                                <div className="flex border-b border-slate-100 pb-2 mb-2 sticky top-0 bg-white z-10">
+                                    <div className="w-2/5 md:w-1/4 font-bold text-xs text-slate-500 shrink-0">Item Pekerjaan</div>
+                                    <div className="w-3/5 md:w-3/4 flex relative h-6">
+                                        {[...Array(8)].map((_, i) => (
+                                            <div key={i} className="flex-1 border-l border-slate-100 text-[9px] text-slate-400 pl-0.5 whitespace-nowrap">
                                                 Mgg {i + 1}
                                             </div>
                                         ))}
@@ -464,13 +464,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                                         return (
                                             <div key={item.id} className="flex items-center group hover:bg-slate-50 rounded-lg p-1">
-                                                <div className="w-1/3 md:w-1/4 text-xs font-medium truncate pr-2">{item.name}</div>
-                                                <div className="w-2/3 md:w-3/4 relative h-6 bg-slate-50 rounded-full overflow-hidden">
+                                                <div className="w-2/5 md:w-1/4 text-xs font-medium truncate pr-2 shrink-0">{item.name}</div>
+                                                <div className="w-3/5 md:w-3/4 relative h-6 bg-slate-50 rounded-full overflow-hidden">
                                                     <div
                                                         className={`absolute top-1 bottom-1 rounded-full opacity-80 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
                                                         style={{ left: `${startOffset}%`, width: `${width}%` }}
                                                     >
-                                                        <span className="text-[9px] text-white px-2 font-bold flex items-center h-full">{item.progress}%</span>
+                                                        <span className="text-[8px] text-white px-1 font-bold flex items-center h-full">{item.progress}%</span>
                                                     </div>
                                                 </div>
                                             </div>
