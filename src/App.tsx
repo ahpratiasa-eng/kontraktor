@@ -279,6 +279,8 @@ const App = () => {
               handleDeleteMaterial={handleDeleteMaterial}
               handlePrepareEditMaterial={handlePrepareEditMaterial}
               ahsItems={ahsItems}
+              setTransactionType={setTransactionType}
+              setTransactionCategory={setTransactionCategory}
             />
           )}
 
@@ -331,6 +333,8 @@ const App = () => {
               handleDeleteMaterial={handleDeleteMaterial}
               handlePrepareEditMaterial={handlePrepareEditMaterial}
               ahsItems={ahsItems}
+              setTransactionType={setTransactionType}
+              setTransactionCategory={setTransactionCategory}
             />
           </div>
         )}

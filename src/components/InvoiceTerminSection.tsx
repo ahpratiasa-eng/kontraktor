@@ -38,8 +38,8 @@ const InvoiceTerminSection: React.FC<InvoiceTerminSectionProps> = ({ project, up
         return terms.map(term => ({
             ...term,
             amount: term.amount || (project.contractValue || project.budgetLimit || 0) * term.percentage / 100,
-            // Determine if this term is now due based on progress
-            isDue: currentProgress >= term.targetProgress && term.status === 'pending'
+            // Determine if this term is now due based on progress (with slight tolerance for float errors)
+            isDue: currentProgress >= (term.targetProgress - 0.1) && term.status === 'pending'
         }));
     }, [project.paymentTerms, project.contractValue, project.budgetLimit, currentProgress]);
 
@@ -230,8 +230,8 @@ const InvoiceTerminSection: React.FC<InvoiceTerminSectionProps> = ({ project, up
                                     {term.status === 'pending' && (
                                         <button
                                             onClick={() => handleGenerateInvoice(term)}
-                                            disabled={currentProgress < term.targetProgress && term.targetProgress > 0}
-                                            className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition ${currentProgress >= term.targetProgress || term.targetProgress === 0
+                                            disabled={currentProgress < (term.targetProgress - 0.1) && term.targetProgress > 0}
+                                            className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition ${currentProgress >= (term.targetProgress - 0.1) || term.targetProgress === 0
                                                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                                                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                                 }`}
