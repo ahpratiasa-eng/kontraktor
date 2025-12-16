@@ -362,64 +362,66 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         </div>
                     </div>
 
-                    {/* Summary Cards Grid */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div
-                            onClick={() => setActiveTab('finance')}
-                            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-2 cursor-pointer active:scale-95 transition-transform"
-                        >
-                            <div className="p-2 bg-orange-50 rounded-lg w-fit text-orange-600"><Banknote size={20} /></div>
-                            <div>
-                                <h4 className="font-bold text-slate-800 text-sm">Keuangan & RAB</h4>
-                                <p className="text-xs text-slate-400">Sisa: Rp {formatNumber(Math.max(0, activeProject.budgetLimit - (getStats(activeProject).exp || 0)))}</p>
-                                <div className="w-full bg-slate-100 h-1 mt-2 rounded-full overflow-hidden">
-                                    <div className="bg-orange-500 h-full w-1/2"></div>
+                    {/* Summary Cards Grid - Hide on Client View (already has bottom nav) */}
+                    {!isClientView && (
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div
+                                onClick={() => setActiveTab('finance')}
+                                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-2 cursor-pointer active:scale-95 transition-transform"
+                            >
+                                <div className="p-2 bg-orange-50 rounded-lg w-fit text-orange-600"><Banknote size={20} /></div>
+                                <div>
+                                    <h4 className="font-bold text-slate-800 text-sm">Keuangan & RAB</h4>
+                                    <p className="text-xs text-slate-400">Sisa: Rp {formatNumber(Math.max(0, activeProject.budgetLimit - (getStats(activeProject).exp || 0)))}</p>
+                                    <div className="w-full bg-slate-100 h-1 mt-2 rounded-full overflow-hidden">
+                                        <div className="bg-orange-500 h-full w-1/2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                onClick={() => setActiveTab('workers')}
+                                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-2 cursor-pointer active:scale-95 transition-transform"
+                            >
+                                <div className="p-2 bg-blue-50 rounded-lg w-fit text-blue-600"><Users size={20} /></div>
+                                <div>
+                                    <h4 className="font-bold text-slate-800 text-sm">Tim & Absensi</h4>
+                                    <p className="text-xs text-slate-400">{activeProject.workers?.length || 0} Pekerja Aktif</p>
+                                    <div className="flex -space-x-2 mt-2">
+                                        {(activeProject.workers || []).slice(0, 3).map(w => (
+                                            <div key={w.id} className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-bold text-slate-600">
+                                                {w.name.charAt(0)}
+                                            </div>
+                                        ))}
+                                        {(activeProject.workers?.length || 0) > 3 && (
+                                            <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] text-slate-400">
+                                                +{(activeProject.workers?.length || 0) - 3}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                onClick={() => setActiveTab('logistics')}
+                                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-2 cursor-pointer active:scale-95 transition-transform"
+                            >
+                                <div className="p-2 bg-purple-50 rounded-lg w-fit text-purple-600"><Package size={20} /></div>
+                                <div>
+                                    <h4 className="font-bold text-slate-800 text-sm">Logistik</h4>
+                                    <p className="text-xs text-slate-400">{(activeProject.materials || []).length} Item Stock</p>
+                                </div>
+                            </div>
+                            <div
+                                onClick={() => setActiveTab('gallery')}
+                                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-2 cursor-pointer active:scale-95 transition-transform"
+                            >
+                                <div className="p-2 bg-slate-50 rounded-lg w-fit text-slate-600"><ImageIcon size={20} /></div>
+                                <div>
+                                    <h4 className="font-bold text-slate-800 text-sm">Galeri Proyek</h4>
+                                    <p className="text-xs text-slate-400">Update foto terbaru</p>
                                 </div>
                             </div>
                         </div>
-                        <div
-                            onClick={() => setActiveTab('workers')}
-                            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-2 cursor-pointer active:scale-95 transition-transform"
-                        >
-                            <div className="p-2 bg-blue-50 rounded-lg w-fit text-blue-600"><Users size={20} /></div>
-                            <div>
-                                <h4 className="font-bold text-slate-800 text-sm">Tim & Absensi</h4>
-                                <p className="text-xs text-slate-400">{activeProject.workers?.length || 0} Pekerja Aktif</p>
-                                <div className="flex -space-x-2 mt-2">
-                                    {(activeProject.workers || []).slice(0, 3).map(w => (
-                                        <div key={w.id} className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-bold text-slate-600">
-                                            {w.name.charAt(0)}
-                                        </div>
-                                    ))}
-                                    {(activeProject.workers?.length || 0) > 3 && (
-                                        <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] text-slate-400">
-                                            +{(activeProject.workers?.length || 0) - 3}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                            onClick={() => setActiveTab('logistics')}
-                            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-2 cursor-pointer active:scale-95 transition-transform"
-                        >
-                            <div className="p-2 bg-purple-50 rounded-lg w-fit text-purple-600"><Package size={20} /></div>
-                            <div>
-                                <h4 className="font-bold text-slate-800 text-sm">Logistik</h4>
-                                <p className="text-xs text-slate-400">{(activeProject.materials || []).length} Item Stock</p>
-                            </div>
-                        </div>
-                        <div
-                            onClick={() => setActiveTab('gallery')}
-                            className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-2 cursor-pointer active:scale-95 transition-transform"
-                        >
-                            <div className="p-2 bg-slate-50 rounded-lg w-fit text-slate-600"><ImageIcon size={20} /></div>
-                            <div>
-                                <h4 className="font-bold text-slate-800 text-sm">Galeri Proyek</h4>
-                                <p className="text-xs text-slate-400">Update foto terbaru</p>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
 
