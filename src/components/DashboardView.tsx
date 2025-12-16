@@ -211,7 +211,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         const isOverbudget = totalExpense > p.budgetLimit && p.budgetLimit > 0;
 
                         // Mock update message if none exists
-                        const lastUpdate = "Struktur atap mulai dipasang pagi ini.";
+                        const lastTx = (p.transactions || []).length > 0
+                            ? [...p.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+                            : null;
+
+                        const lastUpdate = lastTx
+                            ? `${lastTx.category}: ${lastTx.description ? (lastTx.description.length > 25 ? lastTx.description.substring(0, 25) + '...' : lastTx.description) : 'Transaksi Baru'} (${new Date(lastTx.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})`
+                            : "Proyek baru dimulai.";
 
                         return (
                             <div
@@ -230,15 +236,25 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                             <p className="text-[11px] text-slate-500 truncate">{p.client}</p>
                                         </div>
                                     </div>
-                                    {health.issues.length === 0 ? (
-                                        <span className="bg-green-100 text-green-700 text-[8px] px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">
-                                            On Track
-                                        </span>
-                                    ) : (
-                                        <span className={`text-[8px] px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 ${health.issues.includes('Terlambat') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                            {health.issues[0]}
-                                        </span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {health.issues.length === 0 ? (
+                                            <span className="bg-green-100 text-green-700 text-[8px] px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0">
+                                                On Track
+                                            </span>
+                                        ) : (
+                                            <span className={`text-[8px] px-2 py-1 rounded-full font-bold whitespace-nowrap shrink-0 ${health.issues.includes('Terlambat') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                {health.issues[0]}
+                                            </span>
+                                        )}
+                                        {canEditProject && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleSoftDeleteProject(p); }}
+                                                className="text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-full transition-colors z-10 relative"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Progress Bar */}
@@ -280,14 +296,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                 </div>
 
                                 {/* Trash Button for Edit Mode */}
-                                {canEditProject && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleSoftDeleteProject(p); }}
-                                        className="absolute top-3 right-3 text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-full transition-colors"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                )}
+
                             </div>
                         )
                     })}
