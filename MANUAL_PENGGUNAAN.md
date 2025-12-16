@@ -67,19 +67,19 @@ Ini adalah fitur otomatisasi logistik berbasis RAB.
 
 ---
 
-## 4. Keuangan & Tim Lapangan
-### Keuangan (Finance)
-*   **Catat Transaksi**: Input pengeluaran harian (makan, bensin, material darurat).
-*   **Gaji & Hutang Tukang**: Tab khusus untuk memantau "Siapa yang belum dibayar?".
-    *   Lihat total hutang gaji per tukang.
-    *   Bayar sebagian (Kasbon) atau lunas.
-    *   Otomatis terhitung dari Absensi x Upah Harian.
-*   **Cashflow**: Grafik pemasukan vs pengeluaran real-time.
+## 4. Keuangan & Tim Lapangan (Smart Finance)
+### Keuangan & Invoice
+*   **Scan Struk Otomatis (AI Receipt)**: Tidak perlu ketik manual! Gunakan fitur **Scan Struk** untuk mencatat pengeluaran material. AI akan membaca Total, Tanggal, dan Deskripsi dari foto struk Anda. Foto bukti disimpan aman di Google Drive.
+*   **Kelola Pemasukan**: Catat pembayaran dari klien (DP, Termin, Pelunasan). Sistem akan membedakan arus kas masuk dan keluar.
+*   **Invoice Generator**: Buat tagihan profesional (PDF) otomatis untuk termin yang jatuh tempo. 
 
-### Tim & Absensi
+### Tim & Absensi Modern
 *   **Database Tukang**: Simpan data tukang, gaji harian, dan peran (Mandor/Tukang).
-*   **Absensi Harian**: Klik `Isi Absensi`. Bisa tandai Hadir, Setengah Hari, atau Lembur.
-*   **Bukti Foto**: Upload foto pekerjaan hari ini. Dilengkapi **Geo-Tagging** (Lokasi GPS) otomatis untuk mencegah mandor bohong lokasi.
+*   **Absensi Real-Time**: Input kehadiran (Hadir/Lembur/Setengah).
+*   **Bukti Anti-Manipulasi**:
+    *   **Upload & Geo-Tagging**: Wajib upload foto lapangan saat absen.
+    *   **Lokasi Interaktif**: Lokasi GPS yang terekam **bisa diklik** langsung menuju Google Maps untuk verifikasi posisi.
+    *   **Loading Feedback**: Indikator status upload memastikan data tersimpan sempurna sebelum menutup layar.
 
 ---
 
@@ -103,7 +103,7 @@ Fitur untuk menjaga transparansi dengan Pemilik Rumah.
 2.  Link unik akan disalin. Kirim link ini via WhatsApp ke pemilik rumah.
 3.  Pemilik rumah bisa melihat:
     *   Progress Fisik (%)
-    *   Foto-foto Galeri Pro proyek.
+    *   **Galeri Progres**: Foto-foto proyek yang dilengkapi data Progress (%) saat foto diambil dan bisa difilter berdasarkan tanggal.
     *   Kurva S sederhana.
     *   *Catatan: Nilai uang/profit KONTRAKTOR disembunyikan dari pandangan klien.*
 
