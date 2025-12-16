@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
     FileText, Sparkles, History, Edit, Trash2, Banknote,
-    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown
+    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown, Plus
 } from 'lucide-react';
 import { NumberInput, TransactionGroup } from './UIComponents';
 import SCurveChart from './SCurveChart';
@@ -503,58 +503,109 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-3"><SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} /></div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-24">
                         <div className="lg:col-span-3">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                                <h3 className="font-bold text-lg text-slate-700">Rincian RAB</h3>
+                            <SCurveChart stats={getStats(activeProject)} project={activeProject} />
+                        </div>
+                        <div className="lg:col-span-3">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 px-1">
+                                <div>
+                                    <h3 className="font-bold text-lg text-slate-700">Rincian Pekerjaan (RAB)</h3>
+                                    <p className="text-xs text-slate-400">Update progres pekerjaan di sini.</p>
+                                </div>
                                 {!isClientView && canEditProject && (
-                                    <div className="flex flex-wrap gap-2">
-                                        <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-green-100 text-green-700 px-3 py-2 rounded-lg font-bold border border-green-200 hover:bg-green-200 flex items-center gap-1"><Upload size={14} /> Import</button>
-                                        <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 flex items-center gap-1"><Sparkles size={14} /> Auto RAB</button>
-                                        <button onClick={() => { /* handleAddCCO prop */ }} className="text-xs bg-orange-100 text-orange-700 px-3 py-2 rounded-lg font-bold border border-orange-200">+ CCO</button>
-                                        <button onClick={() => { setSelectedRabItem(null); openModal('newRAB'); }} className="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg font-bold">+ Item</button>
+                                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                                        <button onClick={() => { setSelectedRabItem(null); openModal('newRAB'); }} className="flex-1 sm:flex-none text-xs bg-blue-600 text-white px-4 py-2.5 rounded-xl font-bold shadow-md active:scale-95 transition-transform flex items-center justify-center gap-1">
+                                            <Plus size={16} /> Item Baru
+                                        </button>
+                                        <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-white text-slate-600 px-3 py-2.5 rounded-xl font-bold border shadow-sm hover:bg-slate-50 flex items-center gap-1"><Upload size={14} /></button>
+                                        <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-50 text-purple-600 px-3 py-2.5 rounded-xl font-bold border border-purple-100 hover:bg-purple-100 flex items-center gap-1"><Sparkles size={14} /></button>
                                     </div>
                                 )}
                             </div>
-                            <div className="space-y-4 pb-20">
+
+                            <div className="space-y-6">
                                 {Object.keys(rabGroups).sort().map(category => (
-                                    <div key={category} className="bg-white rounded-xl border shadow-sm overflow-hidden">
-                                        <div className="bg-slate-50 p-3 md:p-4 font-bold text-sm text-slate-700 border-b flex justify-between"><span>{category}</span></div>
+                                    <div key={category} className="bg-white rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden">
+                                        <div className="bg-slate-50/80 p-4 border-b flex justify-between items-center backdrop-blur-sm sticky top-0 z-10">
+                                            <span className="font-bold text-slate-700 text-sm uppercase tracking-wide">{category}</span>
+                                            <span className="text-[10px] font-bold bg-white px-2 py-1 rounded-lg text-slate-400 border shadow-sm">
+                                                {rabGroups[category].length} Item
+                                            </span>
+                                        </div>
+
                                         {(!isClientView && rabViewMode === 'internal') && (
-                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (
-                                                <div key={item.id} className={`p-3 md:p-4 text-sm hover:bg-slate-50 ${item.isAddendum ? 'bg-orange-50' : ''}`}>
-                                                    <div className="flex justify-between mb-2">
-                                                        <span className="font-bold text-slate-800">{item.name} {item.isAddendum && <span className="text-[9px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full ml-2">CCO</span>}</span>
-                                                        <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{item.progress}%</span>
-                                                    </div>
-                                                    <div className="flex flex-col sm:flex-row justify-between text-xs text-slate-500 mb-3 gap-1">
-                                                        <span className="flex items-center gap-1">
-                                                            {item.volume} {item.unit} x {formatRupiah(item.unitPrice)}
-                                                            {item.priceLockedAt && (
-                                                                <span className="text-amber-500 cursor-help" title={`Harga terkunci pada: ${new Date(item.priceLockedAt).toLocaleDateString('id-ID')} ${new Date(item.priceLockedAt).toLocaleTimeString('id-ID')}`}>
-                                                                    <Lock size={12} />
-                                                                </span>
-                                                            )}
-                                                        </span>
-                                                        <span className="font-bold text-slate-700">{formatRupiah(item.volume * item.unitPrice)}</span>
-                                                    </div>
-                                                    <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                                                        <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${item.progress}%` }}></div>
-                                                    </div>
-                                                    {canEditProject && (
-                                                        <div className="flex flex-wrap justify-end gap-2">
-                                                            <button onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }} className="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg font-bold">Update Fisik</button>
-                                                            <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg"><History size={14} /></button>
-                                                            <button onClick={() => prepareEditRABItem(item)} className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-lg"><Edit size={14} /></button>
-                                                            <button onClick={() => deleteRABItem(item.id)} className="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><Trash2 size={14} /></button>
+                                            <div className="divide-y divide-slate-100">
+                                                {rabGroups[category].map(item => (
+                                                    <div key={item.id} className={`p-4 hover:bg-slate-50 transition-colors ${item.isAddendum ? 'bg-orange-50/50' : ''}`}>
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div className="flex-1 pr-2">
+                                                                <div className="font-bold text-slate-800 text-sm mb-1 leading-snug">
+                                                                    {item.name}
+                                                                    {item.isAddendum && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded ml-1 align-middle font-bold border border-orange-200">CCO</span>}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">Vol: {item.volume} {item.unit}</span>
+                                                                    <span>x</span>
+                                                                    <span className="font-mono">{formatRupiah(item.unitPrice)}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right flex flex-col items-end">
+                                                                <div className="font-bold text-slate-700 text-sm mb-1">{formatRupiah(item.volume * item.unitPrice)}</div>
+                                                                {item.priceLockedAt && <Lock size={10} className="text-amber-500" />}
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            ))}</div>
+
+                                                        <div className="mb-4">
+                                                            <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1.5">
+                                                                <span>Progress Fisik</span>
+                                                                <span className={item.progress === 100 ? 'text-green-600' : 'text-blue-600'}>{item.progress}%</span>
+                                                            </div>
+                                                            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+                                                                <div
+                                                                    className={`h-full rounded-full transition-all duration-700 ${item.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                                                    style={{ width: `${item.progress}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+
+                                                        {canEditProject && (
+                                                            <div className="flex gap-2 border-t pt-3 border-dashed border-slate-200">
+                                                                <button
+                                                                    onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }}
+                                                                    className="flex-1 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl active:scale-95 transition-all hover:bg-blue-100"
+                                                                >
+                                                                    Update
+                                                                </button>
+                                                                <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded-xl active:scale-95 hover:bg-slate-100"><History size={16} /></button>
+                                                                <button onClick={() => prepareEditRABItem(item)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-yellow-500 hover:border-yellow-200"><Edit size={16} /></button>
+                                                                <button onClick={() => deleteRABItem(item.id)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-red-500 hover:border-red-200"><Trash2 size={16} /></button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         )}
                                         {rabViewMode === 'client' && (
-                                            <div className="divide-y divide-slate-100">{rabGroups[category].map(item => (<div key={item.id} className="p-3 md:p-4 text-sm flex justify-between items-center hover:bg-slate-50"><div className="min-w-0 flex-1"><div className="font-bold text-slate-800 truncate">{item.name}</div><div className="text-xs text-slate-500">Vol: {item.volume} {item.unit}</div></div><div className="text-right ml-2 flex-shrink-0"><div className={`text-xs px-3 py-1 rounded-full font-bold ${item.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{item.progress}%</div></div></div>))}<div className="p-3 md:p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t">Subtotal: {formatRupiah(rabGroups[category].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</div></div>
+                                            <div className="divide-y divide-slate-100">
+                                                {rabGroups[category].map(item => (
+                                                    <div key={item.id} className="p-4 flex justify-between items-center hover:bg-slate-50">
+                                                        <div className="min-w-0 flex-1 pr-4">
+                                                            <div className="font-bold text-slate-800 text-sm truncate mb-0.5">{item.name}</div>
+                                                            <div className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded w-fit">Vol: {item.volume} {item.unit}</div>
+                                                        </div>
+                                                        <div className="text-right flex-shrink-0">
+                                                            <div className={`text-xs px-3 py-1.5 rounded-lg font-bold border ${item.progress === 100 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                                {item.progress}%
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t flex justify-between items-center">
+                                                    <span className="uppercase text-[10px] text-slate-400 tracking-wider">Subtotal</span>
+                                                    <span className="text-sm">{formatRupiah(rabGroups[category].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</span>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 ))}
