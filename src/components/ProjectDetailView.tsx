@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-    Settings, FileText, Sparkles, History, Edit, Trash2, Banknote,
+    FileText, Sparkles, History, Edit, Trash2, Banknote,
     ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown
 } from 'lucide-react';
 import { NumberInput, TransactionGroup } from './UIComponents';
@@ -55,14 +55,14 @@ interface ProjectDetailViewProps {
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
-    activeProject, activeTab, setView, updateProject,
+    activeProject, activeTab, updateProject,
     openModal, setModalType, setShowModal, setSelectedRabItem, setProgressInput, setProgressDate,
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
     handleDeleteMaterial, handlePrepareEditMaterial,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
-    setActiveTab, prepareEditProject, prepareEditRABItem, isClientView, handleReportToOwner,
+    setActiveTab, prepareEditRABItem, isClientView, handleReportToOwner,
     ahsItems
 }) => {
     // Local State moved from App.tsx
