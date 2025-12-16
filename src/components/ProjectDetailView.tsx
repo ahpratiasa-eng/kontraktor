@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote, Calendar, TrendingUp,
-    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown, Plus, CheckCircle
+    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown, Plus, CheckCircle, Camera
 } from 'lucide-react';
 import { NumberInput } from './UIComponents';
 import SCurveChart from './SCurveChart';
@@ -78,8 +78,6 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     React.useEffect(() => {
         if (isClientView) setRabViewMode('client');
     }, [isClientView]);
-    const [txType, setTxType] = useState<'expense' | 'income'>('expense');
-    const [amount, setAmount] = useState(0);
     const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [showAllGantt, setShowAllGantt] = useState(false);
@@ -149,19 +147,6 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         activeProject.rabItems.forEach(item => { if (!groups[item.category]) groups[item.category] = []; groups[item.category].push(item); });
         return groups;
     })();
-
-
-
-    const handleTransaction = (e: React.FormEvent) => {
-        e.preventDefault();
-        const form = e.target as HTMLFormElement;
-        const desc = (form.elements.namedItem('desc') as HTMLInputElement).value;
-        const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value;
-        if (!desc || amount <= 0) { alert("Data tidak valid"); return; }
-        updateProject({ transactions: [{ id: Date.now(), date: new Date().toISOString().split('T')[0], category: cat, description: desc, amount: amount, type: txType }, ...(activeProject.transactions || [])] });
-        form.reset();
-        setAmount(0);
-    };
 
     const getAttendanceSummary = () => {
         const start = new Date(filterStartDate); start.setHours(0, 0, 0, 0);
@@ -831,35 +816,31 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 </div>
                             </div>
 
-                            <div className="bg-white p-5 rounded-3xl border shadow-sm mb-6 w-full overflow-hidden">
-                                <h3 className="font-bold text-slate-800 mb-4">Catat Transaksi Baru</h3>
-                                <div className="flex gap-2 mb-4 bg-slate-50 p-1.5 rounded-2xl border w-full overflow-hidden">
-                                    <button onClick={() => setTxType('expense')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${txType === 'expense' ? 'bg-white shadow text-red-600' : 'text-slate-400'}`}>Pengeluaran</button>
-                                    <button onClick={() => setTxType('income')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${txType === 'income' ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}>Pemasukan</button>
+                            {/* SMART FINANCE ACTIONS */}
+                            {!isClientView && (
+                                <div className="bg-white p-5 rounded-3xl border shadow-sm mb-6 w-full overflow-hidden">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-bold text-slate-800">Aksi Keuangan</h3>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={() => {
+                                                setModalType('newTransaction');
+                                                setShowModal(true);
+                                            }}
+                                            className="flex-1 bg-gradient-to-br from-blue-600 to-blue-700 text-white p-4 rounded-2xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex flex-col items-center justify-center gap-2 group"
+                                        >
+                                            <div className="p-3 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors">
+                                                <Camera size={24} />
+                                            </div>
+                                            <div>
+                                                <span className="block text-sm">Catat Pengeluaran</span>
+                                                <span className="text-[10px] font-normal opacity-80">(Scan Struk / Manual)</span>
+                                            </div>
+                                        </button>
+                                    </div>
                                 </div>
-                                <form onSubmit={handleTransaction} className="space-y-4">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-slate-400 ml-2">Kategori</label>
-                                        <div className="relative">
-                                            <select name="cat" className="w-full p-4 bg-slate-50 border-0 rounded-2xl text-sm font-bold text-slate-700 outline-none appearance-none">
-                                                {txType === 'expense' ? <><option>Material</option><option>Upah Tukang</option><option>Operasional</option></> : <option>Termin/DP</option>}
-                                            </select>
-                                            <div className="absolute right-4 top-4 text-slate-400 pointer-events-none"><ChevronDown size={16} /></div>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-slate-400 ml-2">Keterangan</label>
-                                        <input required name="desc" placeholder="Contoh: Beli Semen 50 Sak" className="w-full p-4 bg-slate-50 border-0 rounded-2xl text-sm font-bold text-slate-700 outline-none placeholder:font-normal" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-slate-400 ml-2">Nominal (Rp)</label>
-                                        <NumberInput className="w-full p-4 bg-slate-50 border-0 rounded-2xl text-lg font-bold text-slate-800 outline-none" placeholder="0" value={amount} onChange={setAmount} />
-                                    </div>
-                                    <button className="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2">
-                                        <Banknote size={20} /> Simpan Transaksi
-                                    </button>
-                                </form>
-                            </div>
+                            )}
 
                             <div className="space-y-6 pb-20 w-full overflow-hidden">
                                 <h3 className="font-bold text-slate-700 px-2">Riwayat Transaksi</h3>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package, ChevronDown, Calendar } from 'lucide-react';
+import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package, ChevronDown, Calendar, Wallet } from 'lucide-react';
 import { NumberInput } from './UIComponents';
+import ReceiptScanner from './ReceiptScanner';
 import * as XLSX from 'xlsx';
 import type { UserRole, Material, RABItem, Project, AHSItem, PricingResource } from '../types';
 import { calculateAHSTotal } from '../types';
@@ -26,6 +27,8 @@ interface ModalManagerProps {
     handleImportRAB: (items: any[]) => void;
     handleSaveSchedule: () => void;
     getFilteredEvidence: () => any[]; // For gallery
+    handleSaveTransaction: () => void; // NEW: Save general transaction
+
     // State Setters & Values
     inputName: string; setInputName: (s: string) => void;
     inputClient: string; setInputClient: (s: string) => void;
@@ -47,6 +50,11 @@ interface ModalManagerProps {
     progressNote: string; setProgressNote: (s: string) => void;
 
     paymentAmount: number; setPaymentAmount: (n: number) => void;
+
+    // NEW: Transaction States
+    transactionDesc: string; setTransactionDesc: (s: string) => void;
+    transactionAmount: number; setTransactionAmount: (n: number) => void;
+    transactionDate: string; setTransactionDate: (s: string) => void;
 
     inputWorkerRole: string; setInputWorkerRole: (s: string) => void;
     inputWageUnit: string; setInputWageUnit: (s: string) => void;
@@ -92,10 +100,12 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const {
         modalType, showModal, setShowModal,
         handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleSaveMaterial, handleEditMaterial, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB, handleSaveSchedule,
+        handleSaveTransaction, // NEW
         inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate, inputHeroImage, setInputHeroImage,
         rabCategory, setRabCategory, rabItemName, setRabItemName, rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice,
         progressInput, setProgressInput, progressDate, setProgressDate, progressNote, setProgressNote,
         paymentAmount, setPaymentAmount,
+        transactionDesc, setTransactionDesc, transactionAmount, setTransactionAmount, transactionDate, setTransactionDate, // NEW props
         inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate, inputMandorRate, setInputMandorRate,
         stockType, setStockType, stockQty, setStockQty, stockDate, setStockDate, stockNotes, setStockNotes, selectedMaterial,
         inputMaterialName, setInputMaterialName, inputMaterialUnit, setInputMaterialUnit, inputMinStock, setInputMinStock, inputInitialStock, setInputInitialStock,
@@ -751,6 +761,60 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
 
                             <button onClick={handleSaveSchedule} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 mt-4">
                                 Simpan Jadwal
+                            </button>
+                        </div>
+                    )}
+
+                    {modalType === 'newTransaction' && (
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-xl mb-2 flex items-center gap-2">
+                                <Wallet className="text-blue-600" /> Catat Pengeluaran
+                            </h3>
+
+                            {/* AI SCANNER */}
+                            <div className="bg-blue-50 p-4 rounded-xl mb-2">
+                                <ReceiptScanner onScanComplete={(data) => {
+                                    setTransactionAmount(data.total);
+                                    setTransactionDate(data.date);
+                                    setTransactionDesc(data.description || 'Pengeluaran via Scan Struk');
+                                }} />
+                            </div>
+
+                            <hr className="border-slate-100 my-2" />
+
+                            {/* MANUAL FORM (Auto-filled by AI) */}
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Total Nominal (Rp)</label>
+                                    <NumberInput
+                                        className="w-full p-3 border rounded-xl font-bold text-lg"
+                                        placeholder="0"
+                                        value={transactionAmount}
+                                        onChange={setTransactionAmount}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Tanggal Transaksi</label>
+                                    <input
+                                        type="date"
+                                        className="w-full p-3 border rounded-xl"
+                                        value={transactionDate}
+                                        onChange={e => setTransactionDate(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Keterangan / Deskripsi</label>
+                                    <textarea
+                                        className="w-full p-3 border rounded-xl h-24"
+                                        placeholder="Contoh: Beli paku 5kg, Makan siang tukang..."
+                                        value={transactionDesc}
+                                        onChange={e => setTransactionDesc(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <button onClick={handleSaveTransaction} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 mt-2">
+                                Simpan Transaksi
                             </button>
                         </div>
                     )}

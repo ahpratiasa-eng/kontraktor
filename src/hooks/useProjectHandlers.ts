@@ -60,6 +60,15 @@ interface UseProjectHandlersProps {
     setInputLocation: (v: string) => void;
     setInputOwnerPhone: (v: string) => void;
     setInputBudget: (v: number) => void;
+
+    // Transaction Props
+    transactionDesc: string;
+    transactionAmount: number;
+    transactionDate: string;
+    setTransactionDesc: (v: string) => void;
+    setTransactionAmount: (v: number) => void;
+    setTransactionDate: (v: string) => void;
+
     setInputStartDate: (v: string) => void;
     setInputEndDate: (v: string) => void;
     setInputHeroImage: (v: string) => void;
@@ -243,6 +252,36 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             workerId: selectedWorkerId
         };
         updateProject({ transactions: [newTx, ...activeProject.transactions] });
+        setShowModal(false);
+    };
+
+    // ========== Transaction Handlers (NEW) ==========
+    const handleSaveTransaction = () => {
+        if (!activeProject) return;
+        if (paymentAmount <= 0 && (!props.transactionAmount || props.transactionAmount <= 0)) {
+            // Fallback check if paymentAmount is reused, but we should use transactionAmount
+            if (!props.transactionAmount || props.transactionAmount <= 0) {
+                alert("Nominal wajib diisi!");
+                return;
+            }
+        }
+
+        const finalAmount = props.transactionAmount;
+        const finalDate = props.transactionDate || new Date().toISOString().split('T')[0];
+        const finalDesc = props.transactionDesc || 'Pengeluaran Umum';
+
+        const newTx: Transaction = {
+            id: Date.now(),
+            date: finalDate,
+            category: 'Pengeluaran Umum',
+            description: finalDesc,
+            amount: finalAmount,
+            type: 'expense',
+        };
+
+        updateProject({
+            transactions: [newTx, ...(activeProject.transactions || [])]
+        });
         setShowModal(false);
     };
 
@@ -730,6 +769,12 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             setInputMaterialUnit('pcs');
             setInputMinStock(10);
             setInputInitialStock(0);
+            setInputInitialStock(0);
+        }
+        if (type === 'newTransaction') {
+            props.setTransactionDesc('');
+            props.setTransactionAmount(0);
+            props.setTransactionDate(new Date().toISOString().split('T')[0]);
         }
         setModalType(type);
         setShowModal(true);
@@ -781,11 +826,11 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         handleSoftDeleteProject,
         handleRestoreProject,
         handlePermanentDeleteProject,
-        // Worker
         handlePayWorker,
         handleSaveWorker,
         handleEditWorker,
         handleDeleteWorker,
+        handleSaveTransaction, // NEW
         // Material/Stock
         handleStockMovement,
         handleSaveMaterial,

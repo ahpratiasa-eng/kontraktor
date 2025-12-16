@@ -78,7 +78,8 @@ const App = () => {
     inputHeroImage, setInputHeroImage,
     inputEmail, setInputEmail, inputRole, setInputRole, aiPrompt, setAiPrompt, isGeneratingAI,
     attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto,
-    evidenceLocation, isGettingLoc
+    evidenceLocation, isGettingLoc,
+    transactionDesc, setTransactionDesc, transactionAmount, setTransactionAmount, transactionDate, setTransactionDate
   } = formStates;
 
   // AHS Library - now managed by useAHSLibrary hook (~60 lines moved)
@@ -107,7 +108,7 @@ const App = () => {
     handleSoftDeleteProject, handleRestoreProject, handlePermanentDeleteProject,
     handlePhotoUpload, saveAttendanceWithEvidence,
     getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB,
-    handleSaveSchedule, prepareEditSchedule
+    handleSaveSchedule, prepareEditSchedule, handleSaveTransaction
   } = projectHandlers;
   // Pengawas ga boleh tambah tukang
 
@@ -406,12 +407,15 @@ const App = () => {
         activeProject={activeProject}
         selectedRabItem={selectedRabItem}
         selectedWorkerId={selectedWorkerId}
-
-
         ahsItems={ahsItems}
         resources={pricingResources}
         selectedAhsId={selectedAhsId}
         setSelectedAhsId={setSelectedAhsId}
+        // Transaction Props
+        handleSaveTransaction={handleSaveTransaction}
+        transactionDesc={transactionDesc} setTransactionDesc={setTransactionDesc}
+        transactionAmount={transactionAmount} setTransactionAmount={setTransactionAmount}
+        transactionDate={transactionDate} setTransactionDate={setTransactionDate}
       />
 
       {/* LANDING PAGE EDITOR MODAL */}

@@ -68,7 +68,18 @@ export const useFormStates = () => {
     const [evidenceLocation, setEvidenceLocation] = useState<string | null>(null);
     const [isGettingLoc, setIsGettingLoc] = useState(false);
 
+    // Transaction form
+    const [transactionDesc, setTransactionDesc] = useState('');
+    const [transactionAmount, setTransactionAmount] = useState(0);
+    const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
+
     // Reset functions
+    const resetTransactionForm = () => {
+        setTransactionDesc('');
+        setTransactionAmount(0);
+        setTransactionDate(new Date().toISOString().split('T')[0]);
+    };
+
     const resetProjectForm = () => {
         setInputName('');
         setInputClient('');
@@ -176,6 +187,12 @@ export const useFormStates = () => {
         evidencePhoto, setEvidencePhoto,
         evidenceLocation, setEvidenceLocation,
         isGettingLoc, setIsGettingLoc,
+
+        // Transaction (New)
+        transactionDesc, setTransactionDesc,
+        transactionAmount, setTransactionAmount,
+        transactionDate, setTransactionDate,
+        resetTransactionForm,
     };
 };
 
