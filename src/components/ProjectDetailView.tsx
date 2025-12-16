@@ -62,21 +62,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     handleDeleteMaterial, handlePrepareEditMaterial,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
-    setActiveTab, prepareEditRABItem, isClientView, handleReportToOwner,
+    setActiveTab, prepareEditProject, prepareEditRABItem, isClientView, handleReportToOwner,
     ahsItems
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
     const [logisticsTab, setLogisticsTab] = useState<'stock' | 'recap'>('stock');
     const [financeTab, setFinanceTab] = useState<'transactions' | 'payroll'>('transactions');
-
-    const prepareEditProject = () => {
-        // Since setProjectInput isn't propogated down, we might need to rely on the prompt or modal
-        // But for now, let's assume the parent can handle it if we signal via modal
-        // Ideally this should call a prop function, but strictness might require us to define it locally if we removed it earlier
-        setModalType('editProject');
-        setShowModal(true);
-    };
 
     // Enforce Client View Mode
     React.useEffect(() => {
