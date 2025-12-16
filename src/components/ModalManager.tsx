@@ -184,16 +184,37 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                     {modalType === 'editProject' && (
                         <div className="space-y-4">
                             <h3 className="font-bold text-xl mb-4">Edit Proyek</h3>
-                            <input className="w-full p-3 border rounded-xl" placeholder="Nama Proyek" value={inputName} onChange={e => setInputName(e.target.value)} />
-                            <input className="w-full p-3 border rounded-xl" placeholder="Klien" value={inputClient} onChange={e => setInputClient(e.target.value)} />
-                            <input className="w-full p-3 border rounded-xl" placeholder="No WA Owner" value={inputOwnerPhone} onChange={e => setInputOwnerPhone(e.target.value)} />
-                            <input className="w-full p-3 border rounded-xl" placeholder="Lokasi Proyek" value={inputLocation} onChange={e => setInputLocation(e.target.value)} />
-                            <div className="flex gap-2">
-                                <div className="flex-1"><label className="text-xs font-bold ml-1">Mulai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /></div>
-                                <div className="flex-1"><label className="text-xs font-bold ml-1">Selesai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /></div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-600 ml-1">Nama Proyek</label>
+                                <input className="w-full p-3 border rounded-xl" placeholder="Nama Proyek" value={inputName} onChange={e => setInputName(e.target.value)} />
                             </div>
-                            <NumberInput placeholder="Budget Limit" className="w-full p-3 border rounded-xl" value={inputBudget} onChange={setInputBudget} />
-                            <button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700">Simpan Perubahan</button>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-600 ml-1">Nama Klien</label>
+                                <input className="w-full p-3 border rounded-xl" placeholder="Klien" value={inputClient} onChange={e => setInputClient(e.target.value)} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-600 ml-1">No. WhatsApp Owner</label>
+                                <input className="w-full p-3 border rounded-xl" placeholder="628xxxxxxxxxx" value={inputOwnerPhone} onChange={e => setInputOwnerPhone(e.target.value)} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-600 ml-1">Lokasi Proyek</label>
+                                <input className="w-full p-3 border rounded-xl" placeholder="Lokasi Proyek" value={inputLocation} onChange={e => setInputLocation(e.target.value)} />
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="flex-1 space-y-1">
+                                    <label className="text-xs font-bold text-slate-600 ml-1">Tanggal Mulai</label>
+                                    <input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                    <label className="text-xs font-bold text-slate-600 ml-1">Tanggal Selesai</label>
+                                    <input type="date" className="w-full p-3 border rounded-xl" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-600 ml-1">Budget Limit (Rp)</label>
+                                <NumberInput placeholder="Masukkan budget limit" className="w-full p-3 border rounded-xl" value={inputBudget} onChange={setInputBudget} />
+                            </div>
+                            <button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 mt-2">Simpan Perubahan</button>
                         </div>
                     )}
 
