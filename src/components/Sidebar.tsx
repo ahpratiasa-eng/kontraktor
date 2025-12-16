@@ -41,9 +41,11 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogou
                         <Building2 size={20} /> Landing Page
                     </button>
                 )}
-                <button onClick={() => setView('trash-bin')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'trash-bin' ? 'bg-red-50 text-red-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
-                    <Trash2 size={20} /> Tong Sampah
-                </button>
+                {userRole !== 'pengawas' && (
+                    <button onClick={() => setView('trash-bin')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'trash-bin' ? 'bg-red-50 text-red-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        <Trash2 size={20} /> Tong Sampah
+                    </button>
+                )}
             </div>
             <div className="p-4 border-t">
                 <button onClick={handleLogout} className="w-full border border-red-200 text-red-600 p-2 rounded-lg text-sm flex items-center justify-center gap-2">

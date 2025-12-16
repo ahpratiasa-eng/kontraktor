@@ -35,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({
             )}
 
             <div className="flex items-center gap-2 ml-auto">
-                {view === 'project-list' && (
+                {view === 'project-list' && userRole !== 'pengawas' && (
                     <button onClick={() => setView('trash-bin')} className="md:hidden text-slate-400 p-2 hover:text-red-500">
                         <Trash2 size={20} />
                     </button>

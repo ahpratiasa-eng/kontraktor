@@ -184,7 +184,7 @@ const App = () => {
 
           {/* TRASH BIN VIEW */}
           {/* TRASH BIN VIEW */}
-          {view === 'trash-bin' && (
+          {view === 'trash-bin' && userRole !== 'pengawas' && (
             <TrashBinView
               projects={projects}
               onRestore={handleRestoreProject}
