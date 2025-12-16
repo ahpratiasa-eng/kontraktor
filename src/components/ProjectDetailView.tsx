@@ -292,7 +292,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     <FileText size={18} /> Lapor via WA
                                 </button>
                                 <button
-                                    onClick={() => setView('report')}
+                                    onClick={() => setView('report-view')}
                                     className="bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
                                 >
                                     <FileText size={18} /> Laporan Detail
