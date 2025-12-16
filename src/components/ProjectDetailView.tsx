@@ -758,33 +758,33 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     {financeTab === 'transactions' && (
                         <div className="max-w-2xl mx-auto">
                             {/* NEW: Total Cash Flow Summary Card */}
-                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden">
+                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 md:p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
                                     <TrendingUp size={100} />
                                 </div>
-                                <h3 className="text-slate-300 text-xs font-bold uppercase tracking-widest mb-4">Total Arus Kas (Cash Flow)</h3>
-                                <div className="grid grid-cols-2 gap-8 mb-6 relative z-10">
+                                <h3 className="text-slate-300 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4">Total Arus Kas (Cash Flow)</h3>
+                                <div className="flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-8 mb-6 relative z-10">
                                     <div>
-                                        <p className="text-xs text-slate-400 mb-1">Total Pemasukan</p>
-                                        <p className="text-xl font-bold text-green-400">
+                                        <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pemasukan</p>
+                                        <p className="text-lg md:text-xl font-bold text-green-400 truncate">
                                             + {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0))}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-slate-400 mb-1">Total Pengeluaran</p>
-                                        <p className="text-xl font-bold text-red-400">
+                                        <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pengeluaran</p>
+                                        <p className="text-lg md:text-xl font-bold text-red-400 truncate">
                                             - {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0))}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="border-t border-slate-700 pt-4 flex justify-between items-center relative z-10">
-                                    <span className="text-sm font-medium text-slate-300">Sisa Kas (Balance)</span>
+                                <div className="border-t border-slate-700 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0 relative z-10">
+                                    <span className="text-xs md:text-sm font-medium text-slate-300">Sisa Kas (Balance)</span>
                                     {(() => {
                                         const inc = (activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
                                         const exp = (activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
                                         const bal = inc - exp;
                                         return (
-                                            <span className={`text-2xl font-black ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                                            <span className={`text-xl md:text-2xl font-black truncate ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
                                                 {bal >= 0 ? '+' : '-'} {formatRupiah(Math.abs(bal))}
                                             </span>
                                         );
@@ -851,8 +851,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                         key={g.monthLabel}
                                                         onClick={() => setFinanceMonthTab(g.monthLabel)}
                                                         className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border snap-start whitespace-nowrap ${activeKey === g.monthLabel
-                                                                ? 'bg-slate-800 text-white border-slate-800 shadow-md'
-                                                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                                            ? 'bg-slate-800 text-white border-slate-800 shadow-md'
+                                                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                                                             }`}
                                                     >
                                                         {g.monthLabel}
