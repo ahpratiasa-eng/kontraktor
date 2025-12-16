@@ -36,22 +36,41 @@ export const useAuth = () => {
             if (firebaseUser) {
                 setUser(firebaseUser);
 
-                // Check user role
+                // Check user role in app_users collection
                 try {
                     const userDoc = await getDoc(doc(db, 'app_users', firebaseUser.email || ''));
+
                     if (userDoc.exists()) {
+                        // User is registered - allow login
                         setUserRole(userDoc.data().role as UserRole);
                         setAuthStatus('connected');
                     } else {
-                        // Strict mode: Reject undefined users
-                        await signOut(auth);
-                        alert(`Email ${firebaseUser.email} tidak terdaftar.`);
-                        setUser(null);
-                        setUserRole(null);
-                        setAuthStatus('connected'); // Connected but logged out effectively
+                        // Check if this is the FIRST user ever (no users in app_users)
+                        const { getDocs } = await import('firebase/firestore');
+                        const allUsersSnapshot = await getDocs(collection(db, 'app_users'));
+
+                        if (allUsersSnapshot.empty) {
+                            // First user - auto-register as super_admin
+                            const { setDoc } = await import('firebase/firestore');
+                            await setDoc(doc(db, 'app_users', firebaseUser.email || ''), {
+                                email: firebaseUser.email,
+                                name: firebaseUser.displayName || 'Admin',
+                                role: 'super_admin'
+                            });
+                            setUserRole('super_admin');
+                            setAuthStatus('connected');
+                            alert(`Selamat datang! Anda terdaftar sebagai Super Admin pertama.`);
+                        } else {
+                            // Not the first user and not registered - reject
+                            await signOut(auth);
+                            alert(`Email ${firebaseUser.email} tidak terdaftar dalam sistem.\n\nHubungi Super Admin untuk mendaftarkan akun Anda.`);
+                            setUser(null);
+                            setUserRole(null);
+                            setAuthStatus('connected');
+                        }
                     }
                 } catch (e) {
-                    console.error('Failed to fetch user role:', e);
+                    console.error('Failed to check user authorization:', e);
                     setAuthStatus('error');
                 }
             } else {
