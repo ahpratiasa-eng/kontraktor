@@ -38,7 +38,6 @@ interface ProjectDetailViewProps {
     handleDeleteWorker: (w: Worker) => void;
     handleDeleteMaterial: (id: number) => void;
     handlePrepareEditMaterial: (m: Material) => void;
-    handleReportToOwner: () => void;
     // ... existing props ...
     canAccessFinance: boolean;
     canAccessWorkers: boolean;
@@ -64,7 +63,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     handleDeleteMaterial, handlePrepareEditMaterial,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
-    setActiveTab, prepareEditProject, prepareEditRABItem, prepareEditSchedule, isClientView, handleReportToOwner,
+    setActiveTab, prepareEditProject, prepareEditRABItem, prepareEditSchedule, isClientView,
     ahsItems
 }) => {
     // Local State moved from App.tsx
@@ -360,22 +359,16 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         {!isClientView && (
                             <>
                                 <button
-                                    onClick={handleReportToOwner}
+                                    onClick={() => setShowDailyReportModal(true)}
                                     className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
                                 >
-                                    <FileText size={18} /> Lapor via WA
+                                    <FileText size={18} /> Laporan Harian
                                 </button>
                                 <button
                                     onClick={() => setView('report-view')}
                                     className="bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
                                 >
                                     <FileText size={18} /> Laporan Detail
-                                </button>
-                                <button
-                                    onClick={() => setShowDailyReportModal(true)}
-                                    className="bg-orange-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
-                                >
-                                    <FileText size={18} /> Export PDF
                                 </button>
                                 <button
                                     onClick={() => {
@@ -1341,13 +1334,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 />
             )}
 
-            {/* Daily Report PDF Export Modal */}
+            {/* Daily Report Modal - Combined PDF + WA */}
             {showDailyReportModal && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
-                        <div className="bg-slate-800 text-white p-5">
-                            <h3 className="font-bold text-lg">Export Laporan Harian (PDF)</h3>
-                            <p className="text-slate-300 text-sm mt-1">Pilih tanggal dan masukkan catatan tambahan</p>
+                        <div className="bg-green-700 text-white p-5">
+                            <h3 className="font-bold text-lg">Laporan Harian</h3>
+                            <p className="text-green-100 text-sm mt-1">Pilih tanggal, isi catatan, lalu pilih kirim via WA atau download PDF</p>
                         </div>
                         <div className="p-5 space-y-4">
                             <div>
@@ -1356,7 +1349,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     type="date"
                                     value={reportDate}
                                     onChange={(e) => setReportDate(e.target.value)}
-                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 />
                             </div>
                             <div>
@@ -1365,30 +1358,59 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     value={reportNote}
                                     onChange={(e) => setReportNote(e.target.value)}
                                     placeholder="Contoh: Cuaca cerah, pengerjaan berjalan lancar. Material semen tiba siang hari."
-                                    rows={4}
-                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    rows={3}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
                                 />
                             </div>
                         </div>
-                        <div className="p-4 bg-slate-50 border-t flex gap-3">
+                        <div className="p-4 bg-slate-50 border-t space-y-3">
+                            {/* Action Buttons */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        // Send via WhatsApp
+                                        if (!activeProject.ownerPhone) {
+                                            alert("Nomor WA Owner belum diisi di Pengaturan Proyek!");
+                                            return;
+                                        }
+                                        const stats = calculateProjectHealth(activeProject);
+                                        const clientLink = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
+                                        let phone = activeProject.ownerPhone.replace(/\D/g, '');
+                                        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+
+                                        const dateFormatted = new Date(reportDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                                        const noteSection = reportNote ? `\n\n📝 *Catatan:*\n${reportNote}` : '';
+
+                                        const msg = `*Laporan Harian: ${activeProject.name}*\n📅 ${dateFormatted}\n\n📈 Progress: ${stats.realProgress.toFixed(1)}%\n⚠️ Status: ${stats.issues.length ? stats.issues.join(', ') : 'On Track'}${noteSection}\n\n🔗 Portal Klien:\n${clientLink}`;
+
+                                        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                        setShowDailyReportModal(false);
+                                        setReportNote('');
+                                    }}
+                                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-green-600 shadow-lg hover:bg-green-700 flex items-center justify-center gap-2"
+                                >
+                                    <ExternalLink size={16} /> Kirim WA
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        generateDailyReport(activeProject, reportDate, reportNote);
+                                        setShowDailyReportModal(false);
+                                        setReportNote('');
+                                    }}
+                                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-orange-600 shadow-lg hover:bg-orange-700 flex items-center justify-center gap-2"
+                                >
+                                    <FileText size={16} /> Download PDF
+                                </button>
+                            </div>
+                            {/* Cancel Button */}
                             <button
                                 onClick={() => {
                                     setShowDailyReportModal(false);
                                     setReportNote('');
                                 }}
-                                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+                                className="w-full py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors text-sm"
                             >
                                 Batal
-                            </button>
-                            <button
-                                onClick={() => {
-                                    generateDailyReport(activeProject, reportDate, reportNote);
-                                    setShowDailyReportModal(false);
-                                    setReportNote('');
-                                }}
-                                className="flex-[2] py-3 px-4 rounded-xl font-bold text-white bg-orange-600 shadow-lg hover:bg-orange-700 flex items-center justify-center gap-2"
-                            >
-                                <FileText size={18} /> Download PDF
                             </button>
                         </div>
                     </div>

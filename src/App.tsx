@@ -105,7 +105,7 @@ const App = () => {
     handleEditWorker, handleDeleteWorker, handleStockMovement, handleSaveMaterial,
     handleEditMaterial, handleDeleteMaterial, // Destructure new handlers
     handleSoftDeleteProject, handleRestoreProject, handlePermanentDeleteProject,
-    handlePhotoUpload, handleReportToOwner, saveAttendanceWithEvidence,
+    handlePhotoUpload, saveAttendanceWithEvidence,
     getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB,
     handleSaveSchedule, prepareEditSchedule
   } = projectHandlers;
@@ -275,7 +275,6 @@ const App = () => {
               handleDeleteWorker={handleDeleteWorker}
               handleDeleteMaterial={handleDeleteMaterial}
               handlePrepareEditMaterial={handlePrepareEditMaterial}
-              handleReportToOwner={handleReportToOwner}
               ahsItems={ahsItems}
             />
           )}
@@ -328,7 +327,6 @@ const App = () => {
               handleDeleteWorker={handleDeleteWorker}
               handleDeleteMaterial={handleDeleteMaterial}
               handlePrepareEditMaterial={handlePrepareEditMaterial}
-              handleReportToOwner={handleReportToOwner}
               ahsItems={ahsItems}
             />
           </div>
