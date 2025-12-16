@@ -842,24 +842,64 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                                     // Determine active tab
                                     const activeKey = financeMonthTab || groups[0].monthLabel;
+
+                                    // Extract unique years and selected year state
+                                    // We'll infer the displayed year from the active tab or default to the latest
+                                    const availableYears = Array.from(new Set(groups.map(g => g.monthLabel.split(' ')[1]))).sort().reverse();
+
+                                    // Find which year the active tab belongs to
+                                    const activeGroupRaw = groups.find(g => g.monthLabel === activeKey) || groups[0];
+                                    const currentYear = activeGroupRaw.monthLabel.split(' ')[1];
+
+                                    // Filter groups by the current year to show in tabs
+                                    const filteredGroups = groups.filter(g => g.monthLabel.endsWith(currentYear));
+
                                     const activeGroup = groups.find(g => g.monthLabel === activeKey) || groups[0];
 
                                     return (
                                         <>
-                                            {/* Horizontal Scrollable Tabs */}
-                                            <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar snap-x px-2 w-full max-w-full">
-                                                {groups.map((g) => (
-                                                    <button
-                                                        key={g.monthLabel}
-                                                        onClick={() => setFinanceMonthTab(g.monthLabel)}
-                                                        className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border snap-start whitespace-nowrap ${activeKey === g.monthLabel
-                                                            ? 'bg-slate-800 text-white border-slate-800 shadow-md'
-                                                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                                                            }`}
-                                                    >
-                                                        {g.monthLabel}
-                                                    </button>
-                                                ))}
+                                            {/* Year Filter & Tabs Container */}
+                                            <div className="flex flex-col gap-3">
+                                                {/* Year Selector (Only show if multiple years exist) */}
+                                                {availableYears.length > 1 && (
+                                                    <div className="flex justify-end px-2">
+                                                        <div className="bg-slate-100 p-1 rounded-lg flex gap-1">
+                                                            {availableYears.map(year => (
+                                                                <button
+                                                                    key={year}
+                                                                    onClick={() => {
+                                                                        // Switch to the first month of this year
+                                                                        const firstMonthOfYear = groups.find(g => g.monthLabel.endsWith(year));
+                                                                        if (firstMonthOfYear) setFinanceMonthTab(firstMonthOfYear.monthLabel);
+                                                                    }}
+                                                                    className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${currentYear === year
+                                                                            ? 'bg-white text-slate-800 shadow-sm'
+                                                                            : 'text-slate-400 hover:text-slate-600'
+                                                                        }`}
+                                                                >
+                                                                    {year}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Horizontal Scrollable Tabs (Filtered by Year) */}
+                                                <div className="flex overflow-x-auto pb-4 gap-2 no-scrollbar snap-x px-2 w-full max-w-full">
+                                                    {filteredGroups.map((g) => (
+                                                        <button
+                                                            key={g.monthLabel}
+                                                            onClick={() => setFinanceMonthTab(g.monthLabel)}
+                                                            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border snap-start whitespace-nowrap ${activeKey === g.monthLabel
+                                                                    ? 'bg-slate-800 text-white border-slate-800 shadow-md'
+                                                                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                                                }`}
+                                                        >
+                                                            {/* Show only Month Name (remove Year) for cleaner tabs */}
+                                                            {g.monthLabel.split(' ')[0]}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
 
                                             {/* Active Month Content */}
