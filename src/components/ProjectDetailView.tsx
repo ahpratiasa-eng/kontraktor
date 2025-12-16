@@ -457,7 +457,24 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 const durationDays = Math.ceil((pEnd - pStart) / (1000 * 60 * 60 * 24));
                                 const totalWeeks = Math.max(4, Math.ceil(durationDays / 7));
                                 const needsScroll = totalWeeks > 8;
-                                const displayedItems = activeProject.rabItems.slice(0, showAllGantt ? undefined : 5);
+
+                                // GROUPING LOGIC
+                                const groups = activeProject.rabItems.reduce((acc: any, item: any) => {
+                                    const cat = item.category || 'Tanpa Kategori';
+                                    if (!acc[cat]) acc[cat] = [];
+                                    acc[cat].push(item);
+                                    return acc;
+                                }, {});
+
+                                const timelineRows: Array<{ type: 'header' | 'item', data: any, id: string }> = [];
+                                Object.keys(groups).sort().forEach(cat => {
+                                    timelineRows.push({ type: 'header', data: cat, id: `cat-${cat}` });
+                                    groups[cat].forEach((item: any) => {
+                                        timelineRows.push({ type: 'item', data: item, id: item.id });
+                                    });
+                                });
+
+                                const displayedRows = showAllGantt ? timelineRows : timelineRows.slice(0, 8);
 
                                 return (
                                     <div className="relative w-full border border-slate-200 rounded-2xl overflow-hidden grid grid-cols-[9rem_minmax(0,1fr)] md:grid-cols-[14rem_minmax(0,1fr)]">
@@ -475,21 +492,31 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             <div className="h-10 border-b border-slate-100 px-4 flex items-center font-bold text-xs text-slate-500 bg-slate-50/50">
                                                 Item Pekerjaan
                                             </div>
-                                            {/* Item Rows */}
-                                            <div className="p-4 space-y-4 bg-white">
-                                                {displayedItems.map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        onClick={() => !isClientView && prepareEditSchedule(item)}
-                                                        className={`h-8 flex items-center text-xs font-medium text-slate-700 truncate cursor-pointer transition-colors hover:text-blue-600 ${!isClientView ? 'group' : ''}`}
-                                                        title={item.name}
-                                                    >
-                                                        {item.name}
-                                                    </div>
+                                            {/* Row List */}
+                                            <div className="bg-white pb-2">
+                                                {displayedRows.map((row) => (
+                                                    row.type === 'header' ? (
+                                                        <div
+                                                            key={row.id}
+                                                            className="h-8 flex items-center px-4 text-[10px] font-bold text-slate-400 bg-slate-50 uppercase tracking-wider border-b border-slate-50 truncate"
+                                                            title={row.data}
+                                                        >
+                                                            {row.data}
+                                                        </div>
+                                                    ) : (
+                                                        <div
+                                                            key={row.id}
+                                                            onClick={() => !isClientView && prepareEditSchedule(row.data)}
+                                                            className={`h-8 flex items-center px-4 text-xs font-medium text-slate-700 truncate cursor-pointer transition-colors hover:text-blue-600 border-b border-transparent ${!isClientView ? 'group' : ''}`}
+                                                            title={row.data.name}
+                                                        >
+                                                            {row.data.name}
+                                                        </div>
+                                                    )
                                                 ))}
                                                 {/* Button Spacer */}
-                                                {activeProject.rabItems.length > 5 && (
-                                                    <div className="h-8 mt-2" />
+                                                {timelineRows.length > 8 && (
+                                                    <div className="h-10 mt-2" />
                                                 )}
                                             </div>
                                         </div>
@@ -505,7 +532,6 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                         {[...Array(totalWeeks)].map((_, i) => (
                                                             <div
                                                                 key={i}
-                                                                // Flex layout: share space but keep min width
                                                                 className="flex-1 min-w-[50px] md:min-w-[70px] border-l border-slate-100 first:border-l-0 text-[10px] text-slate-400 pl-2 py-1 flex items-center"
                                                             >
                                                                 {totalWeeks <= 12 ? `Mgg ${i + 1}` : (i + 1)}
@@ -515,8 +541,16 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                 </div>
 
                                                 {/* Data Rows */}
-                                                <div className="p-4 space-y-4">
-                                                    {displayedItems.map((item, idx) => {
+                                                <div className="pb-2">
+                                                    {displayedRows.map((row, idx) => {
+                                                        if (row.type === 'header') {
+                                                            // Spacer Row for Header
+                                                            return (
+                                                                <div key={row.id} className="h-8 bg-slate-50/30 border-b border-slate-50 w-full" />
+                                                            );
+                                                        }
+
+                                                        const item = row.data;
                                                         // Progress Calculation
                                                         let startOffset = 0;
                                                         let width = 0;
@@ -543,7 +577,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                             <div
                                                                 key={item.id}
                                                                 onClick={() => !isClientView && prepareEditSchedule(item)}
-                                                                className={`h-8 flex items-center rounded-lg px-2 md:px-4 transition-colors ${!isClientView ? 'cursor-pointer hover:bg-slate-50' : ''}`}
+                                                                className={`h-8 flex items-center px-2 md:px-4 transition-colors border-b border-transparent ${!isClientView ? 'cursor-pointer hover:bg-slate-50' : ''}`}
                                                             >
                                                                 <div className="flex-1 relative h-5 bg-slate-100/80 rounded-full overflow-hidden w-full">
                                                                     {/* Plan Bar */}
@@ -570,16 +604,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                         );
                                                     })}
 
-                                                    {/* View All Button inside the scrollable area usually stretches it, but we want it sticky or full width. 
-                                                        Simple solution: Put it here, it will be scrollable. User sees it at bottom left usually.
-                                                    */}
-                                                    {activeProject.rabItems.length > 5 && (
-                                                        <div className="h-8 mt-2 flex items-center">
+                                                    {timelineRows.length > 8 && (
+                                                        <div className="h-10 mt-2 flex items-center pl-4 border-t border-slate-100">
                                                             <button
                                                                 onClick={() => setShowAllGantt(!showAllGantt)}
-                                                                className="text-xs font-bold text-blue-600 hover:text-blue-800 whitespace-nowrap"
+                                                                className="text-xs font-bold text-blue-600 hover:text-blue-800 whitespace-nowrap z-10 relative"
                                                             >
-                                                                {showAllGantt ? 'Tutup Ringkas' : `+ ${activeProject.rabItems.length - 5} item lainnya`}
+                                                                {showAllGantt ? 'Tutup Ringkas' : `+ ${timelineRows.length - 8} baris lainnya`}
                                                             </button>
                                                         </div>
                                                     )}

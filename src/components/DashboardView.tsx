@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     Users, AlertTriangle, Trash2, Loader2, RefreshCw,
-    Clock, TrendingDown, CheckCircle
+    Clock, TrendingDown, CheckCircle, TrendingUp
 } from 'lucide-react';
 import type { Project } from '../types';
 import type { User } from 'firebase/auth';
@@ -66,42 +66,96 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
             </div>
 
-            {/* Smart Filtering Summary Cards */}
+            {/* --- EXECUTIVE COMMAND CENTER --- */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                {/* 1. Total Revenue (Potential) */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-5 rounded-3xl text-white shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <TrendingUp size={80} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 text-slate-400 mb-2">
+                            <div className="p-1.5 bg-slate-700/50 rounded-lg"><Clock size={16} /></div>
+                            <span className="text-xs font-bold uppercase tracking-wider">Potensi Pendapatan (RAB)</span>
+                        </div>
+                        <div className="text-2xl md:text-3xl font-black mb-1">
+                            Rp {activeProjects.reduce((sum, p) => sum + (p.rabItems || []).reduce((s, r) => s + (r.unitPrice * r.volume), 0), 0).toLocaleString('id-ID')}
+                        </div>
+                        <div className="text-xs text-slate-400">Total nilai kontrak berjalan</div>
+                    </div>
+                </div>
+
+                {/* 2. Total Spending (Real) - Warning Color if High? No, just neutral for now */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 text-red-500 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <TrendingDown size={80} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 text-slate-500 mb-2">
+                            <div className="p-1.5 bg-red-50 rounded-lg text-red-500"><TrendingDown size={16} /></div>
+                            <span className="text-xs font-bold uppercase tracking-wider">Total Pengeluaran</span>
+                        </div>
+                        <div className="text-2xl md:text-3xl font-black text-slate-800 mb-1">
+                            Rp {activeProjects.reduce((sum, p) => sum + (p.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), 0).toLocaleString('id-ID')}
+                        </div>
+                        <div className="text-xs text-slate-400">Biaya material & operasional & upah</div>
+                    </div>
+                </div>
+
+                {/* 3. Estimasi Profit (Net) */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 text-green-500 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <CheckCircle size={80} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 text-slate-500 mb-2">
+                            <div className="p-1.5 bg-green-50 rounded-lg text-green-500"><CheckCircle size={16} /></div>
+                            <span className="text-xs font-bold uppercase tracking-wider">Estimasi Profit</span>
+                        </div>
+                        <div className="text-2xl md:text-3xl font-black text-green-600 mb-1">
+                            Rp {(
+                                activeProjects.reduce((sum, p) => sum + (p.rabItems || []).reduce((s, r) => s + (r.unitPrice * r.volume), 0), 0) -
+                                activeProjects.reduce((sum, p) => sum + (p.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), 0)
+                            ).toLocaleString('id-ID')}
+                        </div>
+                        <div className="text-xs text-slate-400">Margin keuntungan kasar</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* QUICK STATUS FILTERS */}
+            <h2 className="text-lg font-bold text-slate-800 mb-4 px-1">Overview Proyek</h2>
             <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
                 <button
                     onClick={() => setFilterStatus('all')}
-                    className={`p-3 md:p-4 rounded-2xl shadow-sm border text-left transition-all ${filterStatus === 'all' ? 'bg-slate-800 border-slate-800 ring-2 ring-slate-200' : 'bg-white border-slate-100 hover:border-slate-300'}`}
+                    className={`p-3 rounded-2xl border text-left transition-all ${filterStatus === 'all' ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200'}`}
                 >
-                    <div className={`p-1.5 md:p-2 rounded-lg w-fit mb-1 ${filterStatus === 'all' ? 'bg-slate-700 text-white' : 'bg-blue-50 text-blue-600'}`}><RefreshCw size={14} /></div>
-                    <span className={`text-xl md:text-2xl font-bold ${filterStatus === 'all' ? 'text-white' : 'text-slate-800'}`}>{activeProjects.length}</span>
-                    <span className={`text-[9px] md:text-[10px] font-medium uppercase tracking-wide ${filterStatus === 'all' ? 'text-slate-400' : 'text-slate-400'}`}>Total Proyek</span>
+                    <span className="block text-2xl font-black">{activeProjects.length}</span>
+                    <span className="text-[10px] uppercase font-bold opacity-60">Semua Proyek</span>
                 </button>
-
                 <button
                     onClick={() => setFilterStatus('active')}
-                    className={`p-3 md:p-4 rounded-2xl shadow-sm border text-left transition-all ${filterStatus === 'active' ? 'bg-blue-600 border-blue-600 ring-2 ring-blue-100' : 'bg-white border-slate-100 hover:border-slate-300'}`}
+                    className={`p-3 rounded-2xl border text-left transition-all ${filterStatus === 'active' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200'}`}
                 >
-                    <div className={`p-1.5 md:p-2 rounded-lg w-fit mb-1 ${filterStatus === 'active' ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-600'}`}><Loader2 size={14} /></div>
-                    <span className={`text-xl md:text-2xl font-bold ${filterStatus === 'active' ? 'text-white' : 'text-blue-600'}`}>{runningCount}</span>
-                    <span className={`text-[9px] md:text-[10px] font-medium uppercase tracking-wide ${filterStatus === 'active' ? 'text-blue-100' : 'text-slate-400'}`}>Berjalan</span>
+                    <span className="block text-2xl font-black">{runningCount}</span>
+                    <span className="text-[10px] uppercase font-bold opacity-60">Sedang Jalan</span>
                 </button>
-
-                <button
-                    onClick={() => setFilterStatus('completed')}
-                    className={`p-3 md:p-4 rounded-2xl shadow-sm border text-left transition-all ${filterStatus === 'completed' ? 'bg-green-600 border-green-600 ring-2 ring-green-100' : 'bg-white border-slate-100 hover:border-slate-300'}`}
-                >
-                    <div className={`p-1.5 md:p-2 rounded-lg w-fit mb-1 ${filterStatus === 'completed' ? 'bg-green-500 text-white' : 'bg-green-50 text-green-600'}`}><CheckCircle size={14} /></div>
-                    <span className={`text-xl md:text-2xl font-bold ${filterStatus === 'completed' ? 'text-white' : 'text-green-600'}`}>{finishedCount}</span>
-                    <span className={`text-[9px] md:text-[10px] font-medium uppercase tracking-wide ${filterStatus === 'completed' ? 'text-green-100' : 'text-slate-400'}`}>Selesai</span>
-                </button>
-
                 <button
                     onClick={() => setFilterStatus('critical')}
-                    className={`p-3 md:p-4 rounded-2xl shadow-sm border text-left transition-all ${filterStatus === 'critical' ? 'bg-red-600 border-red-600 ring-2 ring-red-100' : 'bg-white border-slate-100 hover:border-slate-300'}`}
+                    className={`p-3 rounded-2xl border text-left transition-all ${filterStatus === 'critical' ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200'}`}
                 >
-                    <div className={`p-1.5 md:p-2 rounded-lg w-fit mb-1 ${filterStatus === 'critical' ? 'bg-red-500 text-white' : 'bg-red-50 text-red-600'}`}><AlertTriangle size={14} /></div>
-                    <span className={`text-xl md:text-2xl font-bold ${filterStatus === 'critical' ? 'text-white' : 'text-red-600'}`}>{criticalCount}</span>
-                    <span className={`text-[9px] md:text-[10px] font-medium uppercase tracking-wide ${filterStatus === 'critical' ? 'text-red-100' : 'text-slate-400'}`}>Perlu Perhatian</span>
+                    <div className="flex justify-between items-start">
+                        <span className="block text-2xl font-black">{criticalCount}</span>
+                        {criticalCount > 0 && <span className="animate-pulse w-2 h-2 rounded-full bg-white"></span>}
+                    </div>
+                    <span className="text-[10px] uppercase font-bold opacity-60">Perlu Perhatian</span>
+                </button>
+                <button
+                    onClick={() => setFilterStatus('completed')}
+                    className={`p-3 rounded-2xl border text-left transition-all ${filterStatus === 'completed' ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-slate-200'}`}
+                >
+                    <span className="block text-2xl font-black">{finishedCount}</span>
+                    <span className="text-[10px] uppercase font-bold opacity-60">Selesai</span>
                 </button>
             </div>
 
