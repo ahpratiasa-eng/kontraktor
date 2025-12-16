@@ -76,11 +76,33 @@ export type GalleryItem = {
 
 export type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
 
+// ========== PAYMENT TERMS (TERMIN) ==========
+export type PaymentTermStatus = 'pending' | 'due' | 'invoiced' | 'paid';
+
+export type PaymentTerm = {
+  id: number;
+  name: string;              // "DP", "Termin 1", "Termin 2", "Pelunasan"
+  percentage: number;        // 30, 30, 40 (total should be 100%)
+  targetProgress: number;    // At what % progress this term is due (0=DP, 50, 100)
+  amount: number;            // Calculated from project contractValue * percentage
+  status: PaymentTermStatus;
+  invoiceNumber?: string;    // INV-2024-001
+  invoiceDate?: string;      // When invoice was generated
+  dueDate?: string;          // Payment due date
+  paidDate?: string;         // When payment was received
+  paidAmount?: number;       // Actual paid amount (could differ due to adjustments)
+  notes?: string;
+};
+
 export type Project = {
   id: string; name: string; client: string; location: string; ownerPhone?: string; status: string; budgetLimit: number;
   startDate: string; endDate: string;
   heroImage?: string;
   isDeleted?: boolean;
+  // Contract & Payment
+  contractValue?: number;         // Nilai kontrak total (bisa beda dari budgetLimit)
+  paymentTerms?: PaymentTerm[];   // Termin pembayaran
+  // Existing arrays
   transactions: Transaction[];
   materials: Material[];
   materialLogs: MaterialLog[];

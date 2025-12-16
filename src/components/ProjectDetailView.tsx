@@ -12,6 +12,7 @@ import {
 import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
 import PayrollSummary from './PayrollSummary';
+import InvoiceTerminSection from './InvoiceTerminSection';
 import { generateDailyReport } from '../utils/pdfGenerator';
 import { transformGDriveUrl } from '../utils/storageHelper';
 import type { UserRole } from '../types';
@@ -71,7 +72,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
     const [logisticsTab, setLogisticsTab] = useState<'stock' | 'recap'>('stock');
     const [financeMonthTab, setFinanceMonthTab] = useState<string>(''); // '' means latest or all
-    const [financeTab, setFinanceTab] = useState<'transactions' | 'payroll'>('transactions');
+    const [financeTab, setFinanceTab] = useState<'transactions' | 'payroll' | 'invoices'>('transactions');
 
     // Enforce Client View Mode
     React.useEffect(() => {
@@ -699,6 +700,12 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                         >
                             Gaji & Hutang
                         </button>
+                        <button
+                            onClick={() => setFinanceTab('invoices')}
+                            className={`flex-1 md:flex-none px-4 py-3 text-xs font-bold rounded-xl transition-all shadow-sm ${financeTab === 'invoices' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Invoice & Termin
+                        </button>
                     </div>
 
                     {financeTab === 'transactions' && (
@@ -911,6 +918,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 setPaymentAmount(f.balance > 0 ? f.balance : 0);
                                 openModal('payWorker');
                             }}
+                        />
+                    )}
+
+                    {financeTab === 'invoices' && (
+                        <InvoiceTerminSection
+                            project={activeProject}
+                            updateProject={updateProject}
                         />
                     )}
                 </div>
