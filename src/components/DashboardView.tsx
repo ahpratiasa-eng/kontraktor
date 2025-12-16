@@ -87,6 +87,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 {activeProjects.map(p => {
                     const health = calculateProjectHealth(p);
                     const stats = getStats(p);
+                    // Calculate budget stats
+                    const totalExpense = (p.transactions || [])
+                        .filter(t => t.type === 'expense')
+                        .reduce((sum, t) => sum + t.amount, 0);
+                    const budgetUsedPercent = p.budgetLimit > 0 ? Math.min((totalExpense / p.budgetLimit) * 100, 100) : 0;
+                    const isOverbudget = totalExpense > p.budgetLimit && p.budgetLimit > 0;
+
                     // Mock update message if none exists
                     const lastUpdate = "Struktur atap mulai dipasang pagi ini.";
 
@@ -123,18 +130,36 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             </div>
 
                             {/* Progress Bar */}
-                            <div className="mb-3 relative z-10">
-                                <div className="flex justify-between text-xs mb-1.5">
+                            <div className="mb-2 relative z-10">
+                                <div className="flex justify-between text-xs mb-1">
                                     <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Progress Fisik</span>
-                                    <span className="font-bold text-slate-800 text-sm md:text-base">{stats.prog.toFixed(0)}%</span>
+                                    <span className="font-bold text-slate-800 text-sm">{stats.prog.toFixed(0)}%</span>
                                 </div>
-                                <div className="w-full bg-slate-100 h-2.5 md:h-3 rounded-full overflow-hidden">
+                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full rounded-full transition-all duration-1000 ${health.isCritical ? 'bg-red-500' : 'bg-blue-600'}`}
                                         style={{ width: `${stats.prog}%` }}
                                     ></div>
                                 </div>
                             </div>
+
+                            {/* Budget Bar - Only show if budget exists */}
+                            {p.budgetLimit > 0 && (
+                                <div className="mb-3 relative z-10">
+                                    <div className="flex justify-between text-xs mb-1">
+                                        <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Budget</span>
+                                        <span className={`font-bold text-[10px] ${isOverbudget ? 'text-red-600' : 'text-slate-600'}`}>
+                                            {isOverbudget ? 'OVERBUDGET!' : `${budgetUsedPercent.toFixed(0)}%`}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-1000 ${isOverbudget ? 'bg-red-500' : 'bg-green-500'}`}
+                                            style={{ width: `${budgetUsedPercent}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Footer / Last Update */}
                             <div className="flex items-center gap-2 pt-3 border-t border-slate-50 relative z-10">

@@ -297,12 +297,22 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 >
                                     <FileText size={18} /> Laporan Detail
                                 </button>
+                                <button
+                                    onClick={() => {
+                                        const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
+                                        navigator.clipboard.writeText(url);
+                                        alert(`Link Portal Klien berhasil disalin!\n\nKirim link ini ke pemilik proyek via WhatsApp:\n${url}`);
+                                    }}
+                                    className="bg-purple-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                >
+                                    <ExternalLink size={18} /> Portal Klien
+                                </button>
                                 {canEditProject && (
                                     <button
                                         onClick={prepareEditProject}
-                                        className="col-span-2 bg-white text-slate-700 border border-slate-200 p-3 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                        className="bg-white text-slate-700 border border-slate-200 p-3 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
                                     >
-                                        <Settings size={18} /> Pengaturan Proyek
+                                        <Settings size={18} /> Pengaturan
                                     </button>
                                 )}
                             </>
