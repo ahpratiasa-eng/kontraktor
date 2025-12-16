@@ -12,6 +12,7 @@ import {
 import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
 import PayrollSummary from './PayrollSummary';
+import { generateDailyReport } from '../utils/pdfGenerator';
 import type { UserRole } from '../types';
 
 interface ProjectDetailViewProps {
@@ -85,6 +86,11 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [workerSubTab, setWorkerSubTab] = useState<'attendance' | 'list' | 'evidence'>('attendance');
     const [reorderItems, setReorderItems] = useState<number[]>([]);
     const [showReorderModal, setShowReorderModal] = useState(false);
+
+    // Daily Report PDF Export State
+    const [showDailyReportModal, setShowDailyReportModal] = useState(false);
+    const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
+    const [reportNote, setReportNote] = useState('');
 
     React.useEffect(() => {
         if (!activeProject.location) return;
@@ -364,6 +370,12 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     className="bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
                                 >
                                     <FileText size={18} /> Laporan Detail
+                                </button>
+                                <button
+                                    onClick={() => setShowDailyReportModal(true)}
+                                    className="bg-orange-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                >
+                                    <FileText size={18} /> Export PDF
                                 </button>
                                 <button
                                     onClick={() => {
@@ -873,8 +885,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                                         if (firstMonthOfYear) setFinanceMonthTab(firstMonthOfYear.monthLabel);
                                                                     }}
                                                                     className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${currentYear === year
-                                                                            ? 'bg-white text-slate-800 shadow-sm'
-                                                                            : 'text-slate-400 hover:text-slate-600'
+                                                                        ? 'bg-white text-slate-800 shadow-sm'
+                                                                        : 'text-slate-400 hover:text-slate-600'
                                                                         }`}
                                                                 >
                                                                     {year}
@@ -891,8 +903,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                             key={g.monthLabel}
                                                             onClick={() => setFinanceMonthTab(g.monthLabel)}
                                                             className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border snap-start whitespace-nowrap ${activeKey === g.monthLabel
-                                                                    ? 'bg-slate-800 text-white border-slate-800 shadow-md'
-                                                                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                                                                ? 'bg-slate-800 text-white border-slate-800 shadow-md'
+                                                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                                                                 }`}
                                                         >
                                                             {/* Show only Month Name (remove Year) for cleaner tabs */}
@@ -1387,6 +1399,60 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     updateProject={updateProject}
                     canEdit={!isClientView && (canEditProject || canAccessWorkers)}
                 />
+            )}
+
+            {/* Daily Report PDF Export Modal */}
+            {showDailyReportModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
+                        <div className="bg-slate-800 text-white p-5">
+                            <h3 className="font-bold text-lg">Export Laporan Harian (PDF)</h3>
+                            <p className="text-slate-300 text-sm mt-1">Pilih tanggal dan masukkan catatan tambahan</p>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Tanggal Laporan</label>
+                                <input
+                                    type="date"
+                                    value={reportDate}
+                                    onChange={(e) => setReportDate(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Catatan Harian (Opsional)</label>
+                                <textarea
+                                    value={reportNote}
+                                    onChange={(e) => setReportNote(e.target.value)}
+                                    placeholder="Contoh: Cuaca cerah, pengerjaan berjalan lancar. Material semen tiba siang hari."
+                                    rows={4}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                />
+                            </div>
+                        </div>
+                        <div className="p-4 bg-slate-50 border-t flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowDailyReportModal(false);
+                                    setReportNote('');
+                                }}
+                                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    generateDailyReport(activeProject, reportDate, reportNote);
+                                    setShowDailyReportModal(false);
+                                    setReportNote('');
+                                }}
+                                className="flex-[2] py-3 px-4 rounded-xl font-bold text-white bg-orange-600 shadow-lg hover:bg-orange-700 flex items-center justify-center gap-2"
+                            >
+                                <FileText size={18} /> Download PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
