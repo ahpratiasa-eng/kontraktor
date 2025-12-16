@@ -14,7 +14,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// Configure Google provider to always show account selection
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'  // Always show account chooser
+});
+
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const appId = 'kontraktor-pro-live';
