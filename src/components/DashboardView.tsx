@@ -40,29 +40,27 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
             </div>
 
-            {/* Summary Cards - Horizontal Scroll on Mobile */}
-            <div className="mb-8 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                <div className="flex gap-3 min-w-max">
-                    <div className="w-[130px] bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-1.5">
-                        <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><RefreshCw size={16} /></div>
-                        <span className="text-2xl font-bold text-slate-800">{activeProjects.length}</span>
-                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Total Proyek</span>
-                    </div>
-                    <div className="w-[130px] bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-1.5">
-                        <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Loader2 size={16} /></div>
-                        <span className="text-2xl font-bold text-blue-600">{running}</span>
-                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Sedang Berjalan</span>
-                    </div>
-                    <div className="w-[130px] bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-1.5">
-                        <div className="p-2 bg-green-50 rounded-lg text-green-600"><CheckCircle size={16} /></div>
-                        <span className="text-2xl font-bold text-green-600">{finished}</span>
-                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Selesai</span>
-                    </div>
-                    <div className="w-[130px] bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-1.5">
-                        <div className="p-2 bg-red-50 rounded-lg text-red-600"><AlertTriangle size={16} /></div>
-                        <span className="text-2xl font-bold text-red-600">{critical}</span>
-                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">Perlu Perhatian</span>
-                    </div>
+            {/* Summary Cards - 2x2 Grid on Mobile, 4 cols on Desktop */}
+            <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-1">
+                    <div className="p-1.5 md:p-2 bg-blue-50 rounded-lg text-blue-600"><RefreshCw size={14} /></div>
+                    <span className="text-xl md:text-2xl font-bold text-slate-800">{activeProjects.length}</span>
+                    <span className="text-[9px] md:text-[10px] font-medium text-slate-400 uppercase tracking-wide">Total Proyek</span>
+                </div>
+                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-1">
+                    <div className="p-1.5 md:p-2 bg-blue-50 rounded-lg text-blue-600"><Loader2 size={14} /></div>
+                    <span className="text-xl md:text-2xl font-bold text-blue-600">{running}</span>
+                    <span className="text-[9px] md:text-[10px] font-medium text-slate-400 uppercase tracking-wide">Berjalan</span>
+                </div>
+                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-1">
+                    <div className="p-1.5 md:p-2 bg-green-50 rounded-lg text-green-600"><CheckCircle size={14} /></div>
+                    <span className="text-xl md:text-2xl font-bold text-green-600">{finished}</span>
+                    <span className="text-[9px] md:text-[10px] font-medium text-slate-400 uppercase tracking-wide">Selesai</span>
+                </div>
+                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start gap-1">
+                    <div className="p-1.5 md:p-2 bg-red-50 rounded-lg text-red-600"><AlertTriangle size={14} /></div>
+                    <span className="text-xl md:text-2xl font-bold text-red-600">{critical}</span>
+                    <span className="text-[9px] md:text-[10px] font-medium text-slate-400 uppercase tracking-wide">Perlu Perhatian</span>
                 </div>
             </div>
 
