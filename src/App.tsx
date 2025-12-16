@@ -75,6 +75,7 @@ const App = () => {
     selectedMaterial, setSelectedMaterial,
     inputMaterialName, setInputMaterialName, inputMaterialUnit, setInputMaterialUnit,
     inputMinStock, setInputMinStock, inputInitialStock, setInputInitialStock,
+    inputHeroImage, setInputHeroImage,
     inputEmail, setInputEmail, inputRole, setInputRole, aiPrompt, setAiPrompt, isGeneratingAI,
     attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto,
     evidenceLocation, isGettingLoc
@@ -105,7 +106,8 @@ const App = () => {
     handleEditMaterial, handleDeleteMaterial, // Destructure new handlers
     handleSoftDeleteProject, handleRestoreProject, handlePermanentDeleteProject,
     handlePhotoUpload, handleReportToOwner, saveAttendanceWithEvidence,
-    getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB
+    getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB,
+    handleSaveSchedule, prepareEditSchedule
   } = projectHandlers;
   // Pengawas ga boleh tambah tukang
 
@@ -170,6 +172,8 @@ const App = () => {
           <Header
             view={view}
             setView={setView}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
             user={user}
             userRole={userRole}
             openModal={openModal}
@@ -249,6 +253,7 @@ const App = () => {
               canAddWorkers={canAddWorkers()}
               prepareEditProject={prepareEditProject}
               prepareEditRABItem={prepareEditRABItem}
+              prepareEditSchedule={prepareEditSchedule}
               activeProject={activeProject}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -301,6 +306,7 @@ const App = () => {
               canAddWorkers={canAddWorkers()}
               prepareEditProject={prepareEditProject}
               prepareEditRABItem={prepareEditRABItem}
+              prepareEditSchedule={prepareEditSchedule}
               activeProject={activeProject}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -356,6 +362,7 @@ const App = () => {
         handleAddUser={handleAddUser}
         handleGenerateRAB={handleGenerateRAB}
         handleImportRAB={handleImportRAB}
+        handleSaveSchedule={handleSaveSchedule}
         saveAttendanceWithEvidence={saveAttendanceWithEvidence}
         getFilteredEvidence={getFilteredEvidence}
         inputName={inputName} setInputName={setInputName}
@@ -365,6 +372,7 @@ const App = () => {
         inputBudget={inputBudget} setInputBudget={setInputBudget}
         inputStartDate={inputStartDate} setInputStartDate={setInputStartDate}
         inputEndDate={inputEndDate} setInputEndDate={setInputEndDate}
+        inputHeroImage={inputHeroImage} setInputHeroImage={setInputHeroImage}
         rabCategory={rabCategory} setRabCategory={setRabCategory}
         rabItemName={rabItemName} setRabItemName={setRabItemName}
         rabUnit={rabUnit} setRabUnit={setRabUnit}
@@ -425,6 +433,7 @@ const App = () => {
         userRole={userRole}
         isClientView={isClientView}
         canViewKurvaS={canViewKurvaS()}
+        isHidden={showModal}
       />
 
     </div>

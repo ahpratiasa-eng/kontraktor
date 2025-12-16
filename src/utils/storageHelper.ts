@@ -34,6 +34,19 @@ export const uploadImage = async (
 };
 
 /**
+ * Helper to get GDrive Script URL from LocalStorage or Hardcoded Default
+ */
+const getGDriveScript = () => {
+    // 1. Cek LocalStorage (kalau user mau override sendiri)
+    if (typeof window !== 'undefined') {
+        const local = localStorage.getItem('gdrive_script_url');
+        if (local) return local;
+    }
+    // 2. Default URL (Hardcoded)
+    return "https://script.google.com/macros/s/AKfycbzW5GGFcLLl7KPC-mYkF6L4pC1_K89QjJAemj8c6Jpo3nL_DeM-YgZFsm1PefA9NfbY/exec";
+};
+
+/**
  * Upload attendance evidence photo
  * @param base64Data - Base64 image
  * @param projectId - Project ID
@@ -45,7 +58,12 @@ export const uploadAttendancePhoto = async (
     projectId: string,
     date: string
 ): Promise<string> => {
+    const scriptUrl = getGDriveScript();
     const filename = `attendance_${date}_${Date.now()}.webp`;
+
+    if (scriptUrl) {
+        return uploadToGoogleDrive(base64Data, scriptUrl, filename);
+    }
     return uploadImage(base64Data, `projects/${projectId}/attendance`, filename);
 };
 
@@ -55,12 +73,52 @@ export const uploadAttendancePhoto = async (
  * @param projectId - Project ID
  * @returns Download URL
  */
+/**
+ * Upload to Google Drive via Apps Script Web App
+ */
+export const uploadToGoogleDrive = async (
+    base64Data: string,
+    scriptUrl: string,
+    filename: string
+): Promise<string> => {
+    try {
+        const res = await fetch(scriptUrl, {
+            method: 'POST',
+            body: JSON.stringify({ image: base64Data, name: filename })
+        });
+
+        const json = await res.json();
+        if (json.status === 'success') {
+            return json.url;
+        } else {
+            throw new Error(json.message || 'Upload failed');
+        }
+    } catch (e) {
+        console.error("GDrive upload error:", e);
+        throw e;
+    }
+};
+
+/**
+ * Upload gallery photo
+ * @param base64Data - Base64 image
+ * @param projectId - Project ID
+ * @param gDriveUrl - Optional: Google Apps Script URL
+ * @returns Download URL
+ */
 export const uploadGalleryPhoto = async (
     base64Data: string,
-    projectId: string
+    projectId: string,
+    gDriveUrl?: string
 ): Promise<string> => {
-    const filename = `gallery_${Date.now()}.webp`;
-    return uploadImage(base64Data, `projects/${projectId}/gallery`, filename);
+    const scriptUrl = gDriveUrl || getGDriveScript();
+    const filename = `gallery_${projectId}_${Date.now()}.webp`;
+
+    if (scriptUrl) {
+        return uploadToGoogleDrive(base64Data, scriptUrl, filename);
+    }
+    const filenameFb = `gallery_${Date.now()}.webp`;
+    return uploadImage(base64Data, `projects/${projectId}/gallery`, filenameFb);
 };
 
 /**
@@ -71,7 +129,12 @@ export const uploadGalleryPhoto = async (
 export const uploadPortfolioPhoto = async (
     base64Data: string
 ): Promise<string> => {
+    const scriptUrl = getGDriveScript();
     const filename = `portfolio_${Date.now()}.webp`;
+
+    if (scriptUrl) {
+        return uploadToGoogleDrive(base64Data, scriptUrl, filename);
+    }
     return uploadImage(base64Data, `landing/portfolio`, filename);
 };
 
@@ -80,12 +143,15 @@ export const uploadPortfolioPhoto = async (
  * @param url - Full download URL of the image
  */
 export const deleteImage = async (url: string): Promise<void> => {
+    // If it's a drive link, we can't delete it easily via client without more permissions
+    if (url.includes('drive.google.com') || url.includes('googleusercontent')) return;
+
     try {
         // Extract path from URL
         const decodedUrl = decodeURIComponent(url);
         const pathMatch = decodedUrl.match(/\/o\/(.+?)\?/);
         if (!pathMatch) {
-            console.warn('Could not extract path from URL:', url);
+            // console.warn('Could not extract path from URL:', url);
             return;
         }
 
@@ -106,9 +172,11 @@ export const isBase64Image = (str: string): boolean => {
 };
 
 /**
- * Check if a string is a Firebase Storage URL
+ * Check if a string is a Firebase Storage URL or Drive URL
  */
 export const isStorageUrl = (str: string): boolean => {
     return str.includes('firebasestorage.googleapis.com') ||
-        str.includes('firebasestorage.app');
+        str.includes('firebasestorage.app') ||
+        str.includes('drive.google.com') ||
+        str.includes('googleusercontent.com');
 };

@@ -40,7 +40,7 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
           </div>
         </div>
       )}
-      <div className={`relative border-l border-b border-slate-200 mx-1 ${compact ? 'h-32 mt-2' : 'h-64 mt-4'} bg-white`}>
+      <div className={`relative border-l border-b border-slate-200 ml-8 mr-2 ${compact ? 'h-32 mt-2' : 'h-64 mt-4'} bg-white`}>
         {/* Y Axis Labels */}
         <div className="absolute -left-0 top-0 text-[9px] font-bold text-slate-400 -translate-x-full pr-1">100%</div>
         <div className="absolute -left-0 top-1/2 text-[9px] font-bold text-slate-400 -translate-x-full pr-1 -translate-y-1/2">50%</div>

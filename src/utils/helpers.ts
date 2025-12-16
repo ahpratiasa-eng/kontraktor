@@ -1,4 +1,4 @@
-import type { Project, Transaction, GroupedTransaction, AttendanceLog, RABItem } from '../types';
+import type { Project, Transaction, GroupedTransaction, AttendanceLog, RABItem, MonthlyTransactionGroup, DailyTransactionGroup } from '../types';
 
 export const formatNumber = (num: number | string) => {
   if (!num) return '';
@@ -31,6 +31,52 @@ export const getGroupedTransactions = (transactions: Transaction[]): GroupedTran
     groups[key].items.push(t);
   });
   return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+
+export const getMonthlyGroupedTransactions = (transactions: Transaction[]): MonthlyTransactionGroup[] => {
+  const groups: { [key: string]: MonthlyTransactionGroup } = {};
+
+  transactions.forEach(t => {
+    const d = new Date(t.date);
+    const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+    const monthLabel = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+    if (!groups[monthKey]) {
+      groups[monthKey] = {
+        monthLabel,
+        totalIncome: 0,
+        totalExpense: 0,
+        days: []
+      };
+    }
+
+    if (t.type === 'income') groups[monthKey].totalIncome += t.amount;
+    else groups[monthKey].totalExpense += t.amount;
+
+    // Find or create day group
+    let dayGroup = groups[monthKey].days.find(dg => dg.date === t.date);
+    if (!dayGroup) {
+      const dayDate = new Date(t.date);
+      const displayDate = dayDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+      dayGroup = { date: t.date, displayDate, transactions: [] };
+      groups[monthKey].days.push(dayGroup);
+    }
+
+    dayGroup.transactions.push(t);
+  });
+
+  // Sort months descending
+  const sortedMonths = Object.keys(groups).sort((a, b) => {
+    const [yA, mA] = a.split('-').map(Number);
+    const [yB, mB] = b.split('-').map(Number);
+    return (yB - yA) || (mB - mA);
+  }).map(key => {
+    // Sort days descending
+    groups[key].days.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return groups[key];
+  });
+
+  return sortedMonths;
 };
 
 export const calculateProjectHealth = (p: Project) => {

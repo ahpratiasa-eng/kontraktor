@@ -83,7 +83,8 @@ const LandingEditor: React.FC<LandingEditorProps> = ({ config, onSave, onClose }
         if (!file) return;
 
         try {
-            const compressed = await compressImage(file, 800, 0.7);
+            // High Quality: 1920px (Full HD) @ 90% quality
+            const compressed = await compressImage(file, 1920, 0.9);
 
             // Try uploading to Storage
             let imageUrl = compressed;

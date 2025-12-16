@@ -23,6 +23,7 @@ interface UseProjectHandlersProps {
     inputBudget: number;
     inputStartDate: string;
     inputEndDate: string;
+    inputHeroImage: string;
     rabCategory: string;
     rabItemName: string;
     rabUnit: string;
@@ -61,6 +62,7 @@ interface UseProjectHandlersProps {
     setInputBudget: (v: number) => void;
     setInputStartDate: (v: string) => void;
     setInputEndDate: (v: string) => void;
+    setInputHeroImage: (v: string) => void;
     setRabCategory: (v: string) => void;
     setRabItemName: (v: string) => void;
     setRabUnit: (v: string) => void;
@@ -92,14 +94,14 @@ interface UseProjectHandlersProps {
 export const useProjectHandlers = (props: UseProjectHandlersProps) => {
     const {
         user, activeProject, updateProject, setShowModal, setModalType, ahsItems,
-        inputName, inputClient, inputLocation, inputOwnerPhone, inputBudget, inputStartDate, inputEndDate,
+        inputName, inputClient, inputLocation, inputOwnerPhone, inputBudget, inputStartDate, inputEndDate, inputHeroImage,
         rabCategory, rabItemName, rabUnit, rabVol, rabPrice, selectedRabItem, selectedAhsId,
         progressInput, progressDate, progressNote, paymentAmount, selectedWorkerId,
         inputWorkerRole, inputWageUnit, inputRealRate, inputMandorRate,
         stockType, stockQty, stockDate, stockNotes, selectedMaterial,
         inputMaterialName, inputMaterialUnit, inputMinStock, inputInitialStock,
         attendanceDate, attendanceData, evidencePhoto, evidenceLocation, aiPrompt,
-        setInputName, setInputClient, setInputLocation, setInputOwnerPhone, setInputBudget, setInputStartDate, setInputEndDate,
+        setInputName, setInputClient, setInputLocation, setInputOwnerPhone, setInputBudget, setInputStartDate, setInputEndDate, setInputHeroImage,
         setRabCategory, setRabItemName, setRabUnit, setRabVol, setRabPrice, setSelectedRabItem, setSelectedAhsId,
         setSelectedWorkerId,
         setInputWorkerRole, setInputWageUnit, setInputRealRate, setInputMandorRate,
@@ -183,6 +185,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
                 budgetLimit: inputBudget,
                 startDate: inputStartDate,
                 endDate: inputEndDate,
+                heroImage: inputHeroImage,
                 status: 'Berjalan',
                 rabItems: [],
                 transactions: [],
@@ -206,7 +209,8 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
                 ownerPhone: inputOwnerPhone,
                 budgetLimit: inputBudget,
                 startDate: inputStartDate,
-                endDate: inputEndDate
+                endDate: inputEndDate,
+                heroImage: inputHeroImage,
             });
             setShowModal(false);
         }
@@ -221,6 +225,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         setInputBudget(activeProject.budgetLimit);
         setInputStartDate(activeProject.startDate);
         setInputEndDate(activeProject.endDate);
+        setInputHeroImage(activeProject.heroImage || '');
         setModalType('editProject');
         setShowModal(true);
     };
@@ -665,6 +670,33 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         setShowModal(false);
     };
 
+    const handleSaveSchedule = async () => {
+        if (!activeProject || !selectedRabItem) return;
+
+        const updatedItems = activeProject.rabItems.map(item => {
+            if (item.id === selectedRabItem.id) {
+                return { ...item, startDate: inputStartDate, endDate: inputEndDate };
+            }
+            return item;
+        });
+
+        try {
+            await updateDoc(doc(db, 'app_data', appId, 'projects', activeProject.id), { rabItems: updatedItems });
+            setShowModal(false);
+            if (setModalType) setModalType(null);
+        } catch (error) {
+            console.error("Error save schedule:", error);
+            alert("Gagal menyimpan jadwal.");
+        }
+    };
+
+    const prepareEditSchedule = (item: RABItem) => {
+        if (setSelectedRabItem) setSelectedRabItem(item);
+        setInputStartDate(item.startDate || activeProject?.startDate || '');
+        setInputEndDate(item.endDate || activeProject?.endDate || '');
+        openModal('itemSchedule');
+    };
+
     // ========== Modal Opener ==========
     const openModal = (type: string) => {
         if (type === 'newProject') {
@@ -676,6 +708,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             setInputBudget(0);
             setInputStartDate('');
             setInputEndDate('');
+            setInputHeroImage('');
         }
         if (type === 'newRAB' && !selectedRabItem) {
             setRabCategory('');
@@ -768,8 +801,10 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         // AI RAB
         handleGenerateRAB,
         handleImportRAB,
+        handleSaveSchedule,
         // Modal
         openModal,
+        prepareEditSchedule,
     };
 };
 

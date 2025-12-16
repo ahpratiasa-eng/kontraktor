@@ -6,6 +6,8 @@ import type { UserRole } from '../types';
 interface HeaderProps {
     view: string;
     setView: (view: any) => void;
+    activeTab?: string;
+    setActiveTab?: (tab: string) => void;
     user: User | null;
     userRole: UserRole | null;
     openModal: (type: string) => void;
@@ -15,9 +17,17 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-    view, setView, user, userRole, openModal, handleLogout,
+    view, setView, activeTab, setActiveTab, user, userRole, openModal, handleLogout,
     canAccessManagement, canEditProject
 }) => {
+    const handleBack = () => {
+        if (view === 'project-detail' && activeTab && activeTab !== 'dashboard' && setActiveTab) {
+            setActiveTab('dashboard');
+        } else {
+            setView('project-list');
+        }
+    };
+
     return (
         <header className="bg-white px-4 py-3 sticky top-0 z-10 shadow-sm flex justify-between items-center print:hidden">
             {view === 'project-list' || view === 'user-management' || view === 'trash-bin' ? (
@@ -29,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({
                     </div>
                 </div>
             ) : (
-                <button onClick={() => setView('project-list')} className="text-slate-500 flex items-center gap-1 text-sm">
+                <button onClick={handleBack} className="text-slate-500 flex items-center gap-1 text-sm">
                     <ArrowLeft size={18} /> Kembali
                 </button>
             )}

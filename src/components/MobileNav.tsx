@@ -9,9 +9,11 @@ interface MobileNavProps {
     userRole: UserRole | null;
     isClientView?: boolean;
     canViewKurvaS?: boolean; // Pengawas tidak bisa lihat Kurva S
+    isHidden?: boolean;
 }
 
-const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, userRole, isClientView, canViewKurvaS = true }) => {
+const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, userRole, isClientView, canViewKurvaS = true, isHidden = false }) => {
+    if (isHidden) return null; // Hide if requested (e.g. modal open)
     if (view !== 'project-detail') return null;
 
     const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');

@@ -34,7 +34,7 @@ const PayrollSummary: React.FC<PayrollSummaryProps> = ({ project, onPayWorker })
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-lg">
                     <div className="flex items-center gap-2 mb-2">
                         <Users size={20} />
@@ -82,8 +82,58 @@ const PayrollSummary: React.FC<PayrollSummaryProps> = ({ project, onPayWorker })
                 </div>
             )}
 
-            {/* Worker Details Table */}
-            <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+            {/* Worker Details - Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                <h3 className="font-bold text-slate-700 px-2">Detail Gaji per Tukang</h3>
+                {workerSummaries.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">Belum ada data tukang</div>
+                ) : (
+                    workerSummaries.map(({ worker, daysWorked, totalDue, totalPaid, balance }) => (
+                        <div key={worker.id} className="bg-white p-4 rounded-2xl border shadow-sm space-y-3">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold text-slate-800 text-lg">{worker.name}</div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold ${worker.role === 'Mandor' ? 'bg-purple-100 text-purple-700' :
+                                                worker.role === 'Tukang' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
+                                            }`}>{worker.role}</span>
+                                        <span className="text-xs text-slate-400">{daysWorked.toFixed(1)} Hari Kerja</span>
+                                    </div>
+                                </div>
+                                {balance > 0 && onPayWorker && (
+                                    <button
+                                        onClick={() => onPayWorker(worker)}
+                                        className="bg-green-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-green-700 active:scale-95 transition"
+                                    >
+                                        Bayar
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-dashed">
+                                <div>
+                                    <span className="block text-slate-400 mb-0.5">Total Upah</span>
+                                    <span className="font-bold text-slate-700">{formatRupiah(totalDue)}</span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="block text-slate-400 mb-0.5">Sudah Dibayar</span>
+                                    <span className="font-bold text-green-600">{formatRupiah(totalPaid)}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl">
+                                <span className="text-xs font-bold text-slate-500">Sisa Hutang</span>
+                                <span className={`font-black ${balance > 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                                    {balance > 0 ? formatRupiah(balance) : 'Lunas'}
+                                </span>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Worker Details - Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-2xl border shadow-sm overflow-hidden">
                 <div className="bg-slate-50 px-4 py-3 border-b">
                     <h3 className="font-bold text-slate-700">Detail Gaji per Tukang</h3>
                 </div>
@@ -116,8 +166,8 @@ const PayrollSummary: React.FC<PayrollSummaryProps> = ({ project, onPayWorker })
                                         </td>
                                         <td className="p-3 text-center">
                                             <span className={`px-2 py-1 rounded-full text-xs font-bold ${worker.role === 'Mandor' ? 'bg-purple-100 text-purple-700' :
-                                                    worker.role === 'Tukang' ? 'bg-blue-100 text-blue-700' :
-                                                        'bg-slate-100 text-slate-700'
+                                                worker.role === 'Tukang' ? 'bg-blue-100 text-blue-700' :
+                                                    'bg-slate-100 text-slate-700'
                                                 }`}>
                                                 {worker.role}
                                             </span>

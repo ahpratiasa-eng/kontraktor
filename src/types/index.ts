@@ -79,6 +79,7 @@ export type TaskLog = { id: number; date: string; taskId: number; previousProgre
 export type Project = {
   id: string; name: string; client: string; location: string; ownerPhone?: string; status: string; budgetLimit: number;
   startDate: string; endDate: string;
+  heroImage?: string;
   isDeleted?: boolean;
   transactions: Transaction[];
   materials: Material[];
@@ -90,6 +91,19 @@ export type Project = {
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
   gallery?: GalleryItem[];
+};
+
+export type DailyTransactionGroup = {
+  date: string;
+  displayDate: string;
+  transactions: Transaction[];
+};
+
+export type MonthlyTransactionGroup = {
+  monthLabel: string;
+  totalIncome: number;
+  totalExpense: number;
+  days: DailyTransactionGroup[];
 };
 
 export type GroupedTransaction = {

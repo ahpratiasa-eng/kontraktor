@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package } from 'lucide-react';
+import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package, ChevronDown, Calendar } from 'lucide-react';
 import { NumberInput } from './UIComponents';
 import * as XLSX from 'xlsx';
 import type { UserRole, Material, RABItem, Project, AHSItem, PricingResource } from '../types';
@@ -24,6 +24,7 @@ interface ModalManagerProps {
     handleGenerateRAB: () => void;
     saveAttendanceWithEvidence: () => void;
     handleImportRAB: (items: any[]) => void;
+    handleSaveSchedule: () => void;
     getFilteredEvidence: () => any[]; // For gallery
     // State Setters & Values
     inputName: string; setInputName: (s: string) => void;
@@ -33,6 +34,7 @@ interface ModalManagerProps {
     inputBudget: number; setInputBudget: (n: number) => void;
     inputStartDate: string; setInputStartDate: (s: string) => void;
     inputEndDate: string; setInputEndDate: (s: string) => void;
+    inputHeroImage: string; setInputHeroImage: (s: string) => void;
 
     rabCategory: string; setRabCategory: (s: string) => void;
     rabItemName: string; setRabItemName: (s: string) => void;
@@ -89,8 +91,8 @@ interface ModalManagerProps {
 const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const {
         modalType, showModal, setShowModal,
-        handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleSaveMaterial, handleEditMaterial, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB,
-        inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate,
+        handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleSaveMaterial, handleEditMaterial, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB, handleSaveSchedule,
+        inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate, inputHeroImage, setInputHeroImage,
         rabCategory, setRabCategory, rabItemName, setRabItemName, rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice,
         progressInput, setProgressInput, progressDate, setProgressDate, progressNote, setProgressNote,
         paymentAmount, setPaymentAmount,
@@ -112,6 +114,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
     // State for Resource picker in Worker modal
     const [showResourcePicker, setShowResourcePicker] = useState(false);
     const [resourceSearch, setResourceSearch] = useState('');
+    const [isManualInput, setIsManualInput] = useState(false);
 
 
     const handleSelectAHS = (ahs: AHSItem) => {
@@ -176,6 +179,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Mulai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} /></div>
                                 <div className="flex-1"><label className="text-xs font-bold ml-1">Selesai</label><input type="date" className="w-full p-3 border rounded-xl" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} /></div>
                             </div>
+                            <input className="w-full p-3 border rounded-xl" placeholder="URL Foto Sampul (Opsional)" value={inputHeroImage} onChange={e => setInputHeroImage(e.target.value)} />
                             <NumberInput placeholder="Budget Limit (Opsional)" className="w-full p-3 border rounded-xl" value={inputBudget} onChange={setInputBudget} />
                             <button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">Buat Proyek</button>
                         </div>
@@ -213,6 +217,10 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-600 ml-1">Budget Limit (Rp)</label>
                                 <NumberInput placeholder="Masukkan budget limit" className="w-full p-3 border rounded-xl" value={inputBudget} onChange={setInputBudget} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-600 ml-1">URL Foto Sampul</label>
+                                <input className="w-full p-3 border rounded-xl" placeholder="https://..." value={inputHeroImage} onChange={e => setInputHeroImage(e.target.value)} />
                             </div>
                             <button onClick={handleEditProject} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 mt-2">Simpan Perubahan</button>
                         </div>
@@ -505,7 +513,48 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-800 mb-2">
                                 <p>Material yang ditambahkan di sini akan masuk ke Stok Lapangan.</p>
                             </div>
-                            <input className="w-full p-3 border rounded-xl" placeholder="Nama Material (misal: Semen Tiga Roda)" value={inputMaterialName} onChange={e => setInputMaterialName(e.target.value)} />
+
+                            {/* Material Source Selection */}
+                            {!selectedMaterial && activeProject?.rabItems && activeProject.rabItems.length > 0 && (
+                                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4">
+                                    <button
+                                        onClick={() => setIsManualInput(false)}
+                                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${!isManualInput ? 'bg-white shadow text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        Ambil dari RAB
+                                    </button>
+                                    <button
+                                        onClick={() => setIsManualInput(true)}
+                                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${isManualInput ? 'bg-white shadow text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        Input Manual
+                                    </button>
+                                </div>
+                            )}
+
+                            {!isManualInput && !selectedMaterial && activeProject?.rabItems ? (
+                                <div className="relative">
+                                    <select
+                                        className="w-full p-3 border rounded-xl bg-white appearance-none pr-10 font-medium text-slate-700"
+                                        value={inputMaterialName}
+                                        onChange={(e) => {
+                                            const name = e.target.value;
+                                            setInputMaterialName(name);
+                                            const item = activeProject.rabItems.find(r => r.name === name);
+                                            if (item) setInputMaterialUnit(item.unit);
+                                        }}
+                                    >
+                                        <option value="">-- Pilih Material dari RAB --</option>
+                                        {[...new Set(activeProject.rabItems.filter(i => !['oh', 'hari', 'jam', 'ls', 'unit', 'org'].includes(i.unit.toLowerCase())).map(i => i.name))].sort().map((name, idx) => {
+                                            const item = activeProject.rabItems.find(r => r.name === name);
+                                            return <option key={idx} value={name}>{name} ({item?.unit})</option>;
+                                        })}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={20} />
+                                </div>
+                            ) : (
+                                <input className="w-full p-3 border rounded-xl" placeholder="Nama Material (misal: Semen Tiga Roda)" value={inputMaterialName} onChange={e => setInputMaterialName(e.target.value)} />
+                            )}
                             <div className="flex gap-2">
                                 <input className="flex-1 p-3 border rounded-xl" placeholder="Satuan (misal: sak, m3)" value={inputMaterialUnit} onChange={e => setInputMaterialUnit(e.target.value)} />
                                 <NumberInput className="flex-1 p-3 border rounded-xl" placeholder="Min. Stock Alert" value={inputMinStock} onChange={setInputMinStock} />
@@ -582,6 +631,31 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                     onChange={handleFileUpload}
                                 />
                             </div>
+                        </div>
+                    )}
+
+                    {modalType === 'itemSchedule' && selectedRabItem && (
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><Calendar className="text-blue-600" /> Atur Jadwal Pekerjaan</h3>
+                            <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-800 mb-2">
+                                <p className="font-bold">{selectedRabItem.name}</p>
+                                <p className="text-xs mt-1">Tentukan kapan pekerjaan ini dimulai dan berakhir (Rencana).</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 mb-1 block">Tanggal Mulai (Start Date)</label>
+                                    <input type="date" className="w-full p-3 border rounded-xl" value={inputStartDate} onChange={e => setInputStartDate(e.target.value)} />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 mb-1 block">Tanggal Selesai (End Date)</label>
+                                    <input type="date" className="w-full p-3 border rounded-xl" value={inputEndDate} onChange={e => setInputEndDate(e.target.value)} />
+                                </div>
+                            </div>
+
+                            <button onClick={handleSaveSchedule} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 mt-4">
+                                Simpan Jadwal
+                            </button>
                         </div>
                     )}
                 </div>

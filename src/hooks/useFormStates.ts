@@ -14,6 +14,7 @@ export const useFormStates = () => {
     const [inputBudget, setInputBudget] = useState(0);
     const [inputStartDate, setInputStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [inputEndDate, setInputEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [inputHeroImage, setInputHeroImage] = useState('');
 
     // RAB form
     const [rabCategory, setRabCategory] = useState('');
@@ -76,6 +77,7 @@ export const useFormStates = () => {
         setInputBudget(0);
         setInputStartDate(new Date().toISOString().split('T')[0]);
         setInputEndDate(new Date().toISOString().split('T')[0]);
+        setInputHeroImage('');
     };
 
     const resetRABForm = () => {
@@ -116,6 +118,7 @@ export const useFormStates = () => {
         inputBudget, setInputBudget,
         inputStartDate, setInputStartDate,
         inputEndDate, setInputEndDate,
+        inputHeroImage, setInputHeroImage,
         resetProjectForm,
 
         // RAB

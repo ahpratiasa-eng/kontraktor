@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import {
-    Settings, FileText, Sparkles, History, Edit, Trash2, Banknote,
-    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown, Plus
+    Settings, FileText, Sparkles, History, Edit, Trash2, Banknote, Calendar, TrendingUp,
+    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown, Plus, CheckCircle
 } from 'lucide-react';
-import { NumberInput, TransactionGroup } from './UIComponents';
+import { NumberInput } from './UIComponents';
 import SCurveChart from './SCurveChart';
 import {
-    formatRupiah, getStats, getGroupedTransactions, formatNumber,
+    formatRupiah, getStats, getMonthlyGroupedTransactions, formatNumber,
     calculateWorkerFinancials, calculateProjectHealth
 } from '../utils/helpers';
-import type { Project, RABItem, GroupedTransaction, Worker, Material, AHSItem } from '../types';
+import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
 import PayrollSummary from './PayrollSummary';
 import type { UserRole } from '../types';
@@ -50,6 +50,7 @@ interface ProjectDetailViewProps {
     setActiveTab: (tab: string) => void;
     prepareEditProject: () => void;
     prepareEditRABItem: (item: RABItem) => void;
+    prepareEditSchedule: (item: RABItem) => void;
     isClientView?: boolean;
     ahsItems: AHSItem[];
 }
@@ -62,7 +63,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     handleDeleteMaterial, handlePrepareEditMaterial,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
-    setActiveTab, prepareEditProject, prepareEditRABItem, isClientView, handleReportToOwner,
+    setActiveTab, prepareEditProject, prepareEditRABItem, prepareEditSchedule, isClientView, handleReportToOwner,
     ahsItems
 }) => {
     // Local State moved from App.tsx
@@ -76,11 +77,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     }, [isClientView]);
     const [txType, setTxType] = useState<'expense' | 'income'>('expense');
     const [amount, setAmount] = useState(0);
-    const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({});
     const [filterStartDate, setFilterStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [showAllGantt, setShowAllGantt] = useState(false);
     const [weather, setWeather] = useState<any>(null);
+    const [workerSubTab, setWorkerSubTab] = useState<'attendance' | 'list' | 'evidence'>('attendance');
+    const [reorderItems, setReorderItems] = useState<number[]>([]);
+    const [showReorderModal, setShowReorderModal] = useState(false);
 
     React.useEffect(() => {
         if (!activeProject.location) return;
@@ -90,9 +93,17 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 const geoData = await geoRes.json();
                 if (!geoData.results?.[0]) return;
                 const { latitude, longitude, name } = geoData.results[0];
-                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`);
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
                 const weatherData = await weatherRes.json();
-                setWeather({ temp: weatherData.current.temperature_2m, humidity: weatherData.current.relative_humidity_2m, wind: weatherData.current.wind_speed_10m, code: weatherData.current.weather_code, city: name });
+
+                setWeather({
+                    temp: weatherData.current.temperature_2m,
+                    humidity: weatherData.current.relative_humidity_2m,
+                    wind: weatherData.current.wind_speed_10m,
+                    code: weatherData.current.weather_code,
+                    city: name,
+                    daily: weatherData.daily
+                });
             } catch (e) { console.error("Weather error", e); }
         };
         fetchWeather();
@@ -116,6 +127,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         return 'Mendung';
     };
 
+    const isSafeToCast = (code: number, precipProb: number) => {
+        // Aman jika tidak hujan (code < 50) dan probabilitas hujan < 40%
+        if (code < 50 && precipProb < 40) return { status: 'Aman', color: 'text-green-500', bg: 'bg-green-100' };
+        if (code < 60 && precipProb < 70) return { status: 'Waspada', color: 'text-yellow-600', bg: 'bg-yellow-100' };
+        return { status: 'Tunda Cor', color: 'text-red-500', bg: 'bg-red-100' };
+    };
+
     // Derived Values & Local Handlers
     const rabGroups = (() => {
         if (!activeProject.rabItems) return {};
@@ -124,7 +142,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         return groups;
     })();
 
-    const toggleGroup = (groupId: string) => { setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] })); };
+
 
     const handleTransaction = (e: React.FormEvent) => {
         e.preventDefault();
@@ -256,28 +274,77 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             {activeTab === 'dashboard' && (
                 <div className="pb-20">
                     {/* Hero Section */}
-                    <div className="relative h-64 rounded-3xl overflow-hidden shadow-lg mb-6 group">
+                    <div className="relative min-h-[320px] rounded-3xl overflow-hidden shadow-lg mb-6 group">
                         <img
-                            src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1000&q=80"
+                            src={activeProject.heroImage || "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1000&q=80"}
                             alt="Project Hero"
-                            className="w-full h-full object-cover"
+                            className="absolute inset-0 w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-6">
-                            <span className="inline-flex items-center gap-1 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full w-fit font-bold mb-2">
-                                <Sparkles size={10} /> On Schedule
-                            </span>
-                            <div className="flex items-center gap-1 text-white/80 text-xs mb-1">
-                                <AlertTriangle size={12} className="text-white" /> LOKASI PROYEK
-                            </div>
-                            <h2 className="text-2xl font-bold text-white leading-tight mb-2">{activeProject.name}</h2>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6">
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <span className="inline-flex items-center gap-1 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full w-fit font-bold mb-2">
+                                        <Sparkles size={10} /> On Schedule
+                                    </span>
+                                    <div className="flex items-center gap-1 text-white/80 text-xs mb-1">
+                                        <AlertTriangle size={12} className="text-white" /> LOKASI PROYEK
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-white leading-tight mb-2 max-w-lg">{activeProject.name}</h2>
 
-                            <div className="flex items-center gap-4 text-white text-xs font-medium">
-                                <div className="flex items-center gap-1">
-                                    {weather ? getWeatherIcon(weather.code) : '☀️'} {weather ? `${weather.temp}°C, ${getWeatherDesc(weather.code)}` : 'Memuat...'}
+                                    <div className="flex items-center gap-4 text-white text-xs font-medium mb-4">
+                                        <div className="flex items-center gap-1">
+                                            {weather ? getWeatherIcon(weather.code) : '☀️'} {weather ? `${weather.temp}°C, ${getWeatherDesc(weather.code)}` : 'Memuat...'}
+                                        </div>
+                                        <div className="w-1 h-1 bg-white rounded-full"></div>
+                                        <div>Minggu ke-{Math.ceil((new Date().getTime() - new Date(activeProject.startDate).getTime()) / (1000 * 60 * 60 * 24 * 7))}</div>
+                                    </div>
                                 </div>
-                                <div className="w-1 h-1 bg-white rounded-full"></div>
-                                <div>Minggu ke-{Math.ceil((new Date().getTime() - new Date(activeProject.startDate).getTime()) / (1000 * 60 * 60 * 24 * 7))}</div>
+
+                                {/* Weather Forecast Cards */}
+                                {weather && weather.daily && (
+                                    <div className="hidden md:flex gap-2">
+                                        {[0, 1, 2].map(i => {
+                                            const date = new Date();
+                                            date.setDate(date.getDate() + i);
+                                            const dayName = i === 0 ? 'Hari Ini' : date.toLocaleDateString('id-ID', { weekday: 'short' });
+                                            const code = weather.daily.weather_code[i];
+                                            const prob = weather.daily.precipitation_probability_max[i];
+                                            const safety = isSafeToCast(code, prob);
+
+                                            return (
+                                                <div key={i} className="flex flex-col items-center bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-xl w-20 text-center shadow-lg transition hover:bg-white/20">
+                                                    <span className="text-[10px] font-bold text-white/80 mb-1">{dayName}</span>
+                                                    <span className="text-xl mb-1 filter drop-shadow-md">{getWeatherIcon(code)}</span>
+                                                    <span className="text-[10px] font-medium text-white">{Math.round(weather.daily.temperature_2m_max[i])}°C</span>
+                                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold mt-1 ${safety.bg} ${safety.color}`}>{safety.status}</span>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Mobile Forecast (Vertical Stack below title on mobile) */}
+                            {weather && weather.daily && (
+                                <div className="md:hidden flex gap-2 overflow-x-auto pb-2 scrollbar-hide pt-2 border-t border-white/10 mt-2">
+                                    {[0, 1, 2].map(i => {
+                                        const date = new Date();
+                                        date.setDate(date.getDate() + i);
+                                        const dayName = i === 0 ? 'Hari Ini' : date.toLocaleDateString('id-ID', { weekday: 'short' });
+                                        const code = weather.daily.weather_code[i];
+                                        const prob = weather.daily.precipitation_probability_max[i];
+                                        const safety = isSafeToCast(code, prob);
+
+                                        return (
+                                            <div key={i} className="flex flex-col items-center bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-xl min-w-[70px] text-center">
+                                                <span className="text-[10px] font-bold text-white/80 mb-1">{dayName}</span>
+                                                <span className="text-lg mb-1">{getWeatherIcon(code)}</span>
+                                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold mt-1 ${safety.bg} ${safety.color}`}>{safety.status}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -423,75 +490,107 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
             {activeTab === 'progress' && (
                 <div className="space-y-6 pb-24">
-                    {/* Gantt Chart Section - Hidden on mobile for client view */}
-                    <div className={`bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 overflow-hidden ${isClientView ? 'hidden md:block' : ''}`}>
-                        <h3 className="font-bold text-base md:text-lg text-slate-700 mb-4 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan</h3>
-                        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide pb-2">
-                            <div className="min-w-[500px]">
-                                <div className="flex border-b border-slate-100 pb-2 mb-2 sticky top-0 bg-white z-10">
-                                    <div className="w-2/5 md:w-1/4 font-bold text-xs text-slate-500 shrink-0">Item Pekerjaan</div>
-                                    <div className="w-3/5 md:w-3/4 flex relative h-6">
-                                        {[...Array(8)].map((_, i) => (
-                                            <div key={i} className="flex-1 border-l border-slate-100 text-[9px] text-slate-400 pl-0.5 whitespace-nowrap">
-                                                Mgg {i + 1}
-                                            </div>
-                                        ))}
+                    {/* Gantt Chart Section */}
+                    {canViewInternalRAB && (
+                        <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
+                                <h3 className="font-bold text-base md:text-lg text-slate-700 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan</h3>
+                                {!isClientView && (
+                                    <div className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold">
+                                        Tips: Klik baris item untuk atur jadwal (Start/End Date)
                                     </div>
-                                </div>
-                                <div className="space-y-4">
-                                    {activeProject.rabItems.slice(0, showAllGantt ? undefined : 5).map((item, idx) => {
-                                        // Stable Gantt Calculation
-                                        let startOffset = 0;
-                                        let width = 0;
+                                )}
+                            </div>
 
-                                        const pStart = new Date(activeProject.startDate).getTime();
-                                        const pEnd = new Date(activeProject.endDate).getTime();
-                                        const totalDuration = pEnd - pStart;
+                            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-2">
+                                <div className="min-w-[600px] md:min-w-full">
+                                    <div className="flex border-b border-slate-100 pb-2 mb-2 sticky top-0 bg-white z-10">
+                                        <div className="w-1/3 md:w-1/4 font-bold text-xs text-slate-500 shrink-0">Item Pekerjaan</div>
+                                        <div className="w-2/3 md:w-3/4 flex relative h-6">
+                                            {[...Array(8)].map((_, i) => (
+                                                <div key={i} className="flex-1 border-l border-slate-100 text-[9px] text-slate-400 pl-0.5 whitespace-nowrap">
+                                                    Mgg {i + 1}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {activeProject.rabItems.slice(0, showAllGantt ? undefined : 5).map((item, idx) => {
+                                            // Stable Gantt Calculation
+                                            let startOffset = 0;
+                                            let width = 0;
 
-                                        if (item.startDate && item.endDate && totalDuration > 0) {
-                                            const iStart = new Date(item.startDate).getTime();
-                                            const iEnd = new Date(item.endDate).getTime();
-                                            startOffset = ((iStart - pStart) / totalDuration) * 100;
-                                            width = ((iEnd - iStart) / totalDuration) * 100;
-                                        } else {
-                                            // Fallback: Deterministic Stagger based on Index
-                                            // This ensures it never "jumps" on re-render
-                                            startOffset = Math.min((idx * 15), 80);
-                                            width = 15;
-                                        }
+                                            const pStart = new Date(activeProject.startDate).getTime();
+                                            const pEnd = new Date(activeProject.endDate).getTime();
+                                            const totalDuration = pEnd - pStart;
 
-                                        // Safety Clamps
-                                        if (startOffset < 0) startOffset = 0;
-                                        if (startOffset > 100) startOffset = 0; // Reset if out of bounds (e.g. date error)
-                                        if (width < 5) width = 5;
-                                        if (startOffset + width > 100) width = 100 - startOffset;
+                                            if (item.startDate && item.endDate && totalDuration > 0) {
+                                                const iStart = new Date(item.startDate).getTime();
+                                                const iEnd = new Date(item.endDate).getTime();
+                                                startOffset = ((iStart - pStart) / totalDuration) * 100;
+                                                width = ((iEnd - iStart) / totalDuration) * 100;
+                                            } else {
+                                                // Fallback: Deterministic Stagger based on Index
+                                                startOffset = Math.min((idx * 15), 80);
+                                                width = 15;
+                                            }
 
-                                        return (
-                                            <div key={item.id} className="flex items-center group hover:bg-slate-50 rounded-lg p-1">
-                                                <div className="w-2/5 md:w-1/4 text-xs font-medium truncate pr-2 shrink-0">{item.name}</div>
-                                                <div className="w-3/5 md:w-3/4 relative h-6 bg-slate-50 rounded-full overflow-hidden">
-                                                    <div
-                                                        className={`absolute top-1 bottom-1 rounded-full opacity-80 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
-                                                        style={{ left: `${startOffset}%`, width: `${width}%` }}
-                                                    >
-                                                        <span className="text-[8px] text-white px-1 font-bold flex items-center h-full">{item.progress}%</span>
+                                            // Safety Clamps
+                                            if (startOffset < 0) startOffset = 0;
+                                            if (startOffset > 100) startOffset = 100;
+                                            if (width < 5) width = 5;
+                                            if (startOffset + width > 100) width = 100 - startOffset;
+
+                                            return (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => !isClientView && prepareEditSchedule(item)}
+                                                    className={`flex items-center rounded-lg p-1 transition-colors ${!isClientView ? 'cursor-pointer hover:bg-blue-50 group' : ''}`}
+                                                >
+                                                    <div className="w-1/3 md:w-1/4 text-xs font-medium truncate pr-2 shrink-0">{item.name}</div>
+                                                    <div className="w-2/3 md:w-3/4 relative h-6 bg-slate-50 rounded-full overflow-hidden">
+                                                        {/* Plan Bar (Lighter) */}
+                                                        <div
+                                                            className={`absolute top-1 bottom-1 rounded-full opacity-30 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
+                                                            style={{ left: `${startOffset}%`, width: `${width}%` }}
+                                                        />
+                                                        {/* Progress/Realization Bar (Darker & Animated) */}
+                                                        <div
+                                                            className={`absolute top-1 bottom-1 rounded-full ${['bg-blue-600', 'bg-green-600', 'bg-orange-600', 'bg-purple-600'][idx % 4]}`}
+                                                            style={{
+                                                                left: `${startOffset}%`,
+                                                                width: `${width * (item.progress / 100)}%`
+                                                            }}
+                                                        >
+                                                            {width * (item.progress / 100) > 10 && (
+                                                                <span className="text-[8px] text-white px-1 font-bold flex items-center h-full overflow-hidden whitespace-nowrap">
+                                                                    {item.progress}%
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {/* If progress is 0 or very small, show label outside or just on hover? For now keep simple. */}
+                                                        {!isClientView && (
+                                                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] font-bold text-slate-500 bg-white/80 transition-opacity">
+                                                                Atur Jadwal
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                    {activeProject.rabItems.length > 5 && (
-                                        <button
-                                            onClick={() => setShowAllGantt(!showAllGantt)}
-                                            className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 py-2 border-t border-slate-100 transition-colors"
-                                        >
-                                            {showAllGantt ? 'Tutup Tampilan Ringkas' : `Lihat Semua (${activeProject.rabItems.length} items)`}
-                                        </button>
-                                    )}
+                                            );
+                                        })}
+                                        {activeProject.rabItems.length > 5 && (
+                                            <button
+                                                onClick={() => setShowAllGantt(!showAllGantt)}
+                                                className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-800 mt-2 py-2 border-t border-slate-100 transition-colors"
+                                            >
+                                                {showAllGantt ? 'Tutup Tampilan Ringkas' : `Lihat Semua (${activeProject.rabItems.length} items)`}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Mobile Progress Summary for Client View */}
                     {isClientView && (
@@ -687,14 +786,69 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 </form>
                             </div>
 
-                            <div className="space-y-3 pb-20">
+                            <div className="space-y-6 pb-20">
                                 <h3 className="font-bold text-slate-700 px-2">Riwayat Transaksi</h3>
-                                {getGroupedTransactions(activeProject.transactions).map((group: GroupedTransaction) => (
-                                    <TransactionGroup key={group.id} group={group} isExpanded={expandedGroups[group.id]} onToggle={() => toggleGroup(group.id)} />
+                                {getMonthlyGroupedTransactions(activeProject.transactions).map((group) => (
+                                    <div key={group.monthLabel} className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+                                        {/* Month Header */}
+                                        <div className="bg-slate-50 p-4 border-b flex justify-between items-center group-hover:bg-slate-100 transition-colors">
+                                            <div className="flex items-center gap-2">
+                                                <div className="bg-white p-2 rounded-xl border shadow-sm text-slate-500">
+                                                    <Calendar size={18} />
+                                                </div>
+                                                <span className="font-bold text-slate-700 text-sm md:text-base">{group.monthLabel}</span>
+                                            </div>
+                                            <div className="text-right text-[10px] md:text-xs">
+                                                <span className="text-green-600 block font-bold mb-0.5">+ {formatRupiah(group.totalIncome)}</span>
+                                                <span className="text-red-500 block font-bold">- {formatRupiah(group.totalExpense)}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Daily Groups */}
+                                        <div className="p-2 md:p-4 space-y-6 relative">
+                                            {group.days.map((day, dIdx) => (
+                                                <div key={day.date} className="relative">
+                                                    {/* Timeline Line */}
+                                                    {dIdx !== group.days.length - 1 && (
+                                                        <div className="absolute left-[19px] top-8 bottom-[-24px] w-0.5 bg-slate-100"></div>
+                                                    )}
+
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.1)] ml-3.5"></div>
+                                                        <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider bg-white pr-2">
+                                                            {day.displayDate}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2.5 pl-4 md:pl-10">
+                                                        {day.transactions.map((t) => (
+                                                            <div key={t.id} className="flex justify-between items-center p-3 md:p-4 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] group">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`p-2.5 rounded-2xl flex-shrink-0 transition-colors ${t.type === 'income' ? 'bg-green-50 text-green-600 group-hover:bg-green-100' : 'bg-red-50 text-red-600 group-hover:bg-red-100'}`}>
+                                                                        {t.type === 'income' ? <TrendingUp size={18} /> : <Banknote size={18} />}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <div className="font-bold text-slate-700 text-xs md:text-sm line-clamp-1">{t.category}</div>
+                                                                        <div className="text-[10px] md:text-xs text-slate-400 line-clamp-1 truncate">{t.description}</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={`font-bold text-xs md:text-sm whitespace-nowrap pl-2 ${t.type === 'expense' ? 'text-slate-800' : 'text-green-600'}`}>
+                                                                    {t.type === 'expense' ? '-' : '+'} {formatRupiah(t.amount)}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 ))}
                                 {activeProject.transactions.length === 0 && (
-                                    <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-3xl">
-                                        Belum ada transaksi tercatat.
+                                    <div className="text-center py-12 text-slate-400 border-2 border-dashed rounded-3xl bg-slate-50/50">
+                                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
+                                            <History size={24} />
+                                        </div>
+                                        <p className="font-medium text-xs">Belum ada transaksi tercatat.</p>
                                     </div>
                                 )}
                             </div>
@@ -716,139 +870,167 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             )}
 
             {activeTab === 'workers' && canAccessWorkers && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-24">
-                    <div>
-                        <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-4 rounded-2xl shadow-lg font-bold mb-6 active:scale-95 transition-transform flex items-center justify-center gap-2">
-                            <Users size={20} /> Isi Absensi Hari Ini
+                <div className="pb-24">
+                    {/* Mobile Sub-Navigation */}
+                    <div className="md:hidden flex gap-1 bg-slate-100 p-1 rounded-2xl w-full mb-6">
+                        <button
+                            onClick={() => setWorkerSubTab('attendance')}
+                            className={`flex-1 px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all shadow-sm ${workerSubTab === 'attendance' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Absensi
                         </button>
-
-                        <div className="bg-white p-5 rounded-3xl border shadow-sm mb-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-slate-700">Rekapitulasi Tim</h3>
-                                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">Last 30 Days</span>
-                            </div>
-
-                            <div className="flex gap-2 mb-4 bg-slate-50 p-1.5 rounded-2xl border">
-                                <div className="flex-1"><label className="text-[10px] block font-bold text-slate-400 ml-1 mb-1">Dari</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border-0 rounded-xl p-2 text-xs font-bold shadow-sm" /></div>
-                                <div className="flex-1"><label className="text-[10px] block font-bold text-slate-400 ml-1 mb-1">Sampai</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border-0 rounded-xl p-2 text-xs font-bold shadow-sm" /></div>
-                            </div>
-
-                            <div className="space-y-3">
-                                {getAttendanceSummary().map((stat: any, idx: number) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-white border flex items-center justify-center font-bold text-slate-600 text-sm shadow-sm">
-                                                {stat.name.substring(0, 2).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-800 text-sm">{stat.name}</h4>
-                                                <div className="flex gap-2 text-[10px] mt-0.5">
-                                                    <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">{stat.hadir} Hadir</span>
-                                                    <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{stat.lembur} Lembur</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {canSeeMoney && (
-                                            <div className="text-right">
-                                                <div className="text-[10px] text-slate-400">Total Upah</div>
-                                                <div className="font-bold text-slate-700">{formatRupiah(stat.totalCost)}</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                                {getAttendanceSummary().length === 0 && (
-                                    <div className="text-center py-8 text-slate-400 text-sm italic">Belum ada data absensi pada periode ini.</div>
-                                )}
-                            </div>
-                        </div>
+                        <button
+                            onClick={() => setWorkerSubTab('list')}
+                            className={`flex-1 px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all shadow-sm ${workerSubTab === 'list' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Pekerja
+                        </button>
+                        <button
+                            onClick={() => setWorkerSubTab('evidence')}
+                            className={`flex-1 px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all shadow-sm ${workerSubTab === 'evidence' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                            Bukti Foto
+                        </button>
                     </div>
 
-                    <div>
-                        {/* Tim Header */}
-                        <div className="flex justify-between items-center mb-4 px-1">
-                            <div>
-                                <h3 className="font-bold text-lg text-slate-700">Daftar Pekerja</h3>
-                                <p className="text-xs text-slate-400">{activeProject.workers?.length || 0} orang terdaftar</p>
-                            </div>
-                            {canAddWorkers && (
-                                <button onClick={() => openModal('newWorker')} className="bg-white border text-slate-700 px-4 py-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-transform">
-                                    + Tambah Baru
-                                </button>
-                            )}
-                        </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className={`md:block ${workerSubTab === 'attendance' ? 'block' : 'hidden'}`}>
+                            <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-4 rounded-2xl shadow-lg font-bold mb-6 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                                <Users size={20} /> Isi Absensi Hari Ini
+                            </button>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                            {(activeProject.workers || []).map(w => {
-                                const f = calculateWorkerFinancials(activeProject, w.id);
-                                return (
-                                    <div key={w.id} className="bg-white p-4 rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] relative overflow-hidden group">
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div className="flex gap-3">
-                                                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-                                                    {w.name.charAt(0)}
+                            <div className="bg-white p-5 rounded-3xl border shadow-sm mb-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-slate-700">Rekapitulasi Tim</h3>
+                                    <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">Last 30 Days</span>
+                                </div>
+
+                                <div className="flex gap-2 mb-4 bg-slate-50 p-1.5 rounded-2xl border">
+                                    <div className="flex-1"><label className="text-[10px] block font-bold text-slate-400 ml-1 mb-1">Dari</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full bg-white border-0 rounded-xl p-2 text-xs font-bold shadow-sm" /></div>
+                                    <div className="flex-1"><label className="text-[10px] block font-bold text-slate-400 ml-1 mb-1">Sampai</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full bg-white border-0 rounded-xl p-2 text-xs font-bold shadow-sm" /></div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {getAttendanceSummary().map((stat: any, idx: number) => (
+                                        <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-white border flex items-center justify-center font-bold text-slate-600 text-sm shadow-sm">
+                                                    {stat.name.substring(0, 2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-slate-800 text-sm">{w.name}</h4>
-                                                    <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{w.role}</span>
+                                                    <h4 className="font-bold text-slate-800 text-sm">{stat.name}</h4>
+                                                    <div className="flex gap-2 text-[10px] mt-0.5">
+                                                        <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">{stat.hadir} Hadir</span>
+                                                        <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{stat.lembur} Lembur</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            {canAccessWorkers && (
-                                                <button onClick={() => handleEditWorker(w)} className="text-slate-300 hover:text-blue-500">
-                                                    <Edit size={14} />
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <div className="bg-slate-50 rounded-xl p-3 mb-3">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="text-[10px] text-slate-400 uppercase font-bold">Upah / {w.wageUnit}</span>
-                                                <span className="text-xs font-bold text-slate-700">{formatRupiah(w.realRate)}</span>
                                             </div>
                                             {canSeeMoney && (
-                                                <div className="flex justify-between items-center border-t border-slate-200 pt-1 mt-1">
-                                                    <span className="text-[10px] text-slate-400 uppercase font-bold">Sisa Hutang</span>
-                                                    <span className={`text-sm font-bold ${f.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>{formatRupiah(f.balance)}</span>
+                                                <div className="text-right">
+                                                    <div className="text-[10px] text-slate-400">Total Upah</div>
+                                                    <div className="font-bold text-slate-700">{formatRupiah(stat.totalCost)}</div>
                                                 </div>
                                             )}
                                         </div>
-
-                                        <div className="flex gap-2">
-                                            {canSeeMoney && f.balance > 0 && (
-                                                <button
-                                                    onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }}
-                                                    className="flex-1 bg-green-500 text-white py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-green-600 active:scale-95 transition-all"
-                                                >
-                                                    Bayar Gaji
-                                                </button>
-                                            )}
-                                            {canAccessWorkers && (
-                                                <button onClick={() => handleDeleteWorker(w)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100 active:scale-90 transition-all">
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                                    ))}
+                                    {getAttendanceSummary().length === 0 && (
+                                        <div className="text-center py-8 text-slate-400 text-sm italic">Belum ada data absensi pada periode ini.</div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="bg-white p-5 rounded-3xl border shadow-sm">
-                            <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><ImageIcon size={18} /> Galeri Bukti Absensi</h3>
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                                {getFilteredEvidence().map((ev: any) => (
-                                    <div key={ev.id} className="relative rounded-2xl overflow-hidden border aspect-square group">
-                                        <img src={ev.photoUrl} alt="Bukti" className="w-full h-full object-cover" />
-                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-6 text-white translate-y-2 group-hover:translate-y-0 transition-transform">
-                                            <div className="text-[10px] font-medium opacity-80">{new Date(ev.date).toLocaleDateString('id-ID')}</div>
-                                            {ev.location && <div className="text-[10px] font-bold truncate flex items-center gap-1"><ExternalLink size={8} /> Lokasi</div>}
+                        <div className={`md:block ${workerSubTab !== 'attendance' ? 'block' : 'hidden'}`}>
+
+                            {/* Worker List Section */}
+                            <div className={`mb-6 ${workerSubTab === 'evidence' ? 'hidden md:block' : ''}`}>
+                                <div className="flex justify-between items-center mb-4 px-1">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-700">Daftar Pekerja</h3>
+                                        <p className="text-xs text-slate-400">{activeProject.workers?.length || 0} orang terdaftar</p>
+                                    </div>
+                                    {canAddWorkers && (
+                                        <button onClick={() => openModal('newWorker')} className="bg-white border text-slate-700 px-4 py-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-transform">
+                                            + Tambah Baru
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {(activeProject.workers || []).map(w => {
+                                        const f = calculateWorkerFinancials(activeProject, w.id);
+                                        return (
+                                            <div key={w.id} className="bg-white p-4 rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div className="flex gap-3">
+                                                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                                                            {w.name.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-bold text-slate-800 text-sm">{w.name}</h4>
+                                                            <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{w.role}</span>
+                                                        </div>
+                                                    </div>
+                                                    {canAccessWorkers && (
+                                                        <button onClick={() => handleEditWorker(w)} className="text-slate-300 hover:text-blue-500">
+                                                            <Edit size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                <div className="bg-slate-50 rounded-xl p-3 mb-3">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-[10px] text-slate-400 uppercase font-bold">Upah / {w.wageUnit}</span>
+                                                        <span className="text-xs font-bold text-slate-700">{formatRupiah(w.realRate)}</span>
+                                                    </div>
+                                                    {canSeeMoney && (
+                                                        <div className="flex justify-between items-center border-t border-slate-200 pt-1 mt-1">
+                                                            <span className="text-[10px] text-slate-400 uppercase font-bold">Sisa Hutang</span>
+                                                            <span className={`text-sm font-bold ${f.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>{formatRupiah(f.balance)}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    {canSeeMoney && f.balance > 0 && (
+                                                        <button
+                                                            onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }}
+                                                            className="flex-1 bg-green-500 text-white py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-green-600 active:scale-95 transition-all"
+                                                        >
+                                                            Bayar Gaji
+                                                        </button>
+                                                    )}
+                                                    {canAccessWorkers && (
+                                                        <button onClick={() => handleDeleteWorker(w)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100 active:scale-90 transition-all">
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Evidence Gallery Section */}
+                            <div className={`bg-white p-5 rounded-3xl border shadow-sm ${workerSubTab === 'list' ? 'hidden md:block' : ''}`}>
+                                <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><ImageIcon size={18} /> Galeri Bukti Absensi</h3>
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                    {getFilteredEvidence().map((ev: any) => (
+                                        <div key={ev.id} className="relative rounded-2xl overflow-hidden border aspect-square group">
+                                            <img src={ev.photoUrl} alt="Bukti" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-6 text-white translate-y-2 group-hover:translate-y-0 transition-transform">
+                                                <div className="text-[10px] font-medium opacity-80">{new Date(ev.date).toLocaleDateString('id-ID')}</div>
+                                                {ev.location && <div className="text-[10px] font-bold truncate flex items-center gap-1"><ExternalLink size={8} /> Lokasi</div>}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                                {getFilteredEvidence().length === 0 && (
-                                    <div className="col-span-full py-8 text-center text-xs text-slate-400 border-2 border-dashed rounded-2xl">
-                                        Belum ada foto bukti absensi.
-                                    </div>
-                                )}
+                                    ))}
+                                    {getFilteredEvidence().length === 0 && (
+                                        <div className="col-span-full py-8 text-center text-xs text-slate-400 border-2 border-dashed rounded-2xl">
+                                            Belum ada foto bukti absensi.
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -880,26 +1062,97 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     <button
                                         onClick={() => {
                                             const lowStock = activeProject.materials!.filter(m => m.stock <= m.minStock);
-                                            const shopName = prompt("Nama Toko Bangunan / Supplier:", "Toko Langganan");
-                                            if (shopName === null) return;
-
-                                            const shopPhone = prompt("Nomor WA Toko (Opsional, awali 628...):", "");
-
-                                            const list = lowStock
-                                                .map(m => `- ${m.name}: butuh estimasi ${(m.minStock * 2) - m.stock > 0 ? (m.minStock * 2) - m.stock : 10} ${m.unit}`)
-                                                .join('\n');
-
-                                            const msg = `Halo ${shopName},\nSaya mau pesan material untuk proyek *${activeProject.name}*:\n\n${list}\n\nMohon info ketersediaan & harga total. Terima kasih.`;
-
-                                            const targetUrl = shopPhone ? `https://wa.me/${shopPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-
-                                            window.open(targetUrl, '_blank');
+                                            setReorderItems(lowStock.map(m => m.id));
+                                            setShowReorderModal(true);
                                         }}
                                         className="w-full sm:w-auto bg-red-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center gap-2"
                                     >
                                         <ShoppingCart size={20} />
                                         Order via WhatsApp
                                     </button>
+                                </div>
+                            )}
+
+                            {/* REORDER MODAL */}
+                            {showReorderModal && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden">
+                                        <div className="p-6 border-b flex justify-between items-center">
+                                            <h3 className="font-bold text-xl text-slate-800">Pilih Item Restock</h3>
+                                            <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">
+                                                {reorderItems.length} Dipilih
+                                            </div>
+                                        </div>
+
+                                        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-3">
+                                            <p className="text-sm text-slate-500 mb-4">
+                                                Centang material yang ingin dipesan. Material yang tidak dicentang (misal: sisa proyek sebelumnya) tidak akan masuk list order.
+                                            </p>
+
+                                            {activeProject.materials?.filter(m => m.stock <= m.minStock).map(m => (
+                                                <div
+                                                    key={m.id}
+                                                    onClick={() => {
+                                                        if (reorderItems.includes(m.id)) {
+                                                            setReorderItems(prev => prev.filter(id => id !== m.id));
+                                                        } else {
+                                                            setReorderItems(prev => [...prev, m.id]);
+                                                        }
+                                                    }}
+                                                    className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${reorderItems.includes(m.id) ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-100' : 'bg-white border-slate-100 hover:bg-slate-50'}`}
+                                                >
+                                                    <div className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-colors ${reorderItems.includes(m.id) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-300'}`}>
+                                                        {reorderItems.includes(m.id) && <CheckCircle size={14} />}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-slate-800">{m.name}</div>
+                                                        <div className="text-xs text-slate-500">
+                                                            Sisa: <span className="text-red-500 font-bold">{m.stock} {m.unit}</span> (Min: {m.minStock})
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {activeProject.materials?.filter(m => m.stock <= m.minStock).length === 0 && (
+                                                <div className="text-center py-8 text-slate-400">Tidak ada item low stock.</div>
+                                            )}
+                                        </div>
+
+                                        <div className="p-4 bg-slate-50 border-t flex gap-3">
+                                            <button
+                                                onClick={() => setShowReorderModal(false)}
+                                                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+                                            >
+                                                Batal
+                                            </button>
+                                            <button
+                                                disabled={reorderItems.length === 0}
+                                                onClick={() => {
+                                                    const selectedMaterials = activeProject.materials!.filter(m => reorderItems.includes(m.id));
+
+                                                    const shopName = prompt("Nama Toko Bangunan / Supplier:", "Toko Langganan");
+                                                    if (shopName === null) return;
+
+                                                    const shopPhone = prompt("Nomor WA Toko (Opsional, awali 628...):", "");
+
+                                                    const list = selectedMaterials
+                                                        .map(m => `- ${m.name}: butuh estimasi ${(m.minStock * 2) - m.stock > 0 ? (m.minStock * 2) - m.stock : 10} ${m.unit}`)
+                                                        .join('\n');
+
+                                                    const msg = `Halo ${shopName},\nSaya mau pesan material untuk proyek *${activeProject.name}*:\n\n${list}\n\nMohon info ketersediaan & harga total. Terima kasih.`;
+
+                                                    const targetUrl = shopPhone ? `https://wa.me/${shopPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+                                                    window.open(targetUrl, '_blank');
+                                                    setShowReorderModal(false);
+                                                }}
+                                                className="flex-[2] py-3 px-4 rounded-xl font-bold text-white bg-green-600 shadow-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                            >
+                                                <ShoppingCart size={18} />
+                                                Lanjut ke WhatsApp
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -949,7 +1202,44 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 <button onClick={() => window.print()} className="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors w-full sm:w-auto">Print / PDF</button>
                             </div>
 
-                            <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+                            {/* Mobile Card View */}
+                            <div className="md:hidden space-y-4">
+                                {recapData.length === 0 ? (
+                                    <div className="p-8 text-center text-slate-400 italic border-2 border-dashed rounded-2xl bg-slate-50">
+                                        Tidak ada data rekap. Pastikan Item RAB Anda menggunakan AHS & memiliki volume.
+                                    </div>
+                                ) : (
+                                    recapData.map((item, idx) => (
+                                        <div key={idx} className="border rounded-2xl p-4 bg-slate-50 space-y-3">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <div className="font-bold text-slate-800 text-lg leading-tight">{item.name}</div>
+                                                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold ${item.type === 'bahan' ? 'bg-blue-100 text-blue-700' : item.type === 'upah' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                        {item.type}
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-2xl font-black text-slate-700">{item.totalCoefficient.toLocaleString('id-ID', { maximumFractionDigits: 2 })}</div>
+                                                    <div className="text-xs font-bold text-slate-400 uppercase">{item.unit}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-3 border-t border-dashed border-slate-200">
+                                                <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Digunakan Pada (Analisa):</div>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {item.items.slice(0, 5).map((r, i) => (
+                                                        <span key={i} className="bg-white px-2 py-1 rounded-md border text-[10px] text-slate-600 shadow-sm">{r}</span>
+                                                    ))}
+                                                    {item.items.length > 5 && <span className="text-slate-400 text-[10px] self-center">+{item.items.length - 5} lainnya</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
                                 <table className="w-full text-sm min-w-[600px]">
                                     <thead className="bg-slate-50 text-slate-600 border-b">
                                         <tr>
