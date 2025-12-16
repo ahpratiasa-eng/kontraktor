@@ -813,28 +813,39 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                 {transactionType === 'income' ? 'Catat Pemasukan' : 'Catat Pengeluaran'}
                             </h3>
 
-                            {/* AI SCANNER - ONLY FOR EXPENSE OR IF NEEDED */}
-                            {transactionType === 'expense' && (
-                                <div className="bg-slate-50 p-4 rounded-xl mb-2 border border-slate-100">
-                                    <ReceiptScanner onScanComplete={(data) => {
-                                        setTransactionAmount(data.total);
-                                        setTransactionDate(data.date);
-                                        setTransactionDesc(data.description || 'Pengeluaran via Scan Struk');
-                                        if (data.imageFile && setTransactionProof) {
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => setTransactionProof(reader.result as string);
-                                            reader.readAsDataURL(data.imageFile);
-                                        }
-                                    }} />
-                                    <p className="text-[10px] text-center text-slate-400 mt-2">Scan struk belanja material / operasional</p>
-                                </div>
-                            )}
 
-                            {transactionType === 'income' && (
-                                <div className="bg-green-50 p-4 rounded-xl mb-4 text-green-800 text-sm">
-                                    Catat pembayaran dari klien (DP, Termin, atau Pelunasan).
-                                </div>
-                            )}
+                            <div className="bg-slate-50 p-4 rounded-xl mb-2 border border-slate-100">
+                                <ReceiptScanner onScanComplete={(data) => {
+                                    setTransactionAmount(data.total);
+                                    setTransactionDate(data.date);
+                                    setTransactionDesc(data.description || 'Pengeluaran via Scan Struk');
+                                    if (data.imageFile && setTransactionProof) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => setTransactionProof(reader.result as string);
+                                        reader.readAsDataURL(data.imageFile);
+                                    }
+                                }} />
+                                <p className="text-[10px] text-center text-slate-400 mt-2">Scan struk belanja material / operasional</p>
+                            </div>
+                            {/* AI SCANNER - FOR EXPENSE AND INCOME */}
+                            <div className={`p-4 rounded-xl mb-2 border ${transactionType === 'income' ? 'bg-green-50 border-green-100' : 'bg-slate-50 border-slate-100'}`}>
+                                <ReceiptScanner onScanComplete={(data) => {
+                                    setTransactionAmount(data.total);
+                                    setTransactionDate(data.date);
+                                    setTransactionDesc(data.description || (transactionType === 'income' ? 'Pemasukan via Scan' : 'Pengeluaran via Scan Struk'));
+
+                                    // If income, try to detect "Transfer" or similar keywords if needed, but description from gemini is usually good enough.
+
+                                    if (data.imageFile && setTransactionProof) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => setTransactionProof(reader.result as string);
+                                        reader.readAsDataURL(data.imageFile);
+                                    }
+                                }} />
+                                <p className={`text-[10px] text-center mt-2 ${transactionType === 'income' ? 'text-green-600' : 'text-slate-400'}`}>
+                                    {transactionType === 'income' ? 'Scan bukti transfer / mutasi bank' : 'Scan struk belanja material / operasional'}
+                                </p>
+                            </div>
 
                             <hr className="border-slate-100 my-2" />
 
