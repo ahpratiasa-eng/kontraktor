@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Tesseract from 'tesseract.js';
-import { Camera, Upload, Loader2, X, RefreshCw } from 'lucide-react';
+import { Camera, Loader2, X, RefreshCw } from 'lucide-react';
 
 interface ScannedData {
     total: number;

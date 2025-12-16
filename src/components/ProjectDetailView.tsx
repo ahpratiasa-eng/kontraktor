@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote, Calendar, TrendingUp,
-    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, ChevronDown, Plus, CheckCircle, Camera
+    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, Plus, CheckCircle, Camera
 } from 'lucide-react';
-import { NumberInput } from './UIComponents';
 import SCurveChart from './SCurveChart';
 import {
     formatRupiah, getStats, getMonthlyGroupedTransactions,
