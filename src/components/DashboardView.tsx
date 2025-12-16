@@ -28,7 +28,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     const critical = activeProjects.filter(p => calculateProjectHealth(p).isCritical).length;
 
     return (
-        <main className="pb-28 px-4 md:px-6">
+        <main className="pb-28">
             {/* Header / Welcome Section */}
             <div className="mb-6 flex justify-between items-start">
                 <div>
