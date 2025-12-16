@@ -763,30 +763,32 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     <TrendingUp size={100} />
                                 </div>
                                 <h3 className="text-slate-300 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4">Total Arus Kas (Cash Flow)</h3>
-                                <div className="flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-8 mb-6 relative z-10">
-                                    <div>
+                                <div className="flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-8 mb-6 relative z-10 w-full">
+                                    <div className="min-w-0">
                                         <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pemasukan</p>
-                                        <p className="text-lg md:text-xl font-bold text-green-400 truncate">
+                                        <p className="text-lg md:text-xl font-bold text-green-400 break-words">
                                             + {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0))}
                                         </p>
                                     </div>
-                                    <div>
+                                    <div className="min-w-0">
                                         <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pengeluaran</p>
-                                        <p className="text-lg md:text-xl font-bold text-red-400 truncate">
+                                        <p className="text-lg md:text-xl font-bold text-red-400 break-words">
                                             - {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0))}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="border-t border-slate-700 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0 relative z-10">
+                                <div className="border-t border-slate-700 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0 relative z-10 w-full">
                                     <span className="text-xs md:text-sm font-medium text-slate-300">Sisa Kas (Balance)</span>
                                     {(() => {
                                         const inc = (activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
                                         const exp = (activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
                                         const bal = inc - exp;
                                         return (
-                                            <span className={`text-xl md:text-2xl font-black truncate ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
-                                                {bal >= 0 ? '+' : '-'} {formatRupiah(Math.abs(bal))}
-                                            </span>
+                                            <div className="min-w-0 w-full md:w-auto text-left md:text-right">
+                                                <span className={`text-xl md:text-2xl font-black break-words ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                                                    {bal >= 0 ? '+' : '-'} {formatRupiah(Math.abs(bal))}
+                                                </span>
+                                            </div>
                                         );
                                     })()}
                                 </div>
