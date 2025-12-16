@@ -33,51 +33,64 @@ const PayrollSummary: React.FC<PayrollSummaryProps> = ({ project, onPayWorker })
 
     return (
         <div className="space-y-6">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Users size={20} />
-                        <span className="text-sm font-medium opacity-90">Total Tukang</span>
-                    </div>
-                    <p className="text-3xl font-bold">{workers.length}</p>
+            {/* Summary Card - Single unified dark card */}
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 md:p-6 rounded-3xl shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <DollarSign size={120} />
                 </div>
-
-                <div className="bg-gradient-to-br from-amber-500 to-orange-500 text-white p-4 rounded-2xl shadow-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                        <DollarSign size={20} />
-                        <span className="text-sm font-medium opacity-90">Total Upah</span>
+                <h3 className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4">Ringkasan Gaji & Hutang</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 relative z-10">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
+                                <Users size={16} className="text-slate-300" />
+                            </div>
+                        </div>
+                        <p className="text-[10px] md:text-xs text-slate-400 mb-0.5">Total Tukang</p>
+                        <p className="text-xl md:text-2xl font-black">{workers.length}</p>
                     </div>
-                    <p className="text-2xl font-bold">{formatRupiah(totalDue)}</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-green-500 to-emerald-500 text-white p-4 rounded-2xl shadow-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle size={20} />
-                        <span className="text-sm font-medium opacity-90">Sudah Dibayar</span>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
+                                <DollarSign size={16} className="text-slate-300" />
+                            </div>
+                        </div>
+                        <p className="text-[10px] md:text-xs text-slate-400 mb-0.5">Total Upah</p>
+                        <p className="text-lg md:text-xl font-bold text-blue-300">{formatRupiah(totalDue)}</p>
                     </div>
-                    <p className="text-2xl font-bold">{formatRupiah(totalPaid)}</p>
-                </div>
-
-                <div className={`p-4 rounded-2xl shadow-lg ${totalBalance > 0 ? 'bg-gradient-to-br from-red-500 to-rose-500 text-white' : 'bg-gradient-to-br from-slate-500 to-slate-600 text-white'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                        {totalBalance > 0 ? <TrendingDown size={20} /> : <CheckCircle size={20} />}
-                        <span className="text-sm font-medium opacity-90">Sisa Hutang</span>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
+                                <CheckCircle size={16} className="text-green-400" />
+                            </div>
+                        </div>
+                        <p className="text-[10px] md:text-xs text-slate-400 mb-0.5">Sudah Dibayar</p>
+                        <p className="text-lg md:text-xl font-bold text-green-400">{formatRupiah(totalPaid)}</p>
                     </div>
-                    <p className="text-2xl font-bold">{formatRupiah(totalBalance)}</p>
-                    {workersWithDebt > 0 && (
-                        <p className="text-xs opacity-75 mt-1">{workersWithDebt} tukang belum lunas</p>
-                    )}
+                    <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
+                                {totalBalance > 0 ? <TrendingDown size={16} className="text-amber-400" /> : <CheckCircle size={16} className="text-green-400" />}
+                            </div>
+                        </div>
+                        <p className="text-[10px] md:text-xs text-slate-400 mb-0.5">Sisa Hutang</p>
+                        <p className={`text-lg md:text-xl font-bold ${totalBalance > 0 ? 'text-amber-400' : 'text-slate-400'}`}>
+                            {formatRupiah(totalBalance)}
+                        </p>
+                        {workersWithDebt > 0 && (
+                            <p className="text-[10px] text-slate-500 mt-0.5">{workersWithDebt} tukang belum lunas</p>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* Alert if significant debt */}
             {totalBalance > 1000000 && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                    <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+                    <AlertTriangle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
                     <div>
-                        <p className="font-bold text-red-800">Perhatian: Hutang Gaji Signifikan</p>
-                        <p className="text-sm text-red-600">Total hutang gaji sudah mencapai {formatRupiah(totalBalance)}. Pastikan cashflow proyek mencukupi untuk pembayaran.</p>
+                        <p className="font-bold text-amber-800">Perhatian: Hutang Gaji Signifikan</p>
+                        <p className="text-sm text-amber-700">Total hutang gaji sudah mencapai {formatRupiah(totalBalance)}. Pastikan cashflow proyek mencukupi.</p>
                     </div>
                 </div>
             )}
@@ -95,7 +108,7 @@ const PayrollSummary: React.FC<PayrollSummaryProps> = ({ project, onPayWorker })
                                     <div className="font-bold text-slate-800 text-lg">{worker.name}</div>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold ${worker.role === 'Mandor' ? 'bg-purple-100 text-purple-700' :
-                                                worker.role === 'Tukang' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
+                                            worker.role === 'Tukang' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
                                             }`}>{worker.role}</span>
                                         <span className="text-xs text-slate-400">{daysWorked.toFixed(1)} Hari Kerja</span>
                                     </div>
