@@ -194,13 +194,13 @@ const App = () => {
           )}
 
           {/* USER MANAGEMENT VIEW */}
-          {/* USER MANAGEMENT VIEW */}
           {view === 'user-management' && canAccessManagement() && (
             <UserManagementView
               appUsers={appUsers}
               currentUser={user}
               onDeleteUser={handleDeleteUser}
               onAddUser={() => openModal('addUser')}
+              setView={setView}
             />
           )}
 

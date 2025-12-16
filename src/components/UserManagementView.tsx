@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, UserPlus, Trash2 } from 'lucide-react';
+import { ShieldCheck, UserPlus, Trash2, ArrowLeft } from 'lucide-react';
 import type { AppUser } from '../types';
 
 interface UserManagementViewProps {
@@ -7,27 +7,38 @@ interface UserManagementViewProps {
     currentUser: any; // Using any to match current App usage securely
     onDeleteUser: (email: string) => void;
     onAddUser: () => void;
+    setView: (v: any) => void;
 }
 
 const UserManagementView: React.FC<UserManagementViewProps> = ({
     appUsers,
     currentUser,
     onDeleteUser,
-    onAddUser
+    onAddUser,
+    setView
 }) => {
     return (
-        <main className="space-y-6">
-            <div className="bg-blue-600 text-white p-8 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <main className="space-y-6 pb-24">
+            {/* Back Button */}
+            <button
+                onClick={() => setView('project-list')}
+                className="flex items-center gap-2 text-slate-600 hover:text-slate-800 font-medium mb-2"
+            >
+                <ArrowLeft size={18} /> Kembali ke Dashboard
+            </button>
+
+            <div className="bg-blue-600 text-white p-6 md:p-8 rounded-2xl shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="font-bold text-2xl flex items-center gap-2">
-                        <ShieldCheck size={28} /> Kelola Akses Pengguna
+                    <h2 className="font-bold text-xl md:text-2xl flex items-center gap-2">
+                        <ShieldCheck size={24} /> Kelola Akses Pengguna
                     </h2>
+                    <p className="text-blue-200 text-sm mt-1">Atur siapa yang bisa mengakses aplikasi</p>
                 </div>
                 <button
                     onClick={onAddUser}
-                    className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-50 shadow-md"
+                    className="bg-white text-blue-600 px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-50 shadow-md text-sm"
                 >
-                    <UserPlus size={20} /> Tambah User
+                    <UserPlus size={18} /> Tambah User
                 </button>
             </div>
 
