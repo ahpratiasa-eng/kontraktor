@@ -286,19 +286,18 @@ const App = () => {
               </p>
             </div>
           )}
-
-
-          {/* REPORT VIEW */}
-          {view === 'report-view' && activeProject && (canSeeMoney() || isClientView) && (
-            <ReportView
-              activeProject={activeProject}
-              setView={setView}
-              isClientView={isClientView}
-              canViewInternalRAB={canViewInternalRAB()}
-              landingConfig={landingConfig}
-            />
-          )}
         </div>
+
+        {/* REPORT VIEW - Outside padded container for full width */}
+        {view === 'report-view' && activeProject && (canSeeMoney() || isClientView) && (
+          <ReportView
+            activeProject={activeProject}
+            setView={setView}
+            isClientView={isClientView}
+            canViewInternalRAB={canViewInternalRAB()}
+            landingConfig={landingConfig}
+          />
+        )}
       </div>
 
       <ModalManager

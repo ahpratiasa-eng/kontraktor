@@ -29,29 +29,29 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClien
         .slice(0, 6);
 
     return (
-        <div className="min-h-screen bg-white">
-            <header className="bg-slate-800 text-white px-4 py-3 flex items-center justify-between sticky top-0 shadow-md z-20 print:hidden">
+        <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+            <header className="bg-slate-800 text-white px-3 py-2.5 flex items-center justify-between sticky top-0 shadow-md z-20 print:hidden">
                 <div className="flex items-center gap-2">
                     <button onClick={() => setView('project-detail')} className="hover:bg-slate-700 p-1.5 rounded">
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={18} />
                     </button>
-                    <h2 className="font-bold uppercase tracking-wider text-xs">Laporan Detail</h2>
+                    <h2 className="font-bold uppercase tracking-wider text-[11px]">Laporan</h2>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     {!isClientView && canViewInternalRAB && (
-                        <div className="bg-slate-700 p-0.5 rounded flex text-[10px]">
-                            <button onClick={() => setRabViewMode('client')} className={`px-2 py-1 rounded transition ${rabViewMode === 'client' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300'}`}>Client</button>
-                            <button onClick={() => setRabViewMode('internal')} className={`px-2 py-1 rounded transition ${rabViewMode === 'internal' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300'}`}>Internal</button>
+                        <div className="bg-slate-700 p-0.5 rounded flex text-[9px]">
+                            <button onClick={() => setRabViewMode('client')} className={`px-2 py-0.5 rounded transition ${rabViewMode === 'client' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300'}`}>Client</button>
+                            <button onClick={() => setRabViewMode('internal')} className={`px-2 py-0.5 rounded transition ${rabViewMode === 'internal' ? 'bg-white text-slate-800 font-bold' : 'text-slate-300'}`}>Internal</button>
                         </div>
                     )}
                     <button onClick={() => window.print()} className="bg-white text-slate-800 p-1.5 rounded-full hover:bg-slate-100 shadow-sm">
-                        <Printer size={16} />
+                        <Printer size={14} />
                     </button>
                 </div>
             </header>
 
             {/* PRINT ONLY HEADER (KOP SURAT) */}
-            <div className="hidden print:block mb-8 border-b-4 border-slate-800 pb-4">
+            <div className="hidden print:block mb-8 border-b-4 border-slate-800 pb-4 px-8">
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-2xl font-bold uppercase text-slate-800">{landingConfig?.companyName || 'KONTRAKTOR PRO'}</h1>
@@ -68,14 +68,13 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClien
                 </div>
             </div>
 
-            <main className="p-4 md:p-8 max-w-4xl mx-auto print:p-0 print:max-w-none pb-24">
+            <main className="p-4 print:p-8 pb-20">
                 {/* Project Header */}
-                <div className="border-b-2 border-slate-800 pb-4 mb-6 print:border-b-2 print:mb-4">
-                    <h1 className="text-xl md:text-3xl font-bold uppercase mb-2 print:text-2xl leading-tight">{activeProject.name}</h1>
-                    <div className="flex flex-col md:flex-row md:justify-between text-xs md:text-sm text-slate-600 font-medium gap-1">
+                <div className="border-b-2 border-slate-300 pb-3 mb-4">
+                    <h1 className="text-lg font-bold uppercase mb-1 leading-tight text-slate-800">{activeProject.name}</h1>
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
                         <span>Klien: {activeProject.client}</span>
-                        <span className="print:hidden text-slate-400">{today}</span>
-                        <span className="hidden print:inline">Lokasi: {activeProject.location}</span>
+                        <span className="print:hidden">{today}</span>
                     </div>
                 </div>
 
