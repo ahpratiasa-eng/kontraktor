@@ -757,41 +757,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                     {financeTab === 'transactions' && (
                         <div className="max-w-2xl mx-auto w-full">
-                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 md:p-6 rounded-3xl shadow-md mb-6 relative overflow-hidden w-full max-w-full">
-                                <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <TrendingUp size={100} />
-                                </div>
-                                <h3 className="text-slate-300 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4">Total Arus Kas (Cash Flow)</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-6 relative z-10 w-full">
-                                    <div className="min-w-0 overflow-hidden">
-                                        <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pemasukan</p>
-                                        <p className="text-lg md:text-xl font-bold text-green-400 break-all whitespace-normal">
-                                            + {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0)).replace(/\u00A0/g, ' ')}
-                                        </p>
-                                    </div>
-                                    <div className="min-w-0 overflow-hidden">
-                                        <p className="text-[10px] md:text-xs text-slate-400 mb-1">Total Pengeluaran</p>
-                                        <p className="text-lg md:text-xl font-bold text-red-400 break-all whitespace-normal">
-                                            - {formatRupiah((activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0)).replace(/\u00A0/g, ' ')}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="border-t border-slate-700 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0 relative z-10 w-full">
-                                    <span className="text-xs md:text-sm font-medium text-slate-300">Sisa Kas (Balance)</span>
-                                    {(() => {
-                                        const inc = (activeProject.transactions || []).filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
-                                        const exp = (activeProject.transactions || []).filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
-                                        const bal = inc - exp;
-                                        return (
-                                            <div className="min-w-0 w-full md:w-auto text-left md:text-right overflow-hidden">
-                                                <span className={`text-xl md:text-2xl font-black break-all whitespace-normal ${bal >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
-                                                    {bal >= 0 ? '+' : '-'} {formatRupiah(Math.abs(bal)).replace(/\u00A0/g, ' ')}
-                                                </span>
-                                            </div>
-                                        );
-                                    })()}
-                                </div>
-                            </div>
+
 
                             <div className="bg-white p-5 rounded-3xl border shadow-sm mb-6 w-full max-w-full">
                                 <h3 className="font-bold text-slate-800 mb-4">Catat Transaksi Baru</h3>
