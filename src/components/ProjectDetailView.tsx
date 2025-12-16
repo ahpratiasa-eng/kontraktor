@@ -55,7 +55,7 @@ interface ProjectDetailViewProps {
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
-    activeProject, activeTab, updateProject,
+    activeProject, activeTab, updateProject, setView,
     openModal, setModalType, setShowModal, setSelectedRabItem, setProgressInput, setProgressDate,
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
@@ -292,14 +292,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     <FileText size={18} /> Lapor via WA
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        // Placeholder for actual report generation logic or re-enabling older logic
-                                        alert("Fitur Download Laporan PDF akan segera hadir.");
-                                        // If there was a specific function for this, it should be called here.
-                                    }}
+                                    onClick={() => setView('report')}
                                     className="bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
                                 >
-                                    <FileText size={18} /> Laporan PDF
+                                    <FileText size={18} /> Laporan Detail
                                 </button>
                                 {canEditProject && (
                                     <button
