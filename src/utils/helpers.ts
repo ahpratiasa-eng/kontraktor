@@ -39,7 +39,7 @@ export const getMonthlyGroupedTransactions = (transactions: Transaction[]): Mont
   transactions.forEach(t => {
     const d = new Date(t.date);
     const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
-    const monthLabel = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const monthLabel = d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
 
     if (!groups[monthKey]) {
       groups[monthKey] = {

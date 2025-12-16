@@ -852,7 +852,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                     <button
                                                         key={g.monthLabel}
                                                         onClick={() => setFinanceMonthTab(g.monthLabel)}
-                                                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border snap-start whitespace-nowrap ${activeKey === g.monthLabel
+                                                        className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border snap-start whitespace-nowrap ${activeKey === g.monthLabel
                                                             ? 'bg-slate-800 text-white border-slate-800 shadow-md'
                                                             : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                                                             }`}
