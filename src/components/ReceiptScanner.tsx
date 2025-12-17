@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import Tesseract from 'tesseract.js';
 import { Camera, Loader2, X, RefreshCw, Sparkles } from 'lucide-react';
 
 export interface ScannedData {
@@ -21,7 +22,6 @@ const compressImageForOCR = async (file: File, maxWidth = 1024): Promise<string>
             let width = img.width;
             let height = img.height;
 
-            // Scale down if too large
             if (width > maxWidth) {
                 height = (height * maxWidth) / width;
                 width = maxWidth;
@@ -37,8 +37,6 @@ const compressImageForOCR = async (file: File, maxWidth = 1024): Promise<string>
             }
 
             ctx.drawImage(img, 0, 0, width, height);
-
-            // Get base64 without the data:image prefix
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             const base64 = dataUrl.split(',')[1];
             resolve(base64);
@@ -48,16 +46,128 @@ const compressImageForOCR = async (file: File, maxWidth = 1024): Promise<string>
     });
 };
 
+// Parse receipt text with improved logic
+const parseReceiptText = (text: string): { total: number; date: string; description: string } => {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+    let foundTotal = 0;
+    let foundDate = '';
+    let descriptionCandidate = '';
+
+    // 1. Find Date
+    const datePatterns = [
+        /(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/,
+        /(\d{1,2})\s+(jan|feb|mar|apr|mei|may|jun|jul|agu|aug|sep|okt|oct|nov|des|dec)\w*\s+(\d{2,4})/i
+    ];
+
+    for (const pattern of datePatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            try {
+                if (pattern === datePatterns[0]) {
+                    const d = match[1].padStart(2, '0');
+                    const m = match[2].padStart(2, '0');
+                    let y = match[3];
+                    if (y.length === 2) y = '20' + y;
+                    foundDate = `${y}-${m}-${d}`;
+                } else {
+                    // Month name format
+                    const months: { [key: string]: string } = {
+                        'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+                        'mei': '05', 'may': '05', 'jun': '06', 'jul': '07',
+                        'agu': '08', 'aug': '08', 'sep': '09', 'okt': '10',
+                        'oct': '10', 'nov': '11', 'des': '12', 'dec': '12'
+                    };
+                    const d = match[1].padStart(2, '0');
+                    const m = months[match[2].toLowerCase().substring(0, 3)] || '01';
+                    let y = match[3];
+                    if (y.length === 2) y = '20' + y;
+                    foundDate = `${y}-${m}-${d}`;
+                }
+                break;
+            } catch (e) {
+                console.log("Date parse error", e);
+            }
+        }
+    }
+
+    // 2. Find Total - look for largest number after keywords
+    let maxPrice = 0;
+
+    lines.forEach(line => {
+        const isTotalLine = /total|jumlah|bayar|grand|subtotal/i.test(line);
+
+        // Extract numbers - handle Indonesian format (530.000)
+        const numbers = line.match(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+/g);
+
+        if (numbers) {
+            numbers.forEach(numStr => {
+                // Clean: 530.000 -> 530000
+                let cleanNum = numStr.replace(/\./g, '').replace(/,/g, '');
+                const val = parseInt(cleanNum);
+
+                if (!isNaN(val) && val > 100) {
+                    // Skip years and small values
+                    if (val >= 2020 && val <= 2030) return;
+
+                    if (isTotalLine) {
+                        if (val > maxPrice) maxPrice = val;
+                    } else if (val > maxPrice) {
+                        maxPrice = val;
+                    }
+                }
+            });
+        }
+    });
+
+    foundTotal = maxPrice;
+
+    // 3. Find Description - first line as store name
+    if (lines.length > 0) {
+        const storeName = lines[0].substring(0, 25);
+        descriptionCandidate = `Belanja di ${storeName}`;
+    }
+
+    return {
+        total: foundTotal,
+        date: foundDate || new Date().toISOString().split('T')[0],
+        description: descriptionCandidate
+    };
+};
+
 const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [statusText, setStatusText] = useState('');
+    const [progress, setProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Fallback OCR using Tesseract.js
+    const processWithTesseract = async (imageFile: File): Promise<{ total: number; date: string; description: string }> => {
+        setStatusText('OCR offline sedang memproses...');
+
+        const result = await Tesseract.recognize(
+            imageFile,
+            'ind+eng',
+            {
+                logger: (m) => {
+                    if (m.status === 'recognizing text') {
+                        setProgress(Math.round(m.progress * 100));
+                    }
+                },
+            }
+        );
+
+        console.log('[Tesseract OCR] Result:', result.data.text);
+        return parseReceiptText(result.data.text);
+    };
+
+    // Try Gemini API first, fallback to Tesseract
     const processWithGemini = async (imageFile: File) => {
         setIsProcessing(true);
         setStatusText('Memproses gambar...');
         setPreviewUrl(URL.createObjectURL(imageFile));
+        setProgress(0);
 
         try {
             // Compress image first
@@ -65,36 +175,19 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
             const base64 = await compressImageForOCR(imageFile);
 
             console.log('[Gemini OCR] Image size:', Math.round(base64.length / 1024), 'KB');
-
             setStatusText('AI sedang membaca struk...');
 
             const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
 
-            // Try multiple models in order of preference
-            const models = [
-                "gemini-1.5-flash",
-                "gemini-1.5-flash-latest",
-                "gemini-pro-vision",
-                "gemini-1.5-pro"
-            ];
+            const models = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro-vision"];
 
             const requestBody = {
                 contents: [{
                     parts: [
                         {
-                            text: `Baca struk/nota belanja ini dan berikan hasilnya dalam JSON.
-
-TUGAS:
-1. Cari TOTAL/JUMLAH yang harus dibayar (angka paling besar di bagian bawah, setelah kata "Jumlah" atau "Total")
-2. Cari TANGGAL transaksi
-3. Buat DESKRIPSI singkat (nama toko + barang yang dibeli)
-
-FORMAT ANGKA INDONESIA:
-- Titik (.) = pemisah ribuan, BUKAN desimal
-- Contoh: 530.000 artinya lima ratus tiga puluh ribu = 530000
-
-RESPONSE FORMAT (JSON only, no markdown):
-{"total": 530000, "date": "2020-03-23", "description": "Toko ABC - beli material"}`
+                            text: `Baca struk/nota ini. Return JSON saja:
+{"total": ANGKA_TOTAL, "date": "YYYY-MM-DD", "description": "NAMA_TOKO"}
+Contoh: {"total": 530000, "date": "2020-03-23", "description": "UD. Budi Jaya"}`
                         },
                         {
                             inline_data: {
@@ -104,21 +197,16 @@ RESPONSE FORMAT (JSON only, no markdown):
                         }
                     ]
                 }],
-                generationConfig: {
-                    temperature: 0.1,
-                    maxOutputTokens: 256
-                }
+                generationConfig: { temperature: 0.1, maxOutputTokens: 128 }
             };
 
-            console.log('[Gemini OCR] Trying multiple models...');
-
-            let response: Response | null = null;
-            let usedModel = '';
+            let geminiSuccess = false;
+            let parsedResult: { total: number; date: string; description: string } | null = null;
 
             for (const modelName of models) {
-                console.log(`[Gemini OCR] Trying model: ${modelName}`);
+                console.log(`[Gemini OCR] Trying: ${modelName}`);
                 try {
-                    response = await fetch(
+                    const response = await fetch(
                         `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
                         {
                             method: 'POST',
@@ -128,97 +216,70 @@ RESPONSE FORMAT (JSON only, no markdown):
                     );
 
                     if (response.ok) {
-                        usedModel = modelName;
-                        console.log(`[Gemini OCR] Success with model: ${modelName}`);
-                        break;
+                        const data = await response.json();
+                        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                        if (text) {
+                            console.log('[Gemini OCR] Response:', text);
+                            let cleanJson = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                            const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+                            if (jsonMatch) {
+                                const parsed = JSON.parse(jsonMatch[0]);
+                                parsedResult = {
+                                    total: typeof parsed.total === 'number' ? parsed.total : parseInt(String(parsed.total).replace(/\D/g, '')) || 0,
+                                    date: parsed.date || new Date().toISOString().split('T')[0],
+                                    description: parsed.description || 'Scan struk'
+                                };
+                                geminiSuccess = true;
+                                break;
+                            }
+                        }
                     } else {
-                        console.log(`[Gemini OCR] Model ${modelName} failed with status: ${response.status}`);
+                        console.log(`[Gemini OCR] ${modelName} failed: ${response.status}`);
                     }
                 } catch (e) {
-                    console.log(`[Gemini OCR] Model ${modelName} error:`, e);
+                    console.log(`[Gemini OCR] ${modelName} error:`, e);
                 }
             }
 
-            if (!response || !response.ok) {
-                throw new Error('Semua model Gemini gagal. API mungkin tidak tersedia.');
+            // Fallback to Tesseract if Gemini fails
+            if (!geminiSuccess) {
+                console.log('[OCR] Gemini gagal, gunakan Tesseract...');
+                setStatusText('AI gagal, mencoba OCR offline...');
+                parsedResult = await processWithTesseract(imageFile);
             }
 
-            console.log('[Gemini OCR] Response status:', response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('[Gemini OCR] Error response:', errorText);
-                throw new Error(`API Error ${response.status}: ${errorText.substring(0, 100)}`);
+            if (parsedResult) {
+                setStatusText('Berhasil!');
+                onScanComplete({
+                    ...parsedResult,
+                    imageFile
+                });
             }
-
-            const data = await response.json();
-            console.log('[Gemini OCR] Full response:', JSON.stringify(data, null, 2));
-
-            // Check for blocked content or errors
-            if (data.candidates?.[0]?.finishReason === 'SAFETY') {
-                throw new Error('Konten diblokir oleh safety filter');
-            }
-
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (!text) {
-                console.error('[Gemini OCR] No text in response:', data);
-                throw new Error('AI tidak mengembalikan hasil. Coba foto ulang dengan lebih jelas.');
-            }
-
-            console.log('[Gemini OCR] Raw response text:', text);
-
-            // Clean and parse JSON
-            let cleanJson = text.trim();
-            // Remove markdown code blocks if present
-            cleanJson = cleanJson.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-
-            // Try to extract JSON if there's extra text
-            const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                cleanJson = jsonMatch[0];
-            }
-
-            console.log('[Gemini OCR] Clean JSON:', cleanJson);
-
-            const parsed = JSON.parse(cleanJson);
-
-            console.log('[Gemini OCR] Parsed result:', parsed);
-
-            // Validate and convert total
-            let totalValue = 0;
-            if (typeof parsed.total === 'number') {
-                totalValue = parsed.total;
-            } else if (typeof parsed.total === 'string') {
-                // Remove all non-digit characters and parse
-                totalValue = parseInt(parsed.total.replace(/\D/g, '')) || 0;
-            }
-
-            const result: ScannedData = {
-                total: totalValue,
-                date: parsed.date || new Date().toISOString().split('T')[0],
-                description: parsed.description || 'Scan struk',
-                imageFile
-            };
-
-            setStatusText('Berhasil!');
-            onScanComplete(result);
 
         } catch (error: any) {
-            console.error("[Gemini OCR] Error:", error);
-            setStatusText('Gagal membaca');
+            console.error("[OCR] Error:", error);
 
-            // Show detailed error
-            const errorMsg = error.message || 'Unknown error';
-            alert(`AI gagal membaca struk.\n\nError: ${errorMsg}\n\nSilakan isi data secara manual.`);
-
-            // Still call complete with empty data so user can fill manually
-            onScanComplete({
-                total: 0,
-                date: new Date().toISOString().split('T')[0],
-                description: '',
-                imageFile
-            });
+            // Final fallback
+            try {
+                setStatusText('Error, mencoba OCR offline...');
+                const fallbackResult = await processWithTesseract(imageFile);
+                setStatusText('Berhasil (offline)!');
+                onScanComplete({
+                    ...fallbackResult,
+                    imageFile
+                });
+            } catch (tessError) {
+                console.error("[Tesseract] Error:", tessError);
+                setStatusText('Gagal');
+                alert("Gagal membaca struk. Silakan isi manual.");
+                onScanComplete({
+                    total: 0,
+                    date: new Date().toISOString().split('T')[0],
+                    description: '',
+                    imageFile
+                });
+            }
         } finally {
             setIsProcessing(false);
         }
@@ -233,6 +294,7 @@ RESPONSE FORMAT (JSON only, no markdown):
     const resetScanner = () => {
         setPreviewUrl(null);
         setStatusText('');
+        setProgress(0);
     };
 
     if (isProcessing) {
@@ -241,9 +303,14 @@ RESPONSE FORMAT (JSON only, no markdown):
                 <Loader2 className="w-10 h-10 text-purple-600 animate-spin mb-3" />
                 <p className="font-bold text-slate-700">Membaca Struk...</p>
                 <p className="text-xs text-purple-500 mb-2 flex items-center gap-1">
-                    <Sparkles size={12} /> Powered by Gemini AI
+                    <Sparkles size={12} /> AI + OCR Powered
                 </p>
                 <p className="text-[10px] text-slate-400">{statusText}</p>
+                {progress > 0 && (
+                    <div className="w-full max-w-[150px] bg-slate-200 rounded-full h-1.5 mt-2">
+                        <div className="bg-purple-600 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
+                    </div>
+                )}
             </div>
         );
     }
