@@ -678,6 +678,22 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             </div>
 
                             <div className="space-y-6">
+                                {/* Empty State when no RAB items */}
+                                {(!activeProject.rabItems || activeProject.rabItems.length === 0) && (
+                                    <div className="bg-white p-8 md:p-12 rounded-3xl border border-dashed border-slate-200 text-center">
+                                        <Sparkles size={48} className="mx-auto text-slate-300 mb-4" />
+                                        <h3 className="font-bold text-lg text-slate-700 mb-2">Belum Ada Item Pekerjaan</h3>
+                                        <p className="text-sm text-slate-500 mb-6">Tambahkan item RAB untuk melihat progress dan Kurva-S</p>
+                                        {!isClientView && canEditProject && (
+                                            <button
+                                                onClick={() => { setSelectedRabItem(null); openModal('newRAB'); }}
+                                                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm inline-flex items-center gap-2 hover:bg-blue-700"
+                                            >
+                                                <Plus size={18} /> Tambah Item RAB
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                                 {Object.keys(rabGroups).sort().map(category => (
                                     <div key={category} className="bg-white rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden">
                                         <div className="bg-slate-50/80 p-4 border-b flex justify-between items-center backdrop-blur-sm sticky top-0 z-10">
