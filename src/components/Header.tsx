@@ -37,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({
                 <div className="flex items-center gap-2 font-bold text-slate-800 md:hidden">
                     <Building2 className="text-blue-600" />
                     <div className="flex flex-col">
-                        <span>Kontraktor App</span>
+                        <span>Guna Karya</span>
                         {user && <span className="text-[10px] text-slate-400 font-normal uppercase">{userRole?.replace('_', ' ')}: {user.displayName?.split(' ')[0]}</span>}
                     </div>
                 </div>

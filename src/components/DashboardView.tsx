@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     Users, Trash2, Loader2, RefreshCw,
-    Clock, TrendingDown, CheckCircle, TrendingUp
+    Clock, TrendingDown
 } from 'lucide-react';
 import type { Project } from '../types';
 import type { User } from 'firebase/auth';
@@ -19,7 +19,7 @@ interface DashboardViewProps {
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({
-    user, projects, setActiveProjectId, setView, isSyncing,
+    projects, setActiveProjectId, setView, isSyncing,
     loadDemoData, canEditProject, handleSoftDeleteProject
 }) => {
     // State for Search and Filter
@@ -58,73 +58,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Header / Welcome Section */}
             <div className="mb-6 flex justify-between items-start">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-slate-800">Dashboard Proyek</h1>
-                    <p className="text-sm text-slate-500">Selamat Pagi, {user?.displayName?.split(' ')[0]}</p>
+                    <h1 className="text-xl md:text-2xl font-bold text-slate-800">Daftar Proyek</h1>
+                    <p className="text-sm text-slate-500">Kelola semua proyek Anda</p>
                 </div>
                 <div className="bg-slate-100 p-2.5 rounded-full shrink-0">
                     <Users size={20} className="text-slate-600" />
                 </div>
             </div>
 
-            {/* --- EXECUTIVE COMMAND CENTER --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                {/* 1. Total Revenue (Potential) */}
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-5 rounded-3xl text-white shadow-xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <TrendingUp size={80} />
-                    </div>
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 text-slate-400 mb-2">
-                            <div className="p-1.5 bg-slate-700/50 rounded-lg"><Clock size={16} /></div>
-                            <span className="text-xs font-bold uppercase tracking-wider">Potensi Pendapatan (RAB)</span>
-                        </div>
-                        <div className="text-xl md:text-2xl font-black mb-1 truncate">
-                            Rp {activeProjects.reduce((sum, p) => sum + (p.rabItems || []).reduce((s, r) => s + (r.unitPrice * r.volume), 0), 0).toLocaleString('id-ID', { maximumFractionDigits: 0 })}
-                        </div>
-                        <div className="text-xs text-slate-400">Total nilai kontrak berjalan</div>
-                    </div>
-                </div>
-
-                {/* 2. Total Spending (Real) - Warning Color if High? No, just neutral for now */}
-                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 text-red-500 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <TrendingDown size={80} />
-                    </div>
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 text-slate-500 mb-2">
-                            <div className="p-1.5 bg-red-50 rounded-lg text-red-500"><TrendingDown size={16} /></div>
-                            <span className="text-xs font-bold uppercase tracking-wider">Total Pengeluaran</span>
-                        </div>
-                        <div className="text-xl md:text-2xl font-black text-slate-800 mb-1 truncate">
-                            Rp {activeProjects.reduce((sum, p) => sum + (p.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), 0).toLocaleString('id-ID', { maximumFractionDigits: 0 })}
-                        </div>
-                        <div className="text-xs text-slate-400">Biaya material & operasional & upah</div>
-                    </div>
-                </div>
-
-                {/* 3. Estimasi Profit (Net) */}
-                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 text-green-500 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <CheckCircle size={80} />
-                    </div>
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 text-slate-500 mb-2">
-                            <div className="p-1.5 bg-green-50 rounded-lg text-green-500"><CheckCircle size={16} /></div>
-                            <span className="text-xs font-bold uppercase tracking-wider">Estimasi Profit</span>
-                        </div>
-                        <div className="text-xl md:text-2xl font-black text-green-600 mb-1 truncate">
-                            Rp {(
-                                activeProjects.reduce((sum, p) => sum + (p.rabItems || []).reduce((s, r) => s + (r.unitPrice * r.volume), 0), 0) -
-                                activeProjects.reduce((sum, p) => sum + (p.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0), 0)
-                            ).toLocaleString('id-ID', { maximumFractionDigits: 0 })}
-                        </div>
-                        <div className="text-xs text-slate-400">Margin keuntungan kasar</div>
-                    </div>
-                </div>
-            </div>
-
             {/* QUICK STATUS FILTERS */}
-            <h2 className="text-lg font-bold text-slate-800 mb-4 px-1">Overview Proyek</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-4 px-1">Filter Proyek</h2>
             <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
                 <button
                     onClick={() => setFilterStatus('all')}

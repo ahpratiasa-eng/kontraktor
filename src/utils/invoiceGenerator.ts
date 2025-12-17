@@ -194,7 +194,7 @@ export const generateInvoice = (
     doc.text("Transfer ke rekening:", margin + 5, yPos + 16);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0);
-    doc.text("Bank BCA - 1234567890 a.n. PT Kontraktor Pro", margin + 50, yPos + 16);
+    doc.text("Bank BCA - 1234567890 a.n. PT Guna Karya", margin + 50, yPos + 16);
 
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100);
@@ -218,7 +218,7 @@ export const generateInvoice = (
     const footerY = doc.internal.pageSize.height - 20;
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text("Invoice ini dibuat secara otomatis oleh Kontraktor Pro.", pageWidth / 2, footerY, { align: 'center' });
+    doc.text("Invoice ini dibuat secara otomatis oleh Guna Karya.", pageWidth / 2, footerY, { align: 'center' });
     doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
     // Save
