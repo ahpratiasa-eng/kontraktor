@@ -17,6 +17,7 @@ import AHSLibraryView from './components/AHSLibraryView';
 import TrashBinView from './components/TrashBinView';
 import UserManagementView from './components/UserManagementView';
 import LandingSettingsView from './components/LandingSettingsView';
+import AnalyticsView from './components/AnalyticsView';
 
 import {
   doc, deleteDoc, setDoc
@@ -252,6 +253,10 @@ const App = () => {
               canEditProject={canEditProject()}
               handleSoftDeleteProject={handleSoftDeleteProject}
             />
+          )}
+
+          {view === 'analytics' && (
+            <AnalyticsView projects={projects} />
           )}
 
           {view === 'project-detail' && activeProject && !isClientView && (

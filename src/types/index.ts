@@ -78,6 +78,16 @@ export type GalleryItem = {
   progress?: number;
 };
 
+export type ProjectDocument = {
+  id: number;
+  name: string;
+  type: 'kontrak' | 'spk' | 'addendum' | 'bast' | 'lainnya';
+  url: string;
+  uploadDate: string;
+  uploader: string;
+  notes?: string;
+};
+
 export type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
 
 // ========== PAYMENT TERMS (TERMIN) ==========
@@ -117,6 +127,7 @@ export type Project = {
   attendanceEvidences: AttendanceEvidence[];
   taskLogs: TaskLog[];
   gallery?: GalleryItem[];
+  documents?: ProjectDocument[];  // Dokumen kontrak/SPK
 };
 
 export type DailyTransactionGroup = {

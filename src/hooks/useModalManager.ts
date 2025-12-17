@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export type ViewType = 'dashboard' | 'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin' | 'landing-settings' | 'ahs-library';
+export type ViewType = 'dashboard' | 'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin' | 'landing-settings' | 'ahs-library' | 'analytics';
 
 export const useModalManager = () => {
     const [showModal, setShowModal] = useState(false);

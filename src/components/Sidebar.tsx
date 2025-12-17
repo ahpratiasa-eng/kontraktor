@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet, FolderKanban } from 'lucide-react';
+import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet, FolderKanban, BarChart3 } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface SidebarProps {
@@ -13,6 +13,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogout, userRole }) => {
     const canAccessManagement = () => userRole === 'super_admin';
     const canEditProject = () => userRole === 'super_admin' || userRole === 'kontraktor';
+    const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
 
     return (
         <aside className="hidden md:flex flex-col w-64 bg-white border-r fixed inset-y-0 z-20 print:hidden">
@@ -31,6 +32,11 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogou
                 <button onClick={() => setView('project-list')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'project-list' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
                     <FolderKanban size={20} /> Daftar Proyek
                 </button>
+                {canAccessFinance() && (
+                    <button onClick={() => setView('analytics')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'analytics' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        <BarChart3 size={20} /> Analytics
+                    </button>
+                )}
                 {canEditProject() && (
                     <button onClick={() => setView('ahs-library')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'ahs-library' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
                         <FileSpreadsheet size={20} /> Library AHS
