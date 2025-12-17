@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export type ViewType = 'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin' | 'landing-settings' | 'ahs-library';
+export type ViewType = 'dashboard' | 'project-list' | 'project-detail' | 'report-view' | 'user-management' | 'trash-bin' | 'landing-settings' | 'ahs-library';
 
 export const useModalManager = () => {
     const [showModal, setShowModal] = useState(false);
@@ -27,7 +27,7 @@ export const useModalManager = () => {
 };
 
 export const useViewManager = () => {
-    const [view, setView] = useState<ViewType>('project-list');
+    const [view, setView] = useState<ViewType>('dashboard');
     const [activeTab, setActiveTab] = useState('dashboard');
 
     return {

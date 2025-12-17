@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet } from 'lucide-react';
+import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet, FolderKanban } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface SidebarProps {
@@ -20,11 +20,16 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogou
                 <Building2 className="text-blue-600" /> Guna Karya
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                <button onClick={() => openModal('newProject')} className="w-full bg-blue-600 text-white p-3 rounded-lg flex items-center gap-2 font-bold hover:bg-blue-700 mb-4">
-                    <Plus size={20} /> Proyek Baru
+                {canEditProject() && (
+                    <button onClick={() => openModal('newProject')} className="w-full bg-blue-600 text-white p-3 rounded-lg flex items-center gap-2 font-bold hover:bg-blue-700 mb-4">
+                        <Plus size={20} /> Proyek Baru
+                    </button>
+                )}
+                <button onClick={() => setView('dashboard')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'dashboard' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                    <LayoutDashboard size={20} /> Dashboard
                 </button>
                 <button onClick={() => setView('project-list')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'project-list' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
-                    <LayoutDashboard size={20} /> Dashboard
+                    <FolderKanban size={20} /> Daftar Proyek
                 </button>
                 {canEditProject() && (
                     <button onClick={() => setView('ahs-library')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'ahs-library' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>

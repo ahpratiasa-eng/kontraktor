@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import Header from './components/Header';
 import DashboardView from './components/DashboardView';
+import DashboardOverview from './components/DashboardOverview';
 import ProjectDetailView from './components/ProjectDetailView';
 import ReportView from './components/ReportView';
 import ModalManager from './components/ModalManager';
@@ -230,6 +231,14 @@ const App = () => {
                 onResetToDefault={resetAHSToDefault}
               />
             </main>
+          )}
+
+          {view === 'dashboard' && (
+            <DashboardOverview
+              projects={projects}
+              setView={setView}
+              setActiveProjectId={setActiveProjectId}
+            />
           )}
 
           {view === 'project-list' && (
