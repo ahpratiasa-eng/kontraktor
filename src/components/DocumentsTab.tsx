@@ -3,6 +3,7 @@ import { FileText, Upload, Download, Trash2, FileCheck, FilePlus } from 'lucide-
 import type { Project, ProjectDocument } from '../types';
 import { generateSPKPDF, getDefaultSPKData, angkaTerbilang } from '../utils/spkGenerator';
 import type { SPKData } from '../utils/spkGenerator';
+import { uploadProjectDocument } from '../utils/storageHelper';
 
 interface DocumentsTabProps {
     activeProject: Project;
@@ -20,6 +21,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ activeProject, updateProjec
     const [docType, setDocType] = useState<ProjectDocument['type']>('kontrak');
     const [docUrl, setDocUrl] = useState('');
     const [docNotes, setDocNotes] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
 
     // SPK form state
     const [spkData, setSpkData] = useState<SPKData>(getDefaultSPKData(activeProject));
@@ -58,6 +60,44 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ activeProject, updateProjec
         updateProject({
             documents: documents.filter(d => d.id !== id)
         });
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Basic validation (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            alert("Ukuran file maksimal 10MB");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64 = reader.result as string;
+                // Determine project ID (fallback to 'general' if string/number mismatch or empty)
+                const pId = activeProject.id ? activeProject.id.toString() : 'general';
+                const url = await uploadProjectDocument(base64, pId, file.name);
+
+                setDocUrl(url);
+                // Also auto-fill name if empty
+                if (!docName) {
+                    setDocName(file.name.split('.')[0]);
+                }
+                setIsUploading(false);
+            };
+            reader.onerror = () => {
+                alert("Gagal membaca file");
+                setIsUploading(false);
+            };
+        } catch (error) {
+            console.error(error);
+            alert("Gagal mengupload file ke Cloud");
+            setIsUploading(false);
+        }
     };
 
     const handleGenerateSPK = () => {
@@ -211,15 +251,56 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ activeProject, updateProjec
                             </div>
 
                             <div>
-                                <label className="text-sm font-bold text-slate-600 mb-1 block">URL Dokumen *</label>
+                                <label className="text-sm font-bold text-slate-600 mb-1 block">Upload File / URL</label>
+
+                                {/* File Upload Button */}
+                                <div className="mb-3">
+                                    <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer hover:bg-slate-50 transition-colors ${isUploading ? 'bg-slate-50 border-blue-300' : 'border-slate-300'}`}>
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            {isUploading ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                                                    <p className="text-sm text-slate-500">Mengupload ke Google Drive...</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Upload className="w-8 h-8 mb-2 text-slate-400" />
+                                                    <p className="text-sm text-slate-500"><span className="font-bold">Klik untuk upload file</span></p>
+                                                    <p className="text-xs text-slate-400">PDF, Word, Excel, Gambar (Max 10MB)</p>
+                                                </>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            onChange={handleFileUpload}
+                                            disabled={isUploading}
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
+                                        />
+                                    </label>
+                                </div>
+
+                                <div className="relative">
+                                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                        <div className="h-px bg-slate-200 flex-1"></div>
+                                        <span className="text-xs text-slate-400 font-medium bg-white px-2">ATAU PASTE URL</span>
+                                        <div className="h-px bg-slate-200 flex-1"></div>
+                                    </div>
+                                </div>
+
                                 <input
                                     type="url"
                                     value={docUrl}
                                     onChange={(e) => setDocUrl(e.target.value)}
-                                    placeholder="https://drive.google.com/..."
-                                    className="w-full border rounded-xl p-3"
+                                    placeholder="https://..."
+                                    className="w-full border rounded-xl p-3 mt-3"
+                                    disabled={isUploading}
                                 />
-                                <p className="text-xs text-slate-400 mt-1">Upload ke Google Drive, lalu paste link-nya di sini</p>
+                                {docUrl && docUrl.includes('google') && !isUploading && (
+                                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                        <FileCheck size={12} /> Link terdeteksi valid
+                                    </p>
+                                )}
                             </div>
 
                             <div>

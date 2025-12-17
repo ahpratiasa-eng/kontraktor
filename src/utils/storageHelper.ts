@@ -181,6 +181,32 @@ export const uploadPortfolioPhoto = async (
 };
 
 /**
+ * Upload general project document (PDF, DOCX, etc)
+ * @param base64Data - Base64 data string (must include data:application/pdf;base64, etc)
+ * @param projectId - Project ID
+ * @param originalName - Original filename
+ * @returns Download URL
+ */
+export const uploadProjectDocument = async (
+    base64Data: string,
+    projectId: string,
+    originalName: string
+): Promise<string> => {
+    const scriptUrl = getGDriveScript();
+    // Sanitize filename and append timestamp
+    const ext = originalName.split('.').pop();
+    const cleanName = originalName.replace(/[^a-zA-Z0-9]/g, '_').replace(`_${ext}`, '');
+    const filename = `doc_${projectId}_${cleanName}_${Date.now()}.${ext}`;
+
+    if (scriptUrl) {
+        return uploadToGoogleDrive(base64Data, scriptUrl, filename);
+    }
+
+    // Fallback to firebase storage if script not available (though GDrive is preferred for docs)
+    return uploadImage(base64Data, `projects/${projectId}/documents`, filename);
+};
+
+/**
  * Upload project cover photo
  * @param base64Data - Base64 image
  * @param projectId - Project ID (optional, will use timestamp if not provided)
