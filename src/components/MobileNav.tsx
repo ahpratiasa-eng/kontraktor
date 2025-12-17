@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Wallet, Users, Package, TrendingUp, ImageIcon, FolderKanban, FileSpreadsheet } from 'lucide-react';
+import { LayoutDashboard, Wallet, Users, Package, TrendingUp, ImageIcon, FolderKanban, FileSpreadsheet, BarChart3 } from 'lucide-react';
 import type { UserRole } from '../types';
 import type { ViewType } from '../hooks/useModalManager';
 
@@ -21,8 +21,8 @@ const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, se
     const canAccessWorkers = () => ['super_admin', 'kontraktor', 'pengawas'].includes(userRole || '');
     const canEditProject = () => userRole === 'super_admin' || userRole === 'kontraktor';
 
-    // Main views (dashboard, project-list): Show main navigation
-    if ((view === 'dashboard' || view === 'project-list') && !isClientView && setView) {
+    // Main views (dashboard, project-list, analytics): Show main navigation
+    if ((view === 'dashboard' || view === 'project-list' || view === 'analytics') && !isClientView && setView) {
         return (
             <nav className="md:hidden fixed bottom-4 left-4 right-4 bg-slate-900/90 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-white/10 z-50 print:hidden transition-all duration-300 safe-area-bottom">
                 <div className="flex justify-around items-center px-4 py-3">
@@ -41,6 +41,16 @@ const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, se
                         <FolderKanban size={view === 'project-list' ? 24 : 20} strokeWidth={view === 'project-list' ? 2.5 : 2} />
                         <span className={`text-[10px] font-bold ${view === 'project-list' ? '' : 'opacity-70'}`}>Proyek</span>
                     </button>
+
+                    {canAccessFinance() && (
+                        <button
+                            onClick={() => setView('analytics')}
+                            className={`flex flex-col items-center gap-1 transition-all duration-300 ${view === 'analytics' ? 'text-blue-400 scale-110' : 'text-slate-400 hover:text-slate-200'}`}
+                        >
+                            <BarChart3 size={view === 'analytics' ? 24 : 20} strokeWidth={view === 'analytics' ? 2.5 : 2} />
+                            <span className={`text-[10px] font-bold ${view === 'analytics' ? '' : 'opacity-70'}`}>Analytics</span>
+                        </button>
+                    )}
 
                     {canEditProject() && (
                         <button

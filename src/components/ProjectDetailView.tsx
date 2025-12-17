@@ -13,6 +13,7 @@ import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
 import PayrollSummary from './PayrollSummary';
 import InvoiceTerminSection from './InvoiceTerminSection';
+import DocumentsTab from './DocumentsTab';
 import { generateDailyReport } from '../utils/pdfGenerator';
 
 import type { UserRole } from '../types';
@@ -252,6 +253,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         ...(!isClientView && canAccessWorkers ? [{ id: 'workers', label: 'Tim & Absensi', icon: <ImageIcon size={18} /> }] : []),
         ...(!isClientView ? [{ id: 'logistics', label: 'Logistik', icon: <History size={18} /> }] : []),
         { id: 'gallery', label: 'Galeri', icon: <ImageIcon size={18} /> },
+        ...(!isClientView && canEditProject ? [{ id: 'documents', label: 'Dokumen', icon: <FileText size={18} /> }] : []),
     ];
 
     return (
@@ -1461,6 +1463,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     project={activeProject}
                     updateProject={updateProject}
                     canEdit={!isClientView && (canEditProject || canAccessWorkers)}
+                />
+            )}
+
+            {activeTab === 'documents' && (
+                <DocumentsTab
+                    activeProject={activeProject}
+                    updateProject={updateProject}
+                    canEditProject={canEditProject}
                 />
             )}
 
