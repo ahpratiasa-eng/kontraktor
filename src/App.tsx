@@ -455,6 +455,7 @@ const App = () => {
         view={view}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        setView={setView}
         userRole={userRole}
         isClientView={isClientView}
         canViewKurvaS={canViewKurvaS()}
