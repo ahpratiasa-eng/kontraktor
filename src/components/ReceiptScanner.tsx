@@ -12,6 +12,42 @@ interface ReceiptScannerProps {
     onScanComplete: (data: ScannedData) => void;
 }
 
+// Compress image before sending to API
+const compressImageForOCR = async (file: File, maxWidth = 1024): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // Scale down if too large
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error('Canvas context not available'));
+                return;
+            }
+
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Get base64 without the data:image prefix
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const base64 = dataUrl.split(',')[1];
+            resolve(base64);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = URL.createObjectURL(file);
+    });
+};
+
 const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -20,85 +56,116 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
 
     const processWithGemini = async (imageFile: File) => {
         setIsProcessing(true);
-        setStatusText('Mengupload gambar...');
+        setStatusText('Memproses gambar...');
         setPreviewUrl(URL.createObjectURL(imageFile));
 
         try {
-            // Convert image to base64
-            const base64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const result = reader.result as string;
-                    // Remove data:image/...;base64, prefix
-                    const base64Data = result.split(',')[1];
-                    resolve(base64Data);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(imageFile);
-            });
+            // Compress image first
+            setStatusText('Mengompresi gambar...');
+            const base64 = await compressImageForOCR(imageFile);
+
+            console.log('[Gemini OCR] Image size:', Math.round(base64.length / 1024), 'KB');
 
             setStatusText('AI sedang membaca struk...');
 
             const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
+
+            const requestBody = {
+                contents: [{
+                    parts: [
+                        {
+                            text: `Baca struk/nota belanja ini dan berikan hasilnya dalam JSON.
+
+TUGAS:
+1. Cari TOTAL/JUMLAH yang harus dibayar (angka paling besar di bagian bawah, setelah kata "Jumlah" atau "Total")
+2. Cari TANGGAL transaksi
+3. Buat DESKRIPSI singkat (nama toko + barang yang dibeli)
+
+FORMAT ANGKA INDONESIA:
+- Titik (.) = pemisah ribuan, BUKAN desimal
+- Contoh: 530.000 artinya lima ratus tiga puluh ribu = 530000
+
+RESPONSE FORMAT (JSON only, no markdown):
+{"total": 530000, "date": "2020-03-23", "description": "Toko ABC - beli material"}`
+                        },
+                        {
+                            inline_data: {
+                                mime_type: 'image/jpeg',
+                                data: base64
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.1,
+                    maxOutputTokens: 256
+                }
+            };
+
+            console.log('[Gemini OCR] Sending request...');
+
             const response = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                {
-                                    text: `Kamu adalah AI pembaca struk/nota belanja Indonesia.
-                                    
-Analisa gambar struk/nota ini dengan teliti dan extract informasi berikut:
-
-1. **TOTAL**: Cari angka TOTAL/JUMLAH/GRAND TOTAL yang biasanya ada di bagian bawah struk. Jika ada baris "Jumlah" atau "Total" dengan angka di sampingnya, itu yang dicari. Return sebagai angka bulat tanpa titik/koma (contoh: 530000, bukan 530.000).
-
-2. **TANGGAL**: Cari tanggal transaksi. Format bisa DD/MM/YYYY, DD-MM-YYYY, atau "DD Bulan YYYY". Convert ke format YYYY-MM-DD.
-
-3. **DESKRIPSI**: Tulis nama toko/merchant dan ringkasan singkat apa yang dibeli (max 50 karakter).
-
-PENTING:
-- Untuk TOTAL, cari nilai yang ditulis setelah kata "Jumlah" atau "Total" (biasanya di bagian bawah)
-- Jangan ambil harga per item, tapi jumlah keseluruhan
-- Perhatikan format angka Indonesia: titik adalah pemisah ribuan (530.000 = 530000)
-
-Response dalam format JSON saja, tanpa markdown:
-{"total": 530000, "date": "2020-03-23", "description": "UD. Budi Jaya - Material bangunan"}`
-                                },
-                                {
-                                    inline_data: {
-                                        mime_type: imageFile.type || 'image/jpeg',
-                                        data: base64
-                                    }
-                                }
-                            ]
-                        }]
-                    })
+                    body: JSON.stringify(requestBody)
                 }
             );
 
+            console.log('[Gemini OCR] Response status:', response.status);
+
             if (!response.ok) {
-                throw new Error(`API Error: ${response.status}`);
+                const errorText = await response.text();
+                console.error('[Gemini OCR] Error response:', errorText);
+                throw new Error(`API Error ${response.status}: ${errorText.substring(0, 100)}`);
             }
 
             const data = await response.json();
+            console.log('[Gemini OCR] Full response:', JSON.stringify(data, null, 2));
+
+            // Check for blocked content or errors
+            if (data.candidates?.[0]?.finishReason === 'SAFETY') {
+                throw new Error('Konten diblokir oleh safety filter');
+            }
+
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-            console.log('[Gemini OCR] Raw response:', text);
+            if (!text) {
+                console.error('[Gemini OCR] No text in response:', data);
+                throw new Error('AI tidak mengembalikan hasil. Coba foto ulang dengan lebih jelas.');
+            }
+
+            console.log('[Gemini OCR] Raw response text:', text);
 
             // Clean and parse JSON
             let cleanJson = text.trim();
             // Remove markdown code blocks if present
-            cleanJson = cleanJson.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+            cleanJson = cleanJson.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+
+            // Try to extract JSON if there's extra text
+            const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                cleanJson = jsonMatch[0];
+            }
+
+            console.log('[Gemini OCR] Clean JSON:', cleanJson);
 
             const parsed = JSON.parse(cleanJson);
 
-            console.log('[Gemini OCR] Parsed:', parsed);
+            console.log('[Gemini OCR] Parsed result:', parsed);
+
+            // Validate and convert total
+            let totalValue = 0;
+            if (typeof parsed.total === 'number') {
+                totalValue = parsed.total;
+            } else if (typeof parsed.total === 'string') {
+                // Remove all non-digit characters and parse
+                totalValue = parseInt(parsed.total.replace(/\D/g, '')) || 0;
+            }
 
             const result: ScannedData = {
-                total: typeof parsed.total === 'number' ? parsed.total : parseInt(String(parsed.total).replace(/\D/g, '')) || 0,
+                total: totalValue,
                 date: parsed.date || new Date().toISOString().split('T')[0],
                 description: parsed.description || 'Scan struk',
                 imageFile
@@ -111,14 +178,15 @@ Response dalam format JSON saja, tanpa markdown:
             console.error("[Gemini OCR] Error:", error);
             setStatusText('Gagal membaca');
 
-            // Fallback to basic values
-            alert("AI gagal membaca struk. Silakan isi manual.\nError: " + (error.message || 'Unknown error'));
+            // Show detailed error
+            const errorMsg = error.message || 'Unknown error';
+            alert(`AI gagal membaca struk.\n\nError: ${errorMsg}\n\nSilakan isi data secara manual.`);
 
             // Still call complete with empty data so user can fill manually
             onScanComplete({
                 total: 0,
                 date: new Date().toISOString().split('T')[0],
-                description: 'Scan gagal - isi manual',
+                description: '',
                 imageFile
             });
         } finally {
