@@ -264,7 +264,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`px-4 py-3 rounded-t-lg text-sm font-bold flex items-center gap-2 transition-colors border-b-2 ${activeTab === tab.id ? 'bg-blue-50 text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-50'
+                        className={`px-4 py-3 rounded-t-lg text-sm font-bold flex items-center gap-2 transition-colors border-b-2 whitespace-nowrap flex-shrink-0 ${activeTab === tab.id ? 'bg-blue-50 text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-50'
                             }`}
                     >
                         {tab.icon} {tab.label}
