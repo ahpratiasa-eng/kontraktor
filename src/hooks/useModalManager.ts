@@ -27,8 +27,15 @@ export const useModalManager = () => {
 };
 
 export const useViewManager = () => {
-    const [view, setView] = useState<ViewType>('dashboard');
+    const [view, _setView] = useState<ViewType>('dashboard');
     const [activeTab, setActiveTab] = useState('dashboard');
+
+    // Wrap setView to scroll to top when view changes
+    const setView = (newView: ViewType) => {
+        _setView(newView);
+        // Scroll to top for mobile navigation
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    };
 
     return {
         view,
