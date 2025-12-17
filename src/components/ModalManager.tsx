@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package, ChevronDown, Calendar, Wallet } from 'lucide-react';
 import { NumberInput } from './UIComponents';
-import ReceiptScanner from './ReceiptScanner';
+
 import * as XLSX from 'xlsx';
 import type { UserRole, Material, RABItem, Project, AHSItem, PricingResource } from '../types';
 import { calculateAHSTotal } from '../types';
@@ -112,7 +112,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         paymentAmount, setPaymentAmount,
         transactionDesc, setTransactionDesc, transactionAmount, setTransactionAmount, transactionDate, setTransactionDate,
         transactionType = 'expense', transactionCategory, setTransactionCategory,
-        setTransactionProof,
+        transactionProof, setTransactionProof,
         inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate, inputMandorRate, setInputMandorRate,
         stockType, setStockType, stockQty, setStockQty, stockDate, setStockDate, stockNotes, setStockNotes, selectedMaterial,
         inputMaterialName, setInputMaterialName, inputMaterialUnit, setInputMaterialUnit, inputMinStock, setInputMinStock, inputInitialStock, setInputInitialStock,
@@ -814,29 +814,6 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             </h3>
 
 
-
-                            {/* AI SCANNER - FOR EXPENSE AND INCOME */}
-                            <div className={`p-4 rounded-xl mb-2 border ${transactionType === 'income' ? 'bg-green-50 border-green-100' : 'bg-slate-50 border-slate-100'}`}>
-                                <ReceiptScanner onScanComplete={(data) => {
-                                    setTransactionAmount(data.total);
-                                    setTransactionDate(data.date);
-                                    setTransactionDesc(data.description || (transactionType === 'income' ? 'Pemasukan via Scan' : 'Pengeluaran via Scan Struk'));
-
-                                    // If income, try to detect "Transfer" or similar keywords if needed, but description from gemini is usually good enough.
-
-                                    if (data.imageFile && setTransactionProof) {
-                                        const reader = new FileReader();
-                                        reader.onloadend = () => setTransactionProof(reader.result as string);
-                                        reader.readAsDataURL(data.imageFile);
-                                    }
-                                }} />
-                                <p className={`text-[10px] text-center mt-2 ${transactionType === 'income' ? 'text-green-600' : 'text-slate-400'}`}>
-                                    {transactionType === 'income' ? 'Scan bukti transfer / mutasi bank' : 'Scan struk belanja material / operasional'}
-                                </p>
-                            </div>
-
-                            <hr className="border-slate-100 my-2" />
-
                             <div className="space-y-3">
                                 {/* CATEGORY SELECTOR */}
                                 <div>
@@ -886,11 +863,56 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                 <div>
                                     <label className="text-xs font-bold text-slate-500 ml-1">Keterangan / Deskripsi</label>
                                     <textarea
-                                        className="w-full p-3 border rounded-xl h-24"
+                                        className="w-full p-3 border rounded-xl h-20"
                                         placeholder={transactionType === 'income' ? "Contoh: Pembayaran Termin 1 (30%)" : "Contoh: Beli Semen 50 Sak"}
                                         value={transactionDesc}
                                         onChange={e => setTransactionDesc(e.target.value)}
                                     />
+                                </div>
+
+                                {/* BUKTI TRANSAKSI UPLOAD */}
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">
+                                        Bukti Transaksi (Opsional)
+                                    </label>
+                                    <div className="mt-1 border-2 border-dashed border-slate-200 rounded-xl p-3 hover:bg-slate-50 transition relative overflow-hidden">
+                                        {transactionProof ? (
+                                            <div className="relative">
+                                                <img
+                                                    src={transactionProof}
+                                                    alt="Bukti"
+                                                    className="w-full h-32 object-cover rounded-lg"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setTransactionProof && setTransactionProof(null)}
+                                                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label className="flex flex-col items-center justify-center py-4 cursor-pointer">
+                                                <Camera className="text-slate-400 mb-1" size={24} />
+                                                <span className="text-xs text-slate-500 font-medium">
+                                                    {transactionType === 'income' ? 'Upload bukti transfer / mutasi' : 'Upload foto struk / nota'}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 mt-0.5">Tap untuk pilih foto</span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file || !setTransactionProof) return;
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => setTransactionProof(reader.result as string);
+                                                        reader.readAsDataURL(file);
+                                                    }}
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
