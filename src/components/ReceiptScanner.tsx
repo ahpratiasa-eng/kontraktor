@@ -69,6 +69,8 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
             setStatusText('AI sedang membaca struk...');
 
             const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
+            // Use gemini-2.0-flash-exp for vision tasks
+            const modelName = "gemini-2.0-flash-exp";
 
             const requestBody = {
                 contents: [{
@@ -105,7 +107,7 @@ RESPONSE FORMAT (JSON only, no markdown):
             console.log('[Gemini OCR] Sending request...');
 
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
