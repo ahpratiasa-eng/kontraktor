@@ -177,7 +177,7 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
             console.log('[Gemini OCR] Image size:', Math.round(base64.length / 1024), 'KB');
             setStatusText('AI sedang membaca struk...');
 
-            const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
+            const apiKey = "AIzaSyA194eJlcTzc98_D6gY1c1dJ5MIR6WTbzY";
 
             // Models that support vision - order matters
             const models = [
