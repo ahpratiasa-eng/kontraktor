@@ -45,13 +45,25 @@ export const useProjects = (user: any, isClientView: boolean, clientProjectId?: 
 
     // Update project
     const updateProject = async (data: Partial<Project>) => {
-        if (!user || !activeProjectId) return;
+        console.log('[DEBUG updateProject] user:', user?.email, 'activeProjectId:', activeProjectId);
+        if (!user) {
+            console.error('[DEBUG updateProject] ABORTED: No user logged in');
+            alert("Error: Anda belum login. Silakan refresh dan login ulang.");
+            return;
+        }
+        if (!activeProjectId) {
+            console.error('[DEBUG updateProject] ABORTED: No activeProjectId selected');
+            alert("Error: Tidak ada proyek terpilih. Silakan pilih proyek dulu.");
+            return;
+        }
         setIsSyncing(true);
         try {
+            console.log('[DEBUG updateProject] Saving to Firebase...', { activeProjectId, dataKeys: Object.keys(data) });
             await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data);
-        } catch (e) {
-            alert("Gagal simpan.");
-            console.error(e);
+            console.log('[DEBUG updateProject] SUCCESS');
+        } catch (e: any) {
+            console.error('[DEBUG updateProject] FIREBASE ERROR:', e?.code, e?.message, e);
+            alert(`Gagal simpan: ${e?.message || 'Unknown error'}. Cek console untuk detail.`);
         }
         setIsSyncing(false);
     };

@@ -276,8 +276,8 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
         const finalCategory = props.transactionCategory || (props.transactionType === 'income' ? 'Termin' : 'Pengeluaran Umum');
 
-        // Handle Proof Upload
-        let proofUrl = props.transactionProof || undefined;
+        // Handle Proof Upload - only upload if there's actual image data
+        let proofUrl: string | null = null;
         if (props.transactionProof && props.transactionProof.startsWith('data:image/')) {
             try {
                 const { uploadGalleryPhoto } = await import('../utils/storageHelper');
@@ -285,11 +285,15 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
                 proofUrl = await uploadGalleryPhoto(props.transactionProof, activeProject.id);
             } catch (e) {
                 console.error("Proof upload failed", e);
-                // Fallback to base64 or keep as is, but base64 might be too large for Transaction list
-                // Ideally we should alert, but this is a handler.
+                // Keep proofUrl as null if upload fails
             }
+        } else if (props.transactionProof && props.transactionProof.startsWith('http')) {
+            // Already a URL, use it directly
+            proofUrl = props.transactionProof;
         }
 
+        // Build transaction object - only include proofUrl if it has a value
+        // Firebase doesn't accept undefined values
         const newTx: Transaction = {
             id: Date.now(),
             date: finalDate,
@@ -297,12 +301,19 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             description: finalDesc,
             amount: finalAmount,
             type: props.transactionType || 'expense',
-            proofUrl: proofUrl,
+            ...(proofUrl ? { proofUrl } : {}),  // Only add proofUrl if it exists
         };
 
-        updateProject({
+        await updateProject({
             transactions: [newTx, ...(activeProject.transactions || [])]
         });
+
+        // Reset form fields after successful save
+        props.setTransactionDesc('');
+        props.setTransactionAmount(0);
+        props.setTransactionDate(new Date().toISOString().split('T')[0]);
+        if (props.setTransactionProof) props.setTransactionProof(null);
+
         setShowModal(false);
     };
 
@@ -796,6 +807,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             props.setTransactionDesc('');
             props.setTransactionAmount(0);
             props.setTransactionDate(new Date().toISOString().split('T')[0]);
+            if (props.setTransactionProof) props.setTransactionProof(null);
         }
         setModalType(type);
         setShowModal(true);
