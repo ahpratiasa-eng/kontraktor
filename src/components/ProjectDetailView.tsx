@@ -57,6 +57,9 @@ interface ProjectDetailViewProps {
     ahsItems: AHSItem[];
     setTransactionType?: (type: 'expense' | 'income') => void;
     setTransactionCategory?: (cat: string) => void;
+    // Transfer Material
+    projects?: Project[];
+    handleTransferMaterial?: (material: Material, quantity: number, targetProjectId: string, targetProjectName: string, targetMaterialId: number | null) => Promise<void>;
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
@@ -68,7 +71,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
     setActiveTab, prepareEditProject, prepareEditRABItem, prepareEditSchedule, isClientView,
-    ahsItems, setTransactionType, setTransactionCategory
+    ahsItems, setTransactionType, setTransactionCategory,
+    projects = [], handleTransferMaterial
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
@@ -92,6 +96,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [showDailyReportModal, setShowDailyReportModal] = useState(false);
     const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
     const [reportNote, setReportNote] = useState('');
+
+    // Transfer Material Modal State
+    const [showTransferModal, setShowTransferModal] = useState(false);
+    const [transferMaterial, setTransferMaterial] = useState<Material | null>(null);
+    const [transferQty, setTransferQty] = useState(0);
+    const [transferTargetProject, setTransferTargetProject] = useState('');
+    const [isTransferring, setIsTransferring] = useState(false);
 
     React.useEffect(() => {
         if (!activeProject.location) return;
@@ -1341,7 +1352,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         <div className="flex gap-2 border-t border-dashed border-slate-200 pt-3">
                                             <button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2.5 bg-green-50 text-green-700 text-xs font-bold rounded-xl border border-green-200 hover:bg-green-100 active:scale-95 transition-all">Update Stok</button>
                                             <button
-                                                onClick={() => { setSelectedMaterial(m); openModal('transferMaterial'); }}
+                                                onClick={() => { setTransferMaterial(m); setTransferQty(1); setTransferTargetProject(''); setShowTransferModal(true); }}
                                                 className="p-2.5 bg-purple-50 text-purple-600 rounded-xl border border-purple-200 hover:bg-purple-100 active:scale-95 transition-all shadow-sm"
                                                 title="Transfer ke Proyek Lain"
                                             >
@@ -1530,6 +1541,100 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 className="w-full py-2 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors text-sm"
                             >
                                 Batal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Transfer Material Modal */}
+            {showTransferModal && transferMaterial && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="p-6 border-b bg-purple-50">
+                            <h3 className="font-bold text-xl text-slate-800">Transfer Material</h3>
+                            <p className="text-sm text-slate-500">Pindahkan stok ke proyek lain</p>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            {/* Material Info */}
+                            <div className="bg-slate-50 p-4 rounded-2xl">
+                                <div className="text-sm text-slate-500 mb-1">Material</div>
+                                <div className="font-bold text-slate-800 text-lg">{transferMaterial.name}</div>
+                                <div className="text-sm text-slate-500">Stok tersedia: <span className="font-bold text-blue-600">{transferMaterial.stock} {transferMaterial.unit}</span></div>
+                            </div>
+
+                            {/* Quantity Input */}
+                            <div>
+                                <label className="text-xs font-bold text-slate-600 mb-2 block">Jumlah yang akan ditransfer</label>
+                                <input
+                                    type="number"
+                                    value={transferQty}
+                                    onChange={(e) => setTransferQty(Math.min(transferMaterial.stock, Math.max(0, parseInt(e.target.value) || 0)))}
+                                    className="w-full p-3 border rounded-xl text-sm focus:border-purple-400 focus:outline-none"
+                                    min={1}
+                                    max={transferMaterial.stock}
+                                />
+                            </div>
+
+                            {/* Target Project Selection */}
+                            <div>
+                                <label className="text-xs font-bold text-slate-600 mb-2 block">Proyek Tujuan</label>
+                                <select
+                                    value={transferTargetProject}
+                                    onChange={(e) => setTransferTargetProject(e.target.value)}
+                                    className="w-full p-3 border rounded-xl text-sm focus:border-purple-400 focus:outline-none bg-white"
+                                >
+                                    <option value="">-- Pilih Proyek --</option>
+                                    {projects
+                                        .filter(p => p.id !== activeProject.id && !p.isDeleted)
+                                        .map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))
+                                    }
+                                </select>
+                                {projects.filter(p => p.id !== activeProject.id && !p.isDeleted).length === 0 && (
+                                    <p className="text-xs text-red-500 mt-2">Tidak ada proyek lain yang tersedia untuk transfer.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-slate-50 border-t flex gap-3">
+                            <button
+                                onClick={() => setShowTransferModal(false)}
+                                className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                disabled={!transferTargetProject || transferQty <= 0 || isTransferring}
+                                onClick={async () => {
+                                    if (!handleTransferMaterial || !transferMaterial) return;
+                                    const targetProject = projects.find(p => p.id === transferTargetProject);
+                                    if (!targetProject) return;
+
+                                    setIsTransferring(true);
+                                    try {
+                                        await handleTransferMaterial(
+                                            transferMaterial,
+                                            transferQty,
+                                            transferTargetProject,
+                                            targetProject.name,
+                                            null // Will create new material in target
+                                        );
+                                        setShowTransferModal(false);
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
+                                    setIsTransferring(false);
+                                }}
+                                className="flex-[2] py-3 px-4 rounded-xl font-bold text-white bg-purple-600 shadow-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {isTransferring ? (
+                                    <><Package size={16} className="animate-spin" /> Memproses...</>
+                                ) : (
+                                    <><Package size={16} /> Transfer Sekarang</>
+                                )}
                             </button>
                         </div>
                     </div>

@@ -106,7 +106,7 @@ const App = () => {
     handleSaveRAB, deleteRABItem, handleUpdateProgress, handleSaveProject,
     prepareEditProject, prepareEditRABItem, handlePayWorker, handleSaveWorker,
     handleEditWorker, handleDeleteWorker, handleStockMovement, handleSaveMaterial,
-    handleEditMaterial, handleDeleteMaterial, // Destructure new handlers
+    handleEditMaterial, handleDeleteMaterial, handleTransferMaterial,
     handleSoftDeleteProject, handleRestoreProject, handlePermanentDeleteProject,
     handlePhotoUpload, saveAttendanceWithEvidence,
     getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB,
@@ -281,6 +281,8 @@ const App = () => {
               ahsItems={ahsItems}
               setTransactionType={setTransactionType}
               setTransactionCategory={setTransactionCategory}
+              projects={projects}
+              handleTransferMaterial={handleTransferMaterial}
             />
           )}
 
@@ -335,6 +337,8 @@ const App = () => {
               ahsItems={ahsItems}
               setTransactionType={setTransactionType}
               setTransactionCategory={setTransactionCategory}
+              projects={projects}
+              handleTransferMaterial={handleTransferMaterial}
             />
           </div>
         )}
