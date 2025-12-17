@@ -438,8 +438,25 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
             {activeTab === 'progress' && (
                 <div className="space-y-6 pb-24">
+                    {/* Empty State when no RAB items - MUST be at top level */}
+                    {(!activeProject.rabItems || activeProject.rabItems.length === 0) && (
+                        <div className="bg-white p-8 md:p-12 rounded-3xl shadow-sm border border-slate-200 text-center">
+                            <Sparkles size={48} className="mx-auto text-slate-300 mb-4" />
+                            <h3 className="font-bold text-lg text-slate-700 mb-2">Belum Ada Item Pekerjaan</h3>
+                            <p className="text-sm text-slate-500 mb-6">Tambahkan item RAB untuk melihat progress dan Kurva-S</p>
+                            {!isClientView && canEditProject && (
+                                <button
+                                    onClick={() => { setSelectedRabItem(null); openModal('newRAB'); }}
+                                    className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm inline-flex items-center gap-2 hover:bg-blue-700"
+                                >
+                                    <Plus size={18} /> Tambah Item RAB
+                                </button>
+                            )}
+                        </div>
+                    )}
+
                     {/* Gantt Chart Section */}
-                    {canViewInternalRAB && (
+                    {activeProject.rabItems && activeProject.rabItems.length > 0 && canViewInternalRAB && (
                         <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 w-full max-w-full overflow-hidden">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                                 <h3 className="font-bold text-base md:text-lg text-slate-700 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan</h3>
