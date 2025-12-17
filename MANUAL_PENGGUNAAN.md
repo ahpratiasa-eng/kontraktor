@@ -1,118 +1,338 @@
 # 📘 Manual Penggunaan Aplikasi Kontraktor Pro
 
-Selamat datang di **Kontraktor Pro**, solusi manajemen konstruksi cerdas berbasis web. Dokumen ini memandu Anda menggunakan fitur-fitur unggulan aplikasi.
+Selamat datang di **Kontraktor Pro** (Guna Karya), solusi manajemen konstruksi cerdas berbasis web. Dokumen ini memandu Anda menggunakan fitur-fitur unggulan aplikasi.
+
+**Versi Dokumentasi:** 2.0 (Desember 2024)
 
 ---
 
 ## 📋 Daftar Isi
-1. [Overview & Dashboard](#1-dashboard-proyek)
-2. [Manajemen Proyek & RAB](#2-manajemen-rab--kurva-s)
-3. [Fitur Logistik Cerdas (Smart Logistics)](#3-fitur-logistik-cerdas--smart-shopping)
-4. [Keuangan & Tim Lapangan](#4-keuangan--tim-lapangan)
-5. [AI Assistant & Library AHS](#5-ai-assistant--library-ahs)
-6. [Portal Klien (Untuk Pemilik)](#6-portal-klien)
+
+1. [Login & Autentikasi](#1-login--autentikasi)
+2. [Dashboard Proyek](#2-dashboard-proyek)
+3. [Detail Proyek](#3-detail-proyek)
+4. [Manajemen RAB & Kurva S](#4-manajemen-rab--kurva-s)
+5. [Keuangan (Pemasukan & Pengeluaran)](#5-keuangan-pemasukan--pengeluaran)
+6. [Manajemen Tukang & Absensi](#6-manajemen-tukang--absensi)
+7. [Logistik & Stok Material](#7-logistik--stok-material)
+8. [Galeri Proyek](#8-galeri-proyek)
+9. [Library AHS (Analisa Harga Satuan)](#9-library-ahs-analisa-harga-satuan)
+10. [Portal Klien](#10-portal-klien)
+11. [Manajemen User](#11-manajemen-user)
+12. [Landing Page CMS](#12-landing-page-cms)
 
 ---
 
-## 1. Dashboard Proyek
+## 1. Login & Autentikasi
+
+![Login Page](docs/screenshots/01_login.png)
+
+### Cara Login:
+1. Buka aplikasi di browser
+2. Klik tombol **"Login dengan Google"**
+3. Pilih akun Google yang sudah terdaftar di sistem
+
+### Catatan Penting:
+- Hanya user yang sudah didaftarkan oleh Super Admin yang bisa login
+- User pertama yang login akan otomatis menjadi Super Admin
+- Jika belum terdaftar, akan muncul pesan error
+
+---
+
+## 2. Dashboard Proyek
+
+![Dashboard](docs/screenshots/02_dashboard.png)
+
 Halaman utama adalah pusat kendali bisnis Anda.
 
 ### Fitur Utama:
-*   **Daftar Proyek**: Kartu ringkasan untuk setiap proyek aktif.
-*   **Status Progress**: Bar hijau menunjukkan realisasi fisik di lapangan.
-*   **Indikator Keuangan**: Bar kecil yang membandingkan budget vs pengeluaran aktual (Merah = Overbudget).
-*   **Cuaca Live**: Di pojok kanan atas proyek, ikon cuaca (Hujan/Cerah) membantu Anda memutuskan apakah pekerjaan cor beton bisa dilakukan hari ini.
+- **Daftar Proyek**: Kartu ringkasan untuk setiap proyek aktif
+- **Status Progress**: Bar hijau menunjukkan realisasi fisik di lapangan
+- **Indikator Keuangan**: Bar yang membandingkan budget vs pengeluaran aktual (Merah = Overbudget)
+- **Cuaca Live**: Ikon cuaca di kartu proyek membantu memutuskan jadwal pekerjaan outdoor
 
-> **Aksi Cepat**: Klik tombol `Lihat Detail` pada kartu proyek untuk masuk ke menu manajemen lengkap.
+### Aksi Tersedia:
+- ➕ **Proyek Baru**: Tombol di pojok kanan atas untuk membuat proyek baru
+- 👁️ **Lihat Detail**: Klik kartu proyek untuk masuk ke manajemen lengkap
+- 🔗 **Portal Klien**: Bagikan link ke owner untuk monitoring
 
 ---
 
-## 2. Manajemen RAB & Kurva S
-Inti dari teknik sipil ada di sini. Masuk ke tab **Kurva S & RAB**.
+## 3. Detail Proyek
+
+![Detail Proyek](docs/screenshots/03_detail_proyek.png)
+
+Setelah klik proyek, Anda masuk ke halaman detail dengan beberapa tab:
+
+### Tab yang Tersedia:
+| Tab | Fungsi |
+|-----|--------|
+| **Overview** | Ringkasan proyek, statistik, dan alur navigasi cepat |
+| **RAB** | Rencana Anggaran Biaya & Kurva S |
+| **Keuangan** | Pemasukan, Pengeluaran, Cashflow |
+| **Tukang** | Daftar pekerja, absensi, payroll |
+| **Logistik** | Stok material & order |
+| **Galeri** | Foto-foto progress proyek |
+
+---
+
+## 4. Manajemen RAB & Kurva S
+
+![RAB](docs/screenshots/04_rab.png)
 
 ### Cara Membuat RAB:
-1.  **Tambah Item Manual**: Klik `+ Item`, pilih kategori (misal: Pekerjaan Dinding), isi Volume dan Harga Satuan.
-2.  **Import Excel**: Jika sudah punya file Excel, klik tombol `Import` dan upload.
-3.  **AI Auto-Generate**: Klik `Auto RAB (AI)`, ketik deskripsi proyek *"Rumah Type 36, 1 Kamar Tidur"*. AI akan menyusun item pekerjaan standar untuk Anda.
+
+#### A. Tambah Item Manual
+1. Klik tombol **+ Item**
+2. Pilih kategori (misal: Pekerjaan Dinding)
+3. Isi nama pekerjaan, satuan, volume, dan harga satuan
+4. Klik **Simpan**
+
+#### B. Import dari Excel
+1. Klik tombol **Import**
+2. Download template terlebih dahulu
+3. Isi data di Excel sesuai format
+4. Upload file
+
+#### C. Generate dengan AI
+1. Klik tombol **Auto RAB (AI)**
+2. Ketik deskripsi proyek (contoh: *"Rumah Type 36, 2 Kamar Tidur"*)
+3. AI akan menyusun item pekerjaan standar
 
 ### Kurva S Otomatis:
-Setiap kali Anda mengubah Volume atau Harga, bobot pekerjaan dihitung ulang otomatis. Grafik Kurva S (Rencana vs Realisasi) akan langsung terupdate tanpa perlu rumus Excel.
+- Grafik Rencana vs Realisasi diupdate otomatis
+- Update progress per item dengan klik tombol **Update Progress**
+- Progress tercermin di Kurva S tanpa rumus Excel
+
+### Atur Jadwal Pekerjaan:
+1. Klik ikon kalender di tiap item RAB
+2. Set tanggal mulai dan selesai
+3. Jadwal akan tampil di timeline
 
 ---
 
-## 3. Fitur Logistik Cerdas & Smart Shopping 🚀
-*(Fitur Terbaru)*
-Masuk ke tab **Logistik / Bahan**.
+## 5. Keuangan (Pemasukan & Pengeluaran)
 
-### A. Stok Lapangan (Gudang Data)
-Digunakan untuk mencatat stok fisik di gudang proyek.
-*   **Tambah Material**: Klik tombol `+ Material Baru` di pojok kanan.
-*   **Update Stok**: Klik tombol **"Update Stok"** untuk mencatat barang masuk (Beli) atau keluar (Pakai).
-*   **Edit/Hapus**: Gunakan ikon **Pensil** untuk mengedit nama/stok minimum, dan ikon **Sampah** untuk menghapus material.
-*   **Peringatan Dini**: Kartu material akan berwarna **MERAH** dan ada label "STOK MENIPIS" jika jumlah di bawah batas minimum.
+![Keuangan](docs/screenshots/05_keuangan.png)
 
-### B. Otomatisasi Order (WhatsApp) 📱
-Jika ada material yang stoknya kritis:
-1.  Akan muncul alert merah dengan tombol **"Order via WhatsApp"**.
-2.  Klik tombol tersebut, masukkan **Nama Toko** dan **Nomor WhatsApp Toko** (Opsional).
-3.  Sistem akan otomatis membuat draft pesan pesanan berisi daftar material yang habis.
-4.  Kirim pesan langsung ke supplier tanpa mengetik ulang.
+### A. Catat Pemasukan (Dana Masuk)
+1. Klik tombol **+ Pemasukan**
+2. Pilih kategori: Termin, DP, Pelunasan, atau Tambahan
+3. Isi nominal dan tanggal
+4. **(Opsional)** Upload bukti transfer/mutasi bank
+5. Klik **Simpan Pemasukan**
 
-### C. Rekap Kebutuhan Proyek (Smart Shopping List)
-Ini adalah fitur otomatisasi logistik berbasis RAB.
-*   Klik tombol **"Rekap Kebutuhan Proyek (RAB)"**.
-*   Sistem membaca semua ITEM RAB Anda, membongkar Analisa (AHS), dan menghitung total bahan mentah.
-*   **Hasil**: Daftar belanja lengkap (Semen total sekian sak, Pasir sekian kubik).
-*   **Cetak**: Klik tombol `Print/PDF` untuk mengirim daftar ini ke Toko Bangunan.
+![Modal Pemasukan](docs/screenshots/05a_modal_pemasukan.png)
 
----
+### B. Catat Pengeluaran (Dana Keluar)
+1. Klik tombol **+ Pengeluaran**
+2. Pilih kategori: Material, Upah Tukang, Operasional, Sewa Alat, Lainnya
+3. Isi nominal, tanggal, dan keterangan
+4. **(Opsional)** Upload foto struk/nota sebagai bukti
+5. Klik **Simpan Pengeluaran**
 
-## 4. Keuangan & Tim Lapangan (Smart Finance)
-### Keuangan & Invoice
-*   **Scan Struk Otomatis (AI Receipt)**: Tidak perlu ketik manual! Gunakan fitur **Scan Struk** untuk mencatat pengeluaran material. AI akan membaca Total, Tanggal, dan Deskripsi dari foto struk Anda. Foto bukti disimpan aman di Google Drive.
-*   **Kelola Pemasukan**: Catat pembayaran dari klien (DP, Termin, Pelunasan). Sistem akan membedakan arus kas masuk dan keluar.
-*   **Invoice Generator**: Buat tagihan profesional (PDF) otomatis untuk termin yang jatuh tempo. 
+![Modal Pengeluaran](docs/screenshots/05b_modal_pengeluaran.png)
 
-### Tim & Absensi Modern
-*   **Database Tukang**: Simpan data tukang, gaji harian, dan peran (Mandor/Tukang).
-*   **Absensi Real-Time**: Input kehadiran (Hadir/Lembur/Setengah).
-*   **Bukti Anti-Manipulasi**:
-    *   **Upload & Geo-Tagging**: Wajib upload foto lapangan saat absen.
-    *   **Lokasi Interaktif**: Lokasi GPS yang terekam **bisa diklik** langsung menuju Google Maps untuk verifikasi posisi.
-    *   **Loading Feedback**: Indikator status upload memastikan data tersimpan sempurna sebelum menutup layar.
+### Upload Bukti Transaksi:
+- Foto bukti di-upload ke Google Drive (via Apps Script)
+- Preview foto muncul sebelum menyimpan
+- Bisa hapus foto jika salah pilih dengan klik tombol X
+- Bukti bisa dilihat di detail transaksi nanti
+
+### Invoice Generator:
+- Buat tagihan termin untuk klien
+- Format PDF profesional
+- Otomatis hitung berdasarkan progress RAB
 
 ---
 
-## 5. AI Assistant & Library AHS 🤖
-Masuk ke menu **Library AHS** dari Sidebar.
+## 6. Manajemen Tukang & Absensi
 
-### Mengelola Harga Dasar dengan Suara/Teks
-Anda tidak perlu edit satu-satu. Ketik perintah di kolom AI:
-*   *"Naikkan harga semen jadi 65.000"*
-*   *"Hapus item batu kali"*
-*   *"Tambah upah tukang gali 120.000"*
+![Tukang](docs/screenshots/06_tukang.png)
 
-**Smart Sync**:
-Jika Anda mengubah **Harga Dasar** bahan (misal: Harga Semen naik), sistem akan menawarkan tombol **"Sync Semua AHS"**. Sekali klik, ribuan item RAB di semua proyek akan terupdate harganya.
+### A. Tambah Pekerja
+1. Klik **+ Tukang Baru**
+2. Isi nama, role (Tukang/Kuli/Mandor/Kepala Tukang)
+3. Isi upah asli (rate internal) dan upah mandor (rate charge ke klien)
+4. Pilih sistem upah: Harian, Mingguan, Bulanan, atau Borongan
+
+### B. Absensi Harian
+1. Klik tombol **Absensi Hari Ini**
+2. Pilih tanggal
+3. Set status tiap pekerja: Hadir (1), Setengah (0.5), Lembur (1.5), Absen (0)
+4. **WAJIB**: Upload foto bukti lapangan (kamera otomatis terdeteksi)
+5. **WAJIB**: Lokasi GPS otomatis tercatat
+6. Klik **Simpan Absensi**
+
+### C. Fitur Anti-Manipulasi:
+- Foto bukti wajib diupload
+- Lokasi GPS wajib terdeteksi
+- Lokasi bisa diklik untuk buka Google Maps
+- Timestamp tercatat otomatis
+
+### D. Payroll Summary:
+- Lihat rekap gaji per periode
+- Hitung otomatis berdasarkan jumlah hadir x rate
+- Export ke PDF
+
+---
+
+## 7. Logistik & Stok Material
+
+![Logistik](docs/screenshots/07_logistik.png)
+
+### A. Stok Lapangan
+1. Klik **+ Material Baru** untuk tambah item
+2. Isi nama material, satuan, stok minimum
+3. Update stok dengan tombol **Update Stok** (Barang Masuk / Keluar)
+
+### B. Peringatan Stok:
+- Kartu berwarna **MERAH** jika stok di bawah minimum
+- Notifikasi "STOK MENIPIS" muncul otomatis
+
+### C. Order via WhatsApp:
+1. Klik **Order via WhatsApp** pada material yang menipis
+2. Masukkan nama & nomor toko supplier
+3. Draft pesanan otomatis dibuat
+4. Kirim langsung ke WhatsApp
+
+### D. Rekap Kebutuhan Proyek (Smart Shopping):
+1. Klik **Rekap Kebutuhan Proyek**
+2. Sistem menghitung total kebutuhan bahan dari RAB + AHS
+3. Hasil: daftar belanja lengkap
+4. Cetak/Export ke PDF
 
 ---
 
-## 6. Portal Klien
-Fitur untuk menjaga transparansi dengan Pemilik Rumah.
-1.  Di Dashboard Proyek, klik tombol **"Portal Klien"**.
-2.  Link unik akan disalin. Kirim link ini via WhatsApp ke pemilik rumah.
-3.  Pemilik rumah bisa melihat:
-    *   Progress Fisik (%)
-    *   **Galeri Progres**: Foto-foto proyek yang dilengkapi data Progress (%) saat foto diambil dan bisa difilter berdasarkan tanggal.
-    *   Kurva S sederhana.
-    *   *Catatan: Nilai uang/profit KONTRAKTOR disembunyikan dari pandangan klien.*
+## 8. Galeri Proyek
+
+![Galeri](docs/screenshots/08_galeri.png)
+
+### Upload Foto Progress:
+1. Klik **+ Tambah Foto**
+2. Pilih foto dari kamera/galeri
+3. Foto di-upload ke Google Drive
+4. Progress saat foto diambil tercatat otomatis
+
+### Fitur Galeri:
+- Filter berdasarkan tanggal
+- Tampilkan progress (%) saat foto diambil
+- Bisa dilihat oleh klien via Portal Klien
 
 ---
 
-## 7. Pengaturan & Branding 🏢
-Masuk ke menu **Landing Page CMS** (khusus Admin).
-*   **Identitas Perusahaan**: Ubah Nama PT/CV, Tagline, dan Kontak yang akan muncul di Kop Surat Laporan.
-*   **Portfolio**: Upload foto-foto proyek terbaik Anda untuk ditampilkan di halaman depan aplikasi (Landing Page).
+## 9. Library AHS (Analisa Harga Satuan)
+
+![Library AHS](docs/screenshots/09_library_ahs.png)
+
+### Apa itu AHS?
+Analisa Harga Satuan adalah breakdown komponen (bahan + upah) untuk setiap jenis pekerjaan.
+
+### Cara Kelola AHS:
+1. Masuk ke menu **Library AHS** dari sidebar
+2. **Tambah AHS Baru**: Klik + dan isi komponen
+3. **Edit Harga Dasar**: Edit harga bahan/upah di tab Resources
+
+### AI Assistant:
+Ketik perintah natural di kolom AI:
+- *"Naikkan harga semen jadi 65.000"*
+- *"Hapus item batu kali"*
+- *"Tambah upah tukang gali 120.000"*
+
+### Smart Sync:
+Jika harga dasar berubah, klik **Sync Semua AHS** untuk update semua item RAB di semua proyek.
 
 ---
-*Dibuat otomatis oleh Sistem Kontraktor Pro.*
+
+## 10. Portal Klien
+
+![Portal Klien](docs/screenshots/10_portal_klien.png)
+
+Fitur transparansi untuk pemilik proyek.
+
+### Cara Berbagi:
+1. Di dashboard, klik tombol **Portal Klien** pada proyek
+2. Link unik akan disalin
+3. Kirim link via WhatsApp ke pemilik
+
+### Yang Bisa Dilihat Klien:
+- ✅ Progress fisik (%)
+- ✅ Galeri foto progress
+- ✅ Kurva S sederhana
+- ❌ Nilai uang/profit kontraktor (DISEMBUNYIKAN)
+
+---
+
+## 11. Manajemen User
+
+![User Management](docs/screenshots/11_user_management.png)
+
+*Khusus Super Admin*
+
+### Role yang Tersedia:
+| Role | Akses |
+|------|-------|
+| **Super Admin** | Akses penuh, bisa kelola user |
+| **Kontraktor** | Project Manager, lihat keuangan |
+| **Pengawas** | Absensi & data tukang saja |
+| **Keuangan** | Hanya data keuangan |
+
+### Cara Tambah User:
+1. Buka menu **User Management**
+2. Klik **+ Tambah User**
+3. Masukkan email Google dan pilih role
+4. User akan bisa login setelah didaftarkan
+
+---
+
+## 12. Landing Page CMS
+
+![Landing CMS](docs/screenshots/12_landing_cms.png)
+
+*Khusus Admin*
+
+### Yang Bisa Diubah:
+- **Nama Perusahaan**: PT/CV yang tampil di kop surat
+- **Tagline**: Slogan perusahaan
+- **Kontak**: WhatsApp, Email, Alamat
+- **Portfolio**: Foto proyek terbaik untuk halaman depan
+
+---
+
+## 📸 Panduan Screenshot
+
+Untuk melengkapi dokumentasi ini, ambil screenshot berikut dan simpan di folder `docs/screenshots/`:
+
+| No | Nama File | Halaman/Fitur |
+|----|-----------|---------------|
+| 01 | `01_login.png` | Halaman login Google |
+| 02 | `02_dashboard.png` | Dashboard utama dengan daftar proyek |
+| 03 | `03_detail_proyek.png` | Halaman detail proyek (overview) |
+| 04 | `04_rab.png` | Tab RAB dengan daftar item |
+| 05 | `05_keuangan.png` | Tab Keuangan dengan histori transaksi |
+| 05a | `05a_modal_pemasukan.png` | Modal catat pemasukan |
+| 05b | `05b_modal_pengeluaran.png` | Modal catat pengeluaran dengan upload bukti |
+| 06 | `06_tukang.png` | Tab Tukang/Absensi |
+| 07 | `07_logistik.png` | Tab Logistik/Stok Material |
+| 08 | `08_galeri.png` | Tab Galeri Proyek |
+| 09 | `09_library_ahs.png` | Menu Library AHS |
+| 10 | `10_portal_klien.png` | Tampilan Portal Klien |
+| 11 | `11_user_management.png` | Menu User Management |
+| 12 | `12_landing_cms.png` | Menu Landing CMS |
+
+---
+
+## 🔄 Changelog
+
+### v2.0 (Desember 2024)
+- ❌ **Dihapus**: Fitur AI Scan Struk (tidak akurat)
+- ✅ **Baru**: Upload bukti transaksi (struk/transfer) ke Google Drive
+- ✅ **Perbaikan**: Form transaksi auto-reset setelah simpan
+- ✅ **Perbaikan**: Error handling lebih baik di penyimpanan transaksi
+
+### v1.0 (November 2024)
+- Rilis awal dengan fitur lengkap
+
+---
+
+*Dibuat otomatis oleh Sistem Kontraktor Pro - Guna Karya*
