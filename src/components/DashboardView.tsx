@@ -143,7 +143,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
                     )}
 
-                    {displayedProjects.map(p => {
+                    {displayedProjects.map((p, index) => {
                         const health = calculateProjectHealth(p);
                         const stats = getStats(p);
                         // Calculate budget stats
@@ -162,16 +162,27 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             ? `${lastTx.category}: ${lastTx.description ? (lastTx.description.length > 25 ? lastTx.description.substring(0, 25) + '...' : lastTx.description) : 'Transaksi Baru'} (${new Date(lastTx.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})`
                             : "Proyek baru dimulai.";
 
+                        // Subtle color palette for cards - professional muted tones
+                        const cardColors = [
+                            { bg: 'bg-gradient-to-br from-slate-50 to-slate-100', accent: 'bg-slate-700', border: 'border-slate-200' },
+                            { bg: 'bg-gradient-to-br from-stone-50 to-stone-100', accent: 'bg-stone-700', border: 'border-stone-200' },
+                            { bg: 'bg-gradient-to-br from-zinc-50 to-zinc-100', accent: 'bg-zinc-700', border: 'border-zinc-200' },
+                            { bg: 'bg-gradient-to-br from-neutral-50 to-neutral-100', accent: 'bg-neutral-700', border: 'border-neutral-200' },
+                            { bg: 'bg-gradient-to-br from-gray-50 to-gray-100', accent: 'bg-gray-700', border: 'border-gray-200' },
+                            { bg: 'bg-gradient-to-br from-amber-50/50 to-stone-100', accent: 'bg-amber-800', border: 'border-amber-100' },
+                        ];
+                        const cardStyle = cardColors[index % cardColors.length];
+
                         return (
                             <div
                                 key={p.id}
                                 onClick={() => { setActiveProjectId(p.id); setView('project-detail'); }}
-                                className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 active:scale-[0.98] transition-all cursor-pointer relative hover:shadow-md"
+                                className={`${cardStyle.bg} p-4 rounded-2xl shadow-sm border ${cardStyle.border} active:scale-[0.98] transition-all cursor-pointer relative hover:shadow-md`}
                             >
                                 {/* Header - Name and Status */}
                                 <div className="flex items-start justify-between gap-2 mb-3">
                                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                        <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0">
+                                        <div className={`w-10 h-10 ${cardStyle.accent} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0`}>
                                             {p.name.substring(0, 1)}
                                         </div>
                                         <div className="min-w-0 flex-1">
@@ -206,7 +217,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                         <span className="text-slate-400 font-medium uppercase tracking-wider text-[9px]">Progress</span>
                                         <span className="font-bold text-slate-800 text-xs">{stats.prog.toFixed(0)}%</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div className="w-full bg-white/60 h-1.5 rounded-full overflow-hidden">
                                         <div
                                             className={`h-full rounded-full ${health.isCritical ? 'bg-red-500' : 'bg-blue-600'}`}
                                             style={{ width: `${stats.prog}%` }}
@@ -223,7 +234,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                                 {isOverbudget ? 'OVER!' : `${budgetUsedPercent.toFixed(0)}%`}
                                             </span>
                                         </div>
-                                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                        <div className="w-full bg-white/60 h-1.5 rounded-full overflow-hidden">
                                             <div
                                                 className={`h-full rounded-full ${isOverbudget ? 'bg-red-500' : 'bg-green-500'}`}
                                                 style={{ width: `${budgetUsedPercent}%` }}
@@ -233,7 +244,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                 )}
 
                                 {/* Footer / Last Update */}
-                                <div className="flex items-center gap-1.5 pt-2 mt-1 border-t border-slate-100">
+                                <div className="flex items-center gap-1.5 pt-2 mt-1 border-t border-slate-200/50">
                                     <Clock size={10} className="text-slate-400 shrink-0" />
                                     <span className="text-[9px] text-slate-400 truncate">{lastUpdate}</span>
                                 </div>
