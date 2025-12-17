@@ -179,25 +179,36 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
 
             const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
 
-            const models = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro-vision"];
+            // Models that support vision - order matters
+            const models = [
+                "gemini-1.5-flash-latest",
+                "gemini-1.5-flash",
+                "gemini-1.5-pro-latest",
+                "gemini-pro-vision"
+            ];
 
             const requestBody = {
                 contents: [{
                     parts: [
                         {
-                            text: `Baca struk/nota ini. Return JSON saja:
-{"total": ANGKA_TOTAL, "date": "YYYY-MM-DD", "description": "NAMA_TOKO"}
-Contoh: {"total": 530000, "date": "2020-03-23", "description": "UD. Budi Jaya"}`
-                        },
-                        {
                             inline_data: {
                                 mime_type: 'image/jpeg',
                                 data: base64
                             }
+                        },
+                        {
+                            text: `Ini adalah foto struk/nota belanja. Baca dan extract:
+1. TOTAL yang harus dibayar (angka setelah kata "Jumlah" atau "Total", biasanya di bawah)
+2. Tanggal transaksi
+3. Nama toko
+
+PENTING: Angka 530.000 di Indonesia = 530000 (titik pemisah ribuan).
+Hanya return JSON ini:
+{"total":530000,"date":"2020-03-23","description":"UD. Budi Jaya"}`
                         }
                     ]
                 }],
-                generationConfig: { temperature: 0.1, maxOutputTokens: 128 }
+                generationConfig: { temperature: 0, maxOutputTokens: 100 }
             };
 
             let geminiSuccess = false;
