@@ -39,10 +39,13 @@ export type MaterialLog = {
   id: number;
   materialId: number;
   date: string;
-  type: 'in' | 'out';
+  type: 'in' | 'out' | 'transfer_in' | 'transfer_out';
   quantity: number;
   notes: string;
   actor: string;
+  // For transfers between projects
+  transferProjectId?: string;
+  transferProjectName?: string;
 };
 
 export type Worker = {

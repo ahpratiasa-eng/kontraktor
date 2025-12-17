@@ -1340,6 +1340,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         </div>
                                         <div className="flex gap-2 border-t border-dashed border-slate-200 pt-3">
                                             <button onClick={() => { setSelectedMaterial(m); openModal('stockMovement'); }} className="flex-1 py-2.5 bg-green-50 text-green-700 text-xs font-bold rounded-xl border border-green-200 hover:bg-green-100 active:scale-95 transition-all">Update Stok</button>
+                                            <button
+                                                onClick={() => { setSelectedMaterial(m); openModal('transferMaterial'); }}
+                                                className="p-2.5 bg-purple-50 text-purple-600 rounded-xl border border-purple-200 hover:bg-purple-100 active:scale-95 transition-all shadow-sm"
+                                                title="Transfer ke Proyek Lain"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8L22 12L18 16" /><path d="M2 12H22" /><path d="M6 16L2 12L6 8" /></svg>
+                                            </button>
                                             <button onClick={() => handlePrepareEditMaterial(m)} className="p-2.5 bg-white text-blue-600 rounded-xl border hover:bg-blue-50 active:scale-95 transition-all shadow-sm" title="Edit Material"><Edit size={16} /></button>
                                             <button onClick={() => handleDeleteMaterial(m.id)} className="p-2.5 bg-white text-red-600 rounded-xl border hover:bg-red-50 active:scale-95 transition-all shadow-sm" title="Hapus Material"><Trash2 size={16} /></button>
                                         </div>

@@ -473,6 +473,114 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         updateProject({ materials: updatedMaterials });
     };
 
+    // ========== Transfer Material Between Projects ==========
+    const handleTransferMaterial = async (
+        material: Material,
+        quantity: number,
+        targetProjectId: string,
+        targetProjectName: string,
+        targetMaterialId: number | null // null if creating new material in target
+    ) => {
+        if (!activeProject) return;
+        if (quantity <= 0) {
+            alert("Jumlah transfer harus lebih dari 0");
+            return;
+        }
+        if (material.stock < quantity) {
+            alert(`Stok tidak cukup! Tersedia: ${material.stock} ${material.unit}`);
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+
+        // 1. Kurangi stok di proyek sumber (current project)
+        const updatedSourceMaterials = (activeProject.materials || []).map(m => {
+            if (m.id === material.id) {
+                return { ...m, stock: m.stock - quantity };
+            }
+            return m;
+        });
+
+        // Log transfer_out di proyek sumber
+        const transferOutLog: MaterialLog = {
+            id: Date.now(),
+            materialId: material.id,
+            date: today,
+            type: 'transfer_out',
+            quantity: quantity,
+            notes: `Kirim ke ${targetProjectName}`,
+            actor: user?.displayName || 'User',
+            transferProjectId: targetProjectId,
+            transferProjectName: targetProjectName
+        };
+
+        await updateProject({
+            materials: updatedSourceMaterials,
+            materialLogs: [transferOutLog, ...(activeProject.materialLogs || [])]
+        });
+
+        // 2. Tambah stok di proyek tujuan (via direct Firestore update)
+        try {
+            const targetProjectRef = doc(db, 'app_data', appId, 'projects', targetProjectId);
+            const { getDoc } = await import('firebase/firestore');
+            const targetSnap = await getDoc(targetProjectRef);
+
+            if (!targetSnap.exists()) {
+                alert("Proyek tujuan tidak ditemukan!");
+                return;
+            }
+
+            const targetData = targetSnap.data() as Project;
+            let targetMaterials = targetData.materials || [];
+            let finalMaterialId = targetMaterialId;
+
+            if (targetMaterialId) {
+                // Update existing material in target
+                targetMaterials = targetMaterials.map(m => {
+                    if (m.id === targetMaterialId) {
+                        return { ...m, stock: m.stock + quantity };
+                    }
+                    return m;
+                });
+            } else {
+                // Create new material in target (sama nama)
+                const newMat: Material = {
+                    id: Date.now(),
+                    name: material.name,
+                    unit: material.unit,
+                    stock: quantity,
+                    minStock: material.minStock
+                };
+                finalMaterialId = newMat.id;
+                targetMaterials = [...targetMaterials, newMat];
+            }
+
+            // Log transfer_in di proyek tujuan
+            const transferInLog: MaterialLog = {
+                id: Date.now() + 1,
+                materialId: finalMaterialId!,
+                date: today,
+                type: 'transfer_in',
+                quantity: quantity,
+                notes: `Terima dari ${activeProject.name}`,
+                actor: user?.displayName || 'User',
+                transferProjectId: activeProject.id,
+                transferProjectName: activeProject.name
+            };
+
+            await updateDoc(targetProjectRef, {
+                materials: targetMaterials,
+                materialLogs: [transferInLog, ...(targetData.materialLogs || [])]
+            });
+
+            alert(`✅ Transfer ${quantity} ${material.unit} ${material.name} ke "${targetProjectName}" berhasil!`);
+            setShowModal(false);
+        } catch (e) {
+            console.error("Transfer error:", e);
+            alert("Gagal transfer ke proyek tujuan. Cek console.");
+        }
+    };
+
     // ========== Attendance Handlers ==========
     const handleGetLocation = () => {
         if (!navigator.geolocation) return alert("Browser tidak support GPS");
@@ -869,6 +977,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         handleSaveMaterial,
         handleEditMaterial,
         handleDeleteMaterial,
+        handleTransferMaterial,
         // Attendance
         handleGetLocation,
         handlePhotoUpload,
