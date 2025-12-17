@@ -45,7 +45,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ view, activeTab, setActiveTab, se
                     {canEditProject() && (
                         <button
                             onClick={() => setView('ahs-library')}
-                            className={`flex flex-col items-center gap-1 transition-all duration-300 ${view === 'ahs-library' ? 'text-blue-400 scale-110' : 'text-slate-400 hover:text-slate-200'}`}
+                            className="flex flex-col items-center gap-1 transition-all duration-300 text-slate-400 hover:text-slate-200"
                         >
                             <FileSpreadsheet size={20} strokeWidth={2} />
                             <span className="text-[10px] font-bold opacity-70">AHS</span>
