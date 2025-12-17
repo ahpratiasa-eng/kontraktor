@@ -162,14 +162,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             ? `${lastTx.category}: ${lastTx.description ? (lastTx.description.length > 25 ? lastTx.description.substring(0, 25) + '...' : lastTx.description) : 'Transaksi Baru'} (${new Date(lastTx.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})`
                             : "Proyek baru dimulai.";
 
-                        // Subtle color palette for cards - professional muted tones
+                        // Subtle but visible color palette for cards - professional muted tones
                         const cardColors = [
-                            { bg: 'bg-gradient-to-br from-slate-50 to-slate-100', accent: 'bg-slate-700', border: 'border-slate-200' },
-                            { bg: 'bg-gradient-to-br from-stone-50 to-stone-100', accent: 'bg-stone-700', border: 'border-stone-200' },
-                            { bg: 'bg-gradient-to-br from-zinc-50 to-zinc-100', accent: 'bg-zinc-700', border: 'border-zinc-200' },
-                            { bg: 'bg-gradient-to-br from-neutral-50 to-neutral-100', accent: 'bg-neutral-700', border: 'border-neutral-200' },
-                            { bg: 'bg-gradient-to-br from-gray-50 to-gray-100', accent: 'bg-gray-700', border: 'border-gray-200' },
-                            { bg: 'bg-gradient-to-br from-amber-50/50 to-stone-100', accent: 'bg-amber-800', border: 'border-amber-100' },
+                            { bg: 'bg-slate-100', accent: 'bg-slate-700', border: 'border-slate-200', text: 'text-slate-700' },
+                            { bg: 'bg-stone-100', accent: 'bg-stone-700', border: 'border-stone-200', text: 'text-stone-700' },
+                            { bg: 'bg-zinc-100', accent: 'bg-zinc-700', border: 'border-zinc-200', text: 'text-zinc-700' },
+                            { bg: 'bg-neutral-100', accent: 'bg-neutral-700', border: 'border-neutral-200', text: 'text-neutral-700' },
+                            { bg: 'bg-amber-50', accent: 'bg-amber-700', border: 'border-amber-200', text: 'text-amber-800' },
+                            { bg: 'bg-orange-50', accent: 'bg-orange-700', border: 'border-orange-200', text: 'text-orange-800' },
                         ];
                         const cardStyle = cardColors[index % cardColors.length];
 
