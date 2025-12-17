@@ -20,12 +20,14 @@ Selamat datang di **Kontraktor Pro** (Guna Karya), solusi manajemen konstruksi c
 10. [Portal Klien](#10-portal-klien)
 11. [Manajemen User](#11-manajemen-user)
 12. [Landing Page CMS](#12-landing-page-cms)
+13. [Tong Sampah](#13-tong-sampah)
+14. [Landing Page (Public)](#14-landing-page-public)
 
 ---
 
 ## 1. Login & Autentikasi
 
-![Login Page](docs/screenshots/01_login.png)
+*Screenshot: Halaman login Google*
 
 ### Cara Login:
 1. Buka aplikasi di browser
@@ -294,31 +296,64 @@ Fitur transparansi untuk pemilik proyek.
 ### Yang Bisa Diubah:
 - **Nama Perusahaan**: PT/CV yang tampil di kop surat
 - **Tagline**: Slogan perusahaan
-- **Kontak**: WhatsApp, Email, Alamat
+- **Kontak**: WhatsApp, Instagram
 - **Portfolio**: Foto proyek terbaik untuk halaman depan
 
 ---
 
-## 📸 Panduan Screenshot
+## 13. Tong Sampah
 
-Untuk melengkapi dokumentasi ini, ambil screenshot berikut dan simpan di folder `docs/screenshots/`:
+![Tong Sampah](docs/screenshots/13_tong_sampah.png)
+
+Fitur untuk mengelola proyek yang dihapus.
+
+### Cara Kerja:
+- Proyek yang dihapus tidak langsung hilang, tapi masuk ke **Tong Sampah**
+- Dari sini bisa dipilih untuk:
+  - **Pulihkan**: Kembalikan proyek ke dashboard
+  - **Hapus Permanen**: Hapus proyek selamanya
+
+### Akses:
+- Klik menu **Tong Sampah** di sidebar
+- Hanya Super Admin dan Kontraktor yang bisa mengakses
+
+---
+
+## 14. Landing Page (Public)
+
+![Landing Page](docs/screenshots/14_landing_page.png)
+
+Halaman depan website yang dilihat publik/calon klien.
+
+### Fitur:
+- **Hero Section**: Tagline dan CTA button
+- **Statistik**: Jumlah proyek, tahun pengalaman
+- **Tombol Konsultasi**: Link langsung ke WhatsApp
+- **Lihat Portfolio**: Gallery proyek selesai
+
+### Cara Edit:
+- Konten dikelola melalui **Landing Page CMS** (Section 12)
+
+---
+
+## 📸 Daftar Screenshot Tersedia
+
+Screenshot dokumentasi tersimpan di folder `docs/screenshots/`:
 
 | No | Nama File | Halaman/Fitur |
 |----|-----------|---------------|
-| 01 | `01_login.png` | Halaman login Google |
 | 02 | `02_dashboard.png` | Dashboard utama dengan daftar proyek |
-| 03 | `03_detail_proyek.png` | Halaman detail proyek (overview) |
-| 04 | `04_rab.png` | Tab RAB dengan daftar item |
-| 05 | `05_keuangan.png` | Tab Keuangan dengan histori transaksi |
-| 05a | `05a_modal_pemasukan.png` | Modal catat pemasukan |
-| 05b | `05b_modal_pengeluaran.png` | Modal catat pengeluaran dengan upload bukti |
-| 06 | `06_tukang.png` | Tab Tukang/Absensi |
+| 04 | `04_rab_timeline.png` | Timeline Pekerjaan (Kurva S & RAB) |
+| 05 | `05_keuangan.png` | Tab Keuangan dengan Cash Flow |
+| 06 | `06_tukang.png` | Tim & Absensi, Daftar Pekerja |
 | 07 | `07_logistik.png` | Tab Logistik/Stok Material |
 | 08 | `08_galeri.png` | Tab Galeri Proyek |
-| 09 | `09_library_ahs.png` | Menu Library AHS |
-| 10 | `10_portal_klien.png` | Tampilan Portal Klien |
-| 11 | `11_user_management.png` | Menu User Management |
-| 12 | `12_landing_cms.png` | Menu Landing CMS |
+| 09 | `09_library_ahs.png` | Library & Standar Harga |
+| 10 | `10_portal_klien.png` | Portal Klien (View Owner) |
+| 11 | `11_user_management.png` | Kelola Akses Pengguna |
+| 12 | `12_landing_cms.png` | Kelola Landing Page |
+| 13 | `13_tong_sampah.png` | Tong Sampah Proyek |
+| 14 | `14_landing_page.png` | Landing Page (Public) |
 
 ---
 
@@ -329,10 +364,11 @@ Untuk melengkapi dokumentasi ini, ambil screenshot berikut dan simpan di folder 
 - ✅ **Baru**: Upload bukti transaksi (struk/transfer) ke Google Drive
 - ✅ **Perbaikan**: Form transaksi auto-reset setelah simpan
 - ✅ **Perbaikan**: Error handling lebih baik di penyimpanan transaksi
+- 📚 **Dokumentasi**: Manual lengkap dengan 12 screenshot
 
 ### v1.0 (November 2024)
 - Rilis awal dengan fitur lengkap
 
 ---
 
-*Dibuat otomatis oleh Sistem Kontraktor Pro - Guna Karya*
+*Dibuat oleh Sistem Kontraktor Pro - Guna Karya*
