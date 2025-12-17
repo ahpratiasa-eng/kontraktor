@@ -69,8 +69,14 @@ const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete }) => {
             setStatusText('AI sedang membaca struk...');
 
             const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
-            // Use gemini-2.0-flash-exp for vision tasks
-            const modelName = "gemini-2.0-flash-exp";
+
+            // Try multiple models in order of preference
+            const models = [
+                "gemini-1.5-flash",
+                "gemini-1.5-flash-latest",
+                "gemini-pro-vision",
+                "gemini-1.5-pro"
+            ];
 
             const requestBody = {
                 contents: [{
@@ -104,16 +110,38 @@ RESPONSE FORMAT (JSON only, no markdown):
                 }
             };
 
-            console.log('[Gemini OCR] Sending request...');
+            console.log('[Gemini OCR] Trying multiple models...');
 
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
+            let response: Response | null = null;
+            let usedModel = '';
+
+            for (const modelName of models) {
+                console.log(`[Gemini OCR] Trying model: ${modelName}`);
+                try {
+                    response = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(requestBody)
+                        }
+                    );
+
+                    if (response.ok) {
+                        usedModel = modelName;
+                        console.log(`[Gemini OCR] Success with model: ${modelName}`);
+                        break;
+                    } else {
+                        console.log(`[Gemini OCR] Model ${modelName} failed with status: ${response.status}`);
+                    }
+                } catch (e) {
+                    console.log(`[Gemini OCR] Model ${modelName} error:`, e);
                 }
-            );
+            }
+
+            if (!response || !response.ok) {
+                throw new Error('Semua model Gemini gagal. API mungkin tidak tersedia.');
+            }
 
             console.log('[Gemini OCR] Response status:', response.status);
 
