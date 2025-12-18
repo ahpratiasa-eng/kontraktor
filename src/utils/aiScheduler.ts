@@ -260,6 +260,48 @@ EXAMPLE RESPONSE:
 
 // 2. Generate Manpower & Timeline Analysis
 export const generateAnalysisWithGemini = async (project: Project, items: RABItem[], context: string = ''): Promise<string> => {
+    // Minimum worker requirements by work type (realistic construction standards)
+    const MIN_WORKERS_BY_TYPE: Record<string, number> = {
+        'struktur': 8,     // Beton casting needs: tukang batu, kenek, vibrator operator, loader, etc
+        'pondasi': 6,      // Foundation work: excavation, rebar, formwork, concrete
+        'cor': 8,          // Any concrete work
+        'beton': 8,
+        'kolom': 6,
+        'balok': 6,
+        'plat': 8,
+        'dak': 8,
+        'atap': 4,         // Roof: roofers + helpers
+        'rangka': 4,
+        'baja ringan': 4,
+        'dinding': 3,      // Masonry: bricklayers + helpers
+        'bata': 3,
+        'hebel': 3,
+        'plester': 3,
+        'acian': 2,
+        'lantai': 3,       // Flooring
+        'keramik': 2,
+        'kusen': 2,        // Carpentry
+        'pintu': 2,
+        'jendela': 2,
+        'plafon': 2,
+        'cat': 2,          // Painting
+        'default': 2       // Minimum for any work
+    };
+
+    const getMinWorkersForCategory = (categoryName: string): number => {
+        const normalized = categoryName.toLowerCase();
+
+        // Check for keywords in category name
+        for (const [keyword, minWorkers] of Object.entries(MIN_WORKERS_BY_TYPE)) {
+            if (keyword === 'default') continue;
+            if (normalized.includes(keyword)) {
+                return minWorkers;
+            }
+        }
+
+        return MIN_WORKERS_BY_TYPE['default'];
+    };
+
     // 1. Calculate System Estimates (Group by Category) to give Context to AI
     const categories: Record<string, RABItem[]> = {};
     items.forEach(i => {
@@ -285,40 +327,49 @@ export const generateAnalysisWithGemini = async (project: Project, items: RABIte
             const minStart = Math.min(...startTimes);
             const maxEnd = Math.max(...endTimes);
             const durationDays = Math.max(1, (maxEnd - minStart) / (1000 * 60 * 60 * 24));
-            estPeople = Math.ceil(totalManDays / durationDays);
+
+            // Calculate based on workload
+            const calculatedPeople = Math.ceil(totalManDays / durationDays);
+
+            // Get minimum workers for this type of work
+            const minRequiredWorkers = getMinWorkersForCategory(cat);
+
+            // Use the MAXIMUM of: calculated vs minimum required
+            estPeople = Math.max(calculatedPeople, minRequiredWorkers);
         } else {
-            // Fallback if no dates: Assume 1 week per item avg?
-            estPeople = 2;
+            // Fallback if no dates: Use minimum required for the category
+            estPeople = getMinWorkersForCategory(cat);
         }
 
-        manpowerSummary += `- ${cat}: Estimasi rata-rata ${estPeople} Orang (Berdasarkan jadwal user)\n`;
+        manpowerSummary += `- ${cat}: Estimasi rata-rata ${estPeople} Orang (Total beban kerja: ${totalManDays} hari-orang, durasi: ${startTimes.length > 0 ? Math.ceil((Math.max(...endTimes) - Math.min(...startTimes)) / (1000 * 60 * 60 * 24)) : '?'} hari)\n`;
     });
 
     const prompt = `
     PERAN: Anda adalah Mandor Senior yang MENDUKUNG dan MENJELASKAN keputusan penjadwalan yang sudah dibuat.
-    TUGAS: Jelaskan ALASAN TEKNIS kenapa jumlah tenaga kerja per kategori sudah TEPAT dan EFISIEN.
+    TUGAS: Jelaskan ALASAN TEKNIS kenapa jumlah tenaga kerja per kategori sudah TEPAT dan EFISIEN berdasarkan STANDAR KONSTRUKSI.
     
     KONTEKS PROYEK:
     - Nama: ${project.name}
     - Lokasi: ${project.location || "Indonesia"}
     
-    KEBUTUHAN TENAGA KERJA (SUDAH DIHITUNG SISTEM):
+    KEBUTUHAN TENAGA KERJA (SUDAH DIHITUNG BERDASARKAN VOLUME \u0026 STANDAR INDUSTRI):
     ${manpowerSummary}
 
     ${context ? `CATATAN LAPANGAN: "${context}"` : ''}
 
     ATURAN PENTING:
-    - JANGAN mengkritik atau menyalahkan angka di atas. Angka tersebut SUDAH BENAR.
-    - Tugas Anda adalah MENJELASKAN kenapa angka tersebut masuk akal dari sisi teknis konstruksi.
-    - Berikan penjelasan yang meyakinkan kepada klien/pemilik proyek.
+    - Angka tenaga kerja di atas sudah mempertimbangkan STANDAR KONSTRUKSI (contoh: pengecoran beton WAJIB tim besar untuk quality control).
+    - Tugas Anda adalah MENJELASKAN kenapa angka tersebut masuk akal dari sisi TEKNIS KONSTRUKSI dan PRODUKTIVITAS.
+    - Berikan penjelasan yang MEYAKINKAN kepada klien/pemilik proyek mengapa tim dengan size tersebut adalah OPTIMAL.
 
     OUTPUT (Bahasa Indonesia, Nada POSITIF dan PROFESIONAL):
     Untuk setiap kategori, jelaskan secara singkat:
-    - Komposisi tim (misal: 1 Tukang Batu + 1 Kenek + 1 Laden).
-    - Kenapa jumlah tersebut optimal untuk jenis pekerjaan itu.
-    - Keuntungan menggunakan tim dengan ukuran tersebut (efisiensi, koordinasi, dll).
+    - Komposisi tim yang ideal (misal: "6-8 orang untuk struktur beton: 2 tukang batu, 2 kenek, 1 vibrator operator, 1 quality control, 1-2 helper untuk angkut mixing").
+    - Kenapa jumlah tersebut optimal untuk jenis pekerjaan itu (produktivitas, safety, quality).
+    - Keuntungan menggunakan tim dengan ukuran tersebut (efisiensi, koordinasi, menghindari bottleneck).
 
-    Format output: Poin-poin ringkas per kategori. Maksimal 2-3 kalimat per kategori.
+    Format output: Poin-poin ringkas per kategori. Maksimal 3-4 kalimat per kategori.
+    FOKUS pada JUSTIFIKASI TEKNIS, bukan hanya menyebut ulang angka.
     `;
 
     return await callGemini(prompt, false);
