@@ -267,13 +267,64 @@ export const generateSmartSchedule = (project: Project, options: ScheduleOptions
     return updatedItems;
 };
 
+// Minimum worker requirements by work type (realistic construction standards)
+const MIN_WORKERS_BY_TYPE: Record<string, number> = {
+    'struktur': 8,     // Beton casting needs: tukang batu, kenek, vibrator operator, loader, etc
+    'pondasi': 6,      // Foundation work: excavation, rebar, formwork, concrete
+    'cor': 8,          // Any concrete work
+    'beton': 8,
+    'kolom': 6,
+    'balok': 6,
+    'plat': 8,
+    'dak': 8,
+    'atap': 4,         // Roof: roofers + helpers
+    'rangka': 4,
+    'baja ringan': 4,
+    'dinding': 3,      // Masonry: bricklayers + helpers
+    'bata': 3,
+    'hebel': 3,
+    'plester': 3,
+    'acian': 2,
+    'lantai': 3,       // Flooring
+    'keramik': 2,
+    'kusen': 2,        // Carpentry
+    'pintu': 2,
+    'jendela': 2,
+    'plafon': 2,
+    'cat': 2,          // Painting
+    'default': 2       // Minimum for any work
+};
+
+export const getRecommendedWorkers = (categoryName: string, totalTeamDays: number, totalDaysProject: number): number => {
+    // 1. Calculate based on workload
+    // Teams needed = Total Work (Team-Days) / Duration (Days)
+    // Workers = Teams * 2 (1 Team = 2 People)
+    const teamsNeeded = totalTeamDays / (totalDaysProject || 1);
+    const calculatedPeople = Math.ceil(teamsNeeded * 2);
+
+    // 2. Get minimum workers for this type of work
+    let minRequiredWorkers = MIN_WORKERS_BY_TYPE['default'];
+    const normalized = categoryName.toLowerCase();
+
+    for (const [keyword, minWorkers] of Object.entries(MIN_WORKERS_BY_TYPE)) {
+        if (keyword === 'default') continue;
+        if (normalized.includes(keyword)) {
+            minRequiredWorkers = minWorkers;
+            break;
+        }
+    }
+
+    // 3. Return the MAXIMUM of: calculated vs minimum required
+    return Math.max(calculatedPeople, minRequiredWorkers);
+};
+
 export const getSchedulePreview = (project: Project): string[] => {
     if (!project.rabItems || project.rabItems.length === 0) return ["Tidak ada item RAB."];
 
     const pStart = new Date(project.startDate).getTime();
     const pEnd = new Date(project.endDate).getTime();
     const totalDurationMs = pEnd - pStart;
-    const totalDaysProject = totalDurationMs / (1000 * 60 * 60 * 24);
+    const totalDaysProject = Math.max(1, totalDurationMs / (1000 * 60 * 60 * 24));
     const totalWeeksProject = totalDaysProject / 7;
 
     if (totalDurationMs <= 0) return ["Durasi proyek tidak valid."];
@@ -298,45 +349,28 @@ export const getSchedulePreview = (project: Project): string[] => {
         return logicA.order - logicB.order;
     });
 
-    // Worker Calculation
-    // Total Man-Days = Total Team-Days * 2 (Assuming 1 Team = 2 People: Tukang + Kenek)
-    // Avg Daily Teams = Total Team-Days / Total Project Duration
-    const totalManDays = totalProjectTeamDays * 2;
-    const avgDailyTeams = totalProjectTeamDays / totalDaysProject;
-    const recommendedWorkers = Math.ceil(avgDailyTeams * 2);
+    // Global Recommendation
+    const globalRecommendedWorkers = getRecommendedWorkers('default', totalProjectTeamDays, totalDaysProject);
 
     const report: string[] = [];
 
     report.push(`Total Durasi Proyek: ${Math.ceil(totalWeeksProject)} Minggu (${Math.ceil(totalDaysProject)} Hari)`);
-    report.push(`Total Beban Kerja: ${totalProjectTeamDays} Hari-Tim (${totalManDays} Hari-Orang)`);
-    report.push(`REKOMENDASI TENAGA KERJA: ± ${recommendedWorkers} Orang / Hari (Rata-rata)\n`);
+    report.push(`Total Beban Kerja: ${totalProjectTeamDays} Hari-Tim (${totalProjectTeamDays * 2} Hari-Orang)`);
+    report.push(`REKOMENDASI TENAGA KERJA: ± ${globalRecommendedWorkers} Orang / Hari (Rata-rata)\n`);
     report.push("Rincian Alokasi & Kebutuhan (Per Kategori Pekerjaan):");
 
     sortedCategories.forEach(cat => {
         const idealDays = categoryIdealDays[cat];
         const ratio = idealDays / totalProjectTeamDays;
 
-        // Convert ratio to Actual Project Weeks & Days
+        // Allocated Duration for this Category (roughly)
         const allocatedWeeks = totalWeeksProject * ratio;
         const allocatedDays = allocatedWeeks * 7;
 
-        // Calculate Teams Needed to finish 'idealDays' of work within 'allocatedDays'
-        // Teams = idealDays / allocatedDays
-        // Example: 7 days work / 2.8 days duration = 2.5 teams
-        const teamsNeeded = idealDays / (allocatedDays || 1);
+        // Use the new shared function
+        const personCount = getRecommendedWorkers(cat, idealDays, allocatedDays);
 
-        // Format the output
-        let teamInfo = "";
-        if (teamsNeeded < 1) {
-            // Part time or small team
-            teamInfo = `Cukup 1 Tim (Kerja Santai / Part-time)`;
-        } else {
-            const teamCount = Math.round(teamsNeeded * 10) / 10; // Round to 1 decimal
-            const personCount = Math.ceil(teamsNeeded * 2);
-            teamInfo = `Butuh ± ${teamCount} Tim (${personCount} Orang)`;
-        }
-
-        report.push(`- ${cat}: ±${allocatedWeeks.toFixed(1)} Minggu (Load: ${idealDays} Hari-Tim) -> ${teamInfo}`);
+        report.push(`- ${cat}: ±${allocatedWeeks.toFixed(1)} Minggu (Load: ${idealDays} Hari-Tim) -> Butuh ± ${personCount} Orang`);
     });
 
     report.push("\nCatatan:\n1. Estimasi tenaga kerja mengasumsikan produktivitas standar (1 Tim = 2 Orang).\n2. Jika durasi proyek dipercepat, jumlah tukang harus ditambah.");

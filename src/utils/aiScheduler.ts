@@ -1,7 +1,7 @@
 import { firebaseConfig, db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { RABItem, Project } from '../types';
-import { getEstimatedTeamDays } from './scheduleGenerator';
+import { getEstimatedTeamDays, getRecommendedWorkers } from './scheduleGenerator';
 
 const API_KEY = firebaseConfig.apiKey;
 const MODEL = "gemini-3-flash-preview";
@@ -260,48 +260,6 @@ EXAMPLE RESPONSE:
 
 // 2. Generate Manpower & Timeline Analysis
 export const generateAnalysisWithGemini = async (project: Project, items: RABItem[], context: string = ''): Promise<string> => {
-    // Minimum worker requirements by work type (realistic construction standards)
-    const MIN_WORKERS_BY_TYPE: Record<string, number> = {
-        'struktur': 8,     // Beton casting needs: tukang batu, kenek, vibrator operator, loader, etc
-        'pondasi': 6,      // Foundation work: excavation, rebar, formwork, concrete
-        'cor': 8,          // Any concrete work
-        'beton': 8,
-        'kolom': 6,
-        'balok': 6,
-        'plat': 8,
-        'dak': 8,
-        'atap': 4,         // Roof: roofers + helpers
-        'rangka': 4,
-        'baja ringan': 4,
-        'dinding': 3,      // Masonry: bricklayers + helpers
-        'bata': 3,
-        'hebel': 3,
-        'plester': 3,
-        'acian': 2,
-        'lantai': 3,       // Flooring
-        'keramik': 2,
-        'kusen': 2,        // Carpentry
-        'pintu': 2,
-        'jendela': 2,
-        'plafon': 2,
-        'cat': 2,          // Painting
-        'default': 2       // Minimum for any work
-    };
-
-    const getMinWorkersForCategory = (categoryName: string): number => {
-        const normalized = categoryName.toLowerCase();
-
-        // Check for keywords in category name
-        for (const [keyword, minWorkers] of Object.entries(MIN_WORKERS_BY_TYPE)) {
-            if (keyword === 'default') continue;
-            if (normalized.includes(keyword)) {
-                return minWorkers;
-            }
-        }
-
-        return MIN_WORKERS_BY_TYPE['default'];
-    };
-
     // 1. Calculate System Estimates (Group by Category) to give Context to AI
     const categories: Record<string, RABItem[]> = {};
     items.forEach(i => {
@@ -313,35 +271,28 @@ export const generateAnalysisWithGemini = async (project: Project, items: RABIte
     let manpowerSummary = "";
     Object.entries(categories).forEach(([cat, catItems]) => {
         // Calculate Total Man-Days required (Assuming 1 Team = 2 People standard)
-        const totalManDays = catItems.reduce((sum, item) => {
-            const idealDays = getEstimatedTeamDays(item); // Days for 1 team
-            return sum + (idealDays * 2);
-        }, 0);
+        const totalTeamDays = catItems.reduce((sum, item) => sum + getEstimatedTeamDays(item), 0);
+        const totalManDays = totalTeamDays * 2;
 
         // Calculate Scheduled Duration for this Category
         const startTimes = catItems.map(i => i.startDate ? new Date(i.startDate).getTime() : 0).filter(t => t > 0);
         const endTimes = catItems.map(i => i.endDate ? new Date(i.endDate).getTime() : 0).filter(t => t > 0);
 
         let estPeople = 0;
+        let durationDays = 1;
+
         if (startTimes.length > 0 && endTimes.length > 0) {
             const minStart = Math.min(...startTimes);
             const maxEnd = Math.max(...endTimes);
-            const durationDays = Math.max(1, (maxEnd - minStart) / (1000 * 60 * 60 * 24));
-
-            // Calculate based on workload
-            const calculatedPeople = Math.ceil(totalManDays / durationDays);
-
-            // Get minimum workers for this type of work
-            const minRequiredWorkers = getMinWorkersForCategory(cat);
-
-            // Use the MAXIMUM of: calculated vs minimum required
-            estPeople = Math.max(calculatedPeople, minRequiredWorkers);
+            durationDays = Math.max(1, (maxEnd - minStart) / (1000 * 60 * 60 * 24));
         } else {
-            // Fallback if no dates: Use minimum required for the category
-            estPeople = getMinWorkersForCategory(cat);
+            // Fallback if no dates: Assume 1 week per item avg?
+            durationDays = 7;
         }
 
-        manpowerSummary += `- ${cat}: Estimasi rata-rata ${estPeople} Orang (Total beban kerja: ${totalManDays} hari-orang, durasi: ${startTimes.length > 0 ? Math.ceil((Math.max(...endTimes) - Math.min(...startTimes)) / (1000 * 60 * 60 * 24)) : '?'} hari)\n`;
+        estPeople = getRecommendedWorkers(cat, totalTeamDays, durationDays);
+
+        manpowerSummary += `- ${cat}: Estimasi rata-rata ${estPeople} Orang (Total beban kerja: ${totalManDays} hari-orang, durasi: ${startTimes.length > 0 ? Math.ceil(durationDays) : '?'} hari)\n`;
     });
 
     const prompt = `

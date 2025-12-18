@@ -9,7 +9,7 @@ import {
     formatRupiah, getStats, getMonthlyGroupedTransactions,
     calculateWorkerFinancials, calculateProjectHealth
 } from '../utils/helpers';
-import { getEstimatedTeamDays } from '../utils/scheduleGenerator';
+import { getEstimatedTeamDays, getRecommendedWorkers } from '../utils/scheduleGenerator';
 import { generateScheduleWithGemini, generateAnalysisWithGemini, generateRiskReportWithGemini } from '../utils/aiScheduler';
 import { transformGDriveUrl } from '../utils/storageHelper';
 import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
@@ -888,7 +888,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         let maxEnd = -Infinity;
                                         let totalProgress = 0;
                                         let itemCount = 0;
-                                        let totalManDays = 0; // Accumulated Man-Days based on Integer allocations
+                                        let totalTeamDays = 0; // Accumulated Team-Days (ideal effort)
 
                                         items.forEach((item: any) => {
                                             if (item.startDate && item.endDate) {
@@ -897,11 +897,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                 if (iStart < minStart) minStart = iStart;
                                                 if (iEnd > maxEnd) maxEnd = iEnd;
 
-                                                // Calculate Individual Item Load (Integer constraint)
-                                                const durationDays = Math.max(1, Math.ceil((iEnd - iStart) / (1000 * 60 * 60 * 24)));
                                                 const idealDays = getEstimatedTeamDays(item);
-                                                const dailyPeople = Math.ceil((idealDays / durationDays) * 2); // 1 Team = 2 People
-                                                totalManDays += dailyPeople * durationDays;
+                                                totalTeamDays += idealDays;
                                             }
                                             totalProgress += (item.progress || 0);
                                             itemCount++;
@@ -915,10 +912,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             // Calculate Schedule Duration in Days
                                             const scheduledDays = Math.max(1, Math.ceil((maxEnd - minStart) / (1000 * 60 * 60 * 24)));
 
-                                            // New Integer-Corrected Logic:
-                                            // Avg People = TotalManDays / ScheduledDays
-                                            const avgPeopleNeeded = totalManDays / scheduledDays;
-                                            teamsNeeded = avgPeopleNeeded / 2; // Convert back to teams format for consistency
+                                            // New Robust Logic via Shared Function (Synced with AI)
+                                            const recommendedWorkers = getRecommendedWorkers(cat, totalTeamDays, scheduledDays);
+                                            teamsNeeded = recommendedWorkers / 2; // Convert to teams (UI expects teams)
 
                                             categoryTimelines[cat] = {
                                                 startOffset,
@@ -927,7 +923,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                 teamsNeeded
                                             };
                                         } else {
-                                            categoryTimelines[cat] = { startOffset: 0, width: 20, avgProgress: itemCount > 0 ? totalProgress / itemCount : 0, teamsNeeded: 0 };
+                                            // Default / Fallback
+                                            const recommendedWorkers = getRecommendedWorkers(cat, totalTeamDays, 7);
+                                            categoryTimelines[cat] = {
+                                                startOffset: 0,
+                                                width: 20,
+                                                avgProgress: itemCount > 0 ? totalProgress / itemCount : 0,
+                                                teamsNeeded: recommendedWorkers / 2
+                                            };
                                         }
                                     });
 
