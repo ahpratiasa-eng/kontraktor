@@ -53,8 +53,19 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
           <line x1="0" y1="50" x2="100" y2="50" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" vectorEffect="non-scaling-stroke" />
           <line x1="0" y1="75" x2="100" y2="75" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" vectorEffect="non-scaling-stroke" />
 
-          {/* Plan Line (Linear) */}
-          <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="6" vectorEffect="non-scaling-stroke" />
+          {/* Plan Line - Based on RAB Schedule */}
+          {stats.planCurvePoints ? (
+            <polyline
+              fill="none"
+              stroke="#cbd5e1"
+              strokeWidth="2"
+              strokeDasharray="6"
+              points={stats.planCurvePoints}
+              vectorEffect="non-scaling-stroke"
+            />
+          ) : (
+            <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="6" vectorEffect="non-scaling-stroke" />
+          )}
 
           {/* Realization Line - Gradient Area */}
           <defs>
@@ -76,8 +87,6 @@ const SCurveChart = ({ stats, project, compact = false }: { stats: any, project:
             strokeLinejoin="round"
             className="drop-shadow-sm"
           />
-
-          <circle cx={stats.timeProgress} cy={100 - stats.prog} r="3" fill="white" stroke={stats.prog >= stats.timeProgress ? "#22c55e" : "#ef4444"} strokeWidth="2" vectorEffect="non-scaling-stroke" className="shadow-md" />
         </svg>
 
         {!compact && (

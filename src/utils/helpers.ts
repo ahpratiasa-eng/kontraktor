@@ -137,7 +137,12 @@ export const getStats = (p: Project) => {
   const taskProgressState: { [taskId: number]: number } = {};
   (p.rabItems || []).forEach(t => taskProgressState[t.id] = 0);
 
-  uniqueDates.forEach(dateStr => {
+  // Only process dates up to TODAY - no future dates for realization
+  const filteredDates = uniqueDates.filter(dateStr => {
+    return new Date(dateStr).getTime() <= new Date().getTime();
+  });
+
+  filteredDates.forEach(dateStr => {
     const dateVal = new Date(dateStr).getTime();
     const logsUntilNow = (p.taskLogs || []).filter(l => new Date(l.date).getTime() <= dateVal);
     logsUntilNow.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(log => { taskProgressState[log.taskId] = log.newProgress; });
@@ -158,7 +163,46 @@ export const getStats = (p: Project) => {
     points.push(`${x},${y}`);
   });
 
-  return { inc, exp, prog: weightedProgress, leak: 0, timeProgress, curvePoints: points.join(" "), totalRAB };
+  // Calculate PLAN curve based on scheduled RAB items
+  const planPoints: string[] = [];
+  const numPlanPoints = 20; // Generate 20 points for smooth curve
+
+  for (let i = 0; i <= numPlanPoints; i++) {
+    const ratio = i / numPlanPoints;
+    const dateVal = start + (totalDuration * ratio);
+
+    let planProgress = 0;
+    if (totalRAB > 0) {
+      (p.rabItems || []).forEach(item => {
+        const itemTotal = item.volume * item.unitPrice;
+        const itemWeight = (itemTotal / totalRAB) * 100;
+
+        // Calculate expected progress for this item based on its schedule
+        let itemExpectedProgress = 0;
+        if (item.startDate && item.endDate) {
+          const iStart = new Date(item.startDate).getTime();
+          const iEnd = new Date(item.endDate).getTime();
+
+          if (dateVal >= iEnd) {
+            itemExpectedProgress = 100;
+          } else if (dateVal > iStart && iEnd > iStart) {
+            itemExpectedProgress = Math.min(100, ((dateVal - iStart) / (iEnd - iStart)) * 100);
+          }
+        } else {
+          // No schedule for this item - use linear based on project timeline
+          itemExpectedProgress = ratio * 100;
+        }
+
+        planProgress += (itemExpectedProgress * itemWeight) / 100;
+      });
+    }
+
+    const x = ratio * 100;
+    const y = 100 - planProgress;
+    planPoints.push(`${x},${y}`);
+  }
+
+  return { inc, exp, prog: weightedProgress, leak: 0, timeProgress, curvePoints: points.join(" "), planCurvePoints: planPoints.join(" "), totalRAB };
 };
 
 export const getRABGroups = (project: Project) => {

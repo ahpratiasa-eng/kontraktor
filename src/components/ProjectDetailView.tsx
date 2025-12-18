@@ -92,6 +92,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [showAllGantt, setShowAllGantt] = useState(false);
     const [showFullscreenTimeline, setShowFullscreenTimeline] = useState(false);
+    const [showDeviationDetail, setShowDeviationDetail] = useState(false);
     const [weather, setWeather] = useState<any>(null);
     const [workerSubTab, setWorkerSubTab] = useState<'attendance' | 'list' | 'evidence'>('attendance');
     const [reorderItems, setReorderItems] = useState<number[]>([]);
@@ -473,9 +474,91 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         <span className="flex items-center gap-1 text-slate-400"><div className="w-2 h-2 rounded-full bg-slate-300"></div> Rencana</span>
                                     </div>
                                 </div>
-                                <div className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded font-bold">
-                                    +{((getStats(activeProject).prog - (calculateProjectHealth(activeProject).planProgress || 0))).toFixed(1)}% Ahead
-                                </div>
+
+                                {/* DEVIATION INDICATOR - More Prominent */}
+                                {(() => {
+                                    const planProgress = calculateProjectHealth(activeProject).planProgress || 0;
+                                    const actualProgress = getStats(activeProject).prog;
+                                    const deviation = actualProgress - planProgress;
+                                    const isAhead = deviation >= 0;
+                                    const isCritical = deviation < -10;
+                                    const isWarning = deviation < -5 && deviation >= -10;
+
+                                    return (
+                                        <div className={`mt-3 p-4 rounded-2xl border-2 ${isCritical ? 'bg-red-50 border-red-300' :
+                                            isWarning ? 'bg-orange-50 border-orange-300' :
+                                                isAhead ? 'bg-green-50 border-green-300' :
+                                                    'bg-slate-50 border-slate-200'
+                                            }`}>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2 rounded-xl ${isCritical ? 'bg-red-100' :
+                                                        isWarning ? 'bg-orange-100' :
+                                                            isAhead ? 'bg-green-100' :
+                                                                'bg-slate-100'
+                                                        }`}>
+                                                        {isCritical || isWarning ? (
+                                                            <AlertTriangle size={24} className={isCritical ? 'text-red-600' : 'text-orange-600'} />
+                                                        ) : (
+                                                            <TrendingUp size={24} className="text-green-600" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className={`font-bold text-sm ${isCritical ? 'text-red-700' :
+                                                            isWarning ? 'text-orange-700' :
+                                                                isAhead ? 'text-green-700' :
+                                                                    'text-slate-700'
+                                                            }`}>
+                                                            {isCritical ? '⚠️ KRITIS - Sangat Terlambat' :
+                                                                isWarning ? '⚠️ PERINGATAN - Terlambat' :
+                                                                    isAhead && deviation > 5 ? '🚀 Lebih Cepat dari Jadwal' :
+                                                                        isAhead ? '✅ Sesuai Jadwal' :
+                                                                            '📊 Progress Normal'}
+                                                        </h4>
+                                                        <p className="text-xs text-slate-500 mt-0.5">
+                                                            Rencana: {planProgress.toFixed(1)}% • Realisasi: {actualProgress.toFixed(1)}%
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className={`text-2xl font-black ${isCritical ? 'text-red-600' :
+                                                        isWarning ? 'text-orange-600' :
+                                                            isAhead ? 'text-green-600' :
+                                                                'text-slate-600'
+                                                        }`}>
+                                                        {isAhead ? '+' : ''}{deviation.toFixed(1)}%
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">
+                                                        Deviasi
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Progress comparison bar */}
+                                            <div className="mt-3 flex gap-2 items-center">
+                                                <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-slate-400 rounded-full"
+                                                        style={{ width: `${Math.min(planProgress, 100)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-[10px] text-slate-400 w-10 text-right">Plan</span>
+                                            </div>
+                                            <div className="mt-1 flex gap-2 items-center">
+                                                <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full ${isCritical ? 'bg-red-500' :
+                                                            isWarning ? 'bg-orange-500' :
+                                                                'bg-green-500'
+                                                            }`}
+                                                        style={{ width: `${Math.min(actualProgress, 100)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-[10px] text-slate-400 w-10 text-right">Aktual</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             {/* Mini SCurve */}
@@ -483,25 +566,168 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
                             </div>
 
-                            {/* Deviation Warning */}
-                            {(() => {
-                                const dev = getStats(activeProject).prog - (calculateProjectHealth(activeProject).planProgress || 0);
-                                if (dev < -5) {
-                                    return (
-                                        <div className="mt-4 bg-red-50 border border-red-200 p-3 rounded-xl flex items-start gap-3">
-                                            <AlertTriangle className="text-red-500 shrink-0" size={20} />
-                                            <div>
-                                                <h4 className="font-bold text-red-700 text-xs uppercase tracking-wide">Peringatan Keterlambatan</h4>
-                                                <p className="text-xs text-red-600 mt-1">
-                                                    Proyek terlambat <span className="font-bold">{Math.abs(dev).toFixed(1)}%</span> dari rencana.
-                                                    Segera lakukan percepatan atau evaluasi jadwal.
-                                                </p>
-                                            </div>
+                            {/* CATEGORY DEVIATION BREAKDOWN - with Toggle */}
+                            {activeProject.rabItems && activeProject.rabItems.length > 0 && (
+                                <div className="mt-4 border-t border-dashed border-slate-200 pt-3">
+                                    <button
+                                        onClick={() => setShowDeviationDetail(!showDeviationDetail)}
+                                        className="w-full flex items-center justify-between py-2 px-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
+                                    >
+                                        <span className="font-bold text-xs text-slate-600 flex items-center gap-2">
+                                            📊 Lihat Detail Deviasi per Kategori
+                                        </span>
+                                        <span className={`transform transition-transform duration-200 text-slate-400 ${showDeviationDetail ? 'rotate-180' : ''}`}>
+                                            ▼
+                                        </span>
+                                    </button>
+
+                                    {showDeviationDetail && (
+                                        <div className="mt-3 space-y-2">
+                                            {(() => {
+                                                // Group items by category and calculate deviation
+                                                const groups = activeProject.rabItems.reduce((acc: any, item: any) => {
+                                                    const cat = item.category || 'Tanpa Kategori';
+                                                    if (!acc[cat]) acc[cat] = { items: [], totalValue: 0, weightedProgress: 0, hasSchedule: false };
+                                                    acc[cat].items.push(item);
+                                                    // Calculate item value: use totalPrice if exists, otherwise calculate from volume * unitPrice
+                                                    const itemValue = item.totalPrice || ((item.volume || 1) * (item.unitPrice || 0));
+                                                    acc[cat].totalValue += itemValue;
+                                                    acc[cat].weightedProgress += (item.progress || 0) * itemValue;
+                                                    if (item.startDate && item.endDate) acc[cat].hasSchedule = true;
+                                                    return acc;
+                                                }, {});
+
+                                                // Calculate overall plan progress based on project timeline
+                                                const pStart = new Date(activeProject.startDate).getTime();
+                                                const pEnd = new Date(activeProject.endDate).getTime();
+                                                const now = Date.now();
+                                                const projectTimeProgress = Math.min(100, Math.max(0, ((now - pStart) / (pEnd - pStart)) * 100));
+
+                                                // Create category stats
+                                                const categoryStats = Object.entries(groups).map(([cat, data]: [string, any]) => {
+                                                    const actualProgress = data.totalValue > 0 ? data.weightedProgress / data.totalValue : 0;
+
+                                                    // For each category, calculate plan based on scheduled items
+                                                    let totalWeightedPlan = 0;
+                                                    let totalScheduledValue = 0;
+
+                                                    data.items.forEach((item: any) => {
+                                                        const itemValue = item.totalPrice || ((item.volume || 1) * (item.unitPrice || 0)) || 1;
+
+                                                        if (item.startDate && item.endDate) {
+                                                            const iStart = new Date(item.startDate).getTime();
+                                                            const iEnd = new Date(item.endDate).getTime();
+                                                            let itemPlan = 0;
+
+                                                            if (now >= iEnd) {
+                                                                itemPlan = 100;
+                                                            } else if (now > iStart && iEnd > iStart) {
+                                                                itemPlan = Math.min(100, ((now - iStart) / (iEnd - iStart)) * 100);
+                                                            } else if (now <= iStart) {
+                                                                itemPlan = 0; // Item hasn't started yet
+                                                            }
+
+                                                            totalWeightedPlan += itemPlan * itemValue;
+                                                            totalScheduledValue += itemValue;
+                                                        }
+                                                    });
+
+                                                    // If no items have schedules, use project timeline progress as plan
+                                                    // If some items have schedules, use weighted average plan
+                                                    let planProgress = 0;
+                                                    if (totalScheduledValue > 0) {
+                                                        planProgress = totalWeightedPlan / totalScheduledValue;
+                                                    } else {
+                                                        // No schedules set - plan based on project timeline
+                                                        planProgress = projectTimeProgress;
+                                                    }
+
+                                                    const deviation = actualProgress - planProgress;
+
+                                                    return {
+                                                        name: cat,
+                                                        actual: actualProgress,
+                                                        plan: planProgress,
+                                                        deviation,
+                                                        itemCount: data.items.length,
+                                                        value: data.totalValue,
+                                                        hasSchedule: data.hasSchedule
+                                                    };
+                                                });
+
+                                                // Sort by deviation (worst first)
+                                                categoryStats.sort((a, b) => a.deviation - b.deviation);
+
+                                                return categoryStats.map((cat) => {
+                                                    const isCritical = cat.deviation < -10;
+                                                    const isWarning = cat.deviation < -5 && cat.deviation >= -10;
+                                                    const isAhead = cat.deviation >= 0;
+
+                                                    return (
+                                                        <div
+                                                            key={cat.name}
+                                                            className={`p-3 rounded-xl border ${isCritical ? 'bg-red-50 border-red-200' :
+                                                                isWarning ? 'bg-orange-50 border-orange-200' :
+                                                                    isAhead ? 'bg-green-50 border-green-200' :
+                                                                        'bg-slate-50 border-slate-200'
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        <span className={`text-xs font-bold ${isCritical ? 'text-red-700' :
+                                                                            isWarning ? 'text-orange-700' :
+                                                                                isAhead ? 'text-green-700' :
+                                                                                    'text-slate-700'
+                                                                            }`}>
+                                                                            {isCritical ? '🔴' : isWarning ? '🟠' : isAhead ? '🟢' : '⚪'}
+                                                                        </span>
+                                                                        <span className="font-bold text-xs text-slate-800 truncate">{cat.name}</span>
+                                                                        <span className="text-[10px] text-slate-400">({cat.itemCount} item)</span>
+                                                                        {!cat.hasSchedule && (
+                                                                            <span className="text-[9px] bg-yellow-100 text-yellow-600 px-1.5 py-0.5 rounded font-medium">
+                                                                                Belum ada jadwal
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-slate-400 mt-0.5">
+                                                                        Plan: {cat.plan.toFixed(0)}% • Aktual: {cat.actual.toFixed(0)}%
+                                                                    </div>
+                                                                    <div className="mt-1 flex gap-1 items-center">
+                                                                        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                                                            <div
+                                                                                className={`h-full rounded-full ${isCritical ? 'bg-red-500' :
+                                                                                    isWarning ? 'bg-orange-500' :
+                                                                                        'bg-green-500'
+                                                                                    }`}
+                                                                                style={{ width: `${Math.min(cat.actual, 100)}%` }}
+                                                                            />
+                                                                        </div>
+                                                                        <span className="text-[10px] text-slate-500 w-8 text-right">{cat.actual.toFixed(0)}%</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={`text-right px-2 py-1 rounded-lg ${isCritical ? 'bg-red-100' :
+                                                                    isWarning ? 'bg-orange-100' :
+                                                                        isAhead ? 'bg-green-100' :
+                                                                            'bg-slate-100'
+                                                                    }`}>
+                                                                    <div className={`text-sm font-black ${isCritical ? 'text-red-600' :
+                                                                        isWarning ? 'text-orange-600' :
+                                                                            isAhead ? 'text-green-600' :
+                                                                                'text-slate-600'
+                                                                        }`}>
+                                                                        {isAhead ? '+' : ''}{cat.deviation.toFixed(1)}%
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
                                         </div>
-                                    );
-                                }
-                                return null;
-                            })()}
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                     </div>
@@ -927,9 +1153,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                                 <div className="flex gap-2 border-t pt-3 border-dashed border-slate-200">
                                                                     <button
                                                                         onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }}
-                                                                        className="flex-1 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl active:scale-95 transition-all hover:bg-blue-100"
+                                                                        className="flex-1 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl active:scale-95 transition-all hover:bg-blue-700 shadow-md shadow-blue-200 flex items-center justify-center gap-2"
                                                                     >
-                                                                        Update
+                                                                        <TrendingUp size={14} /> Update Progress
                                                                     </button>
                                                                     <button onClick={() => { setSelectedRabItem(item); setModalType('qcModal'); setShowModal(true); }} className="px-3 py-2 bg-green-50 text-green-600 rounded-xl active:scale-95 hover:bg-green-100 border border-green-200" title="Quality Control"><CheckCircle size={16} /></button>
                                                                     <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded-xl active:scale-95 hover:bg-slate-100"><History size={16} /></button>
