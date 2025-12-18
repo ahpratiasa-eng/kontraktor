@@ -1,14 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote, Calendar, TrendingUp,
-    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, Plus, CheckCircle, Camera, X,
-    Maximize2, Minimize2
+    ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, Plus, CheckCircle,
+    ShieldAlert, Maximize2, Minimize2, X, Camera
 } from 'lucide-react';
 import SCurveChart from './SCurveChart';
 import {
     formatRupiah, getStats, getMonthlyGroupedTransactions,
     calculateWorkerFinancials, calculateProjectHealth
 } from '../utils/helpers';
+import { getEstimatedTeamDays } from '../utils/scheduleGenerator';
+import { generateScheduleWithGemini, generateAnalysisWithGemini, generateRiskReportWithGemini } from '../utils/aiScheduler';
 import { transformGDriveUrl } from '../utils/storageHelper';
 import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
@@ -64,6 +66,9 @@ interface ProjectDetailViewProps {
     // Transfer Material
     projects?: Project[];
     handleTransferMaterial?: (material: Material, quantity: number, targetProjectId: string, targetProjectName: string, targetMaterialId: number | null) => Promise<void>;
+    handleAutoSchedule?: () => void;
+    handleGenerateWeeklyReport?: (notes: string) => void;
+    handleUpdateWeeklyReport?: (id: string, notes: string) => void;
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
@@ -76,7 +81,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
     setActiveTab, prepareEditProject, prepareEditRABItem, prepareEditSchedule, isClientView,
     ahsItems, setTransactionType, setTransactionCategory, handleUpdateDefectStatus,
-    projects = [], handleTransferMaterial, userRole
+    projects = [], handleTransferMaterial, userRole, handleAutoSchedule,
+    handleGenerateWeeklyReport, handleUpdateWeeklyReport
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
@@ -92,8 +98,18 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [filterEndDate, setFilterEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [showAllGantt, setShowAllGantt] = useState(false);
     const [showFullscreenTimeline, setShowFullscreenTimeline] = useState(false);
+
+    // Journal State
+    const [journalFilter, setJournalFilter] = useState<'all' | 'manpower' | 'risk'>('all');
+    const [journalDateFilter, setJournalDateFilter] = useState('');
+    const [journalExpanded, setJournalExpanded] = useState(false);
     const [showDeviationDetail, setShowDeviationDetail] = useState(false);
     const [weather, setWeather] = useState<any>(null);
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+    // Schedule Analysis Editing State
+    const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
+    const [localAnalysis, setLocalAnalysis] = useState('');
     const [workerSubTab, setWorkerSubTab] = useState<'attendance' | 'list' | 'evidence'>('attendance');
     const [reorderItems, setReorderItems] = useState<number[]>([]);
     const [showReorderModal, setShowReorderModal] = useState(false);
@@ -109,6 +125,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [transferQty, setTransferQty] = useState(0);
     const [transferTargetProject, setTransferTargetProject] = useState('');
     const [isTransferring, setIsTransferring] = useState(false);
+
 
     React.useEffect(() => {
         if (!activeProject.location) return;
@@ -292,7 +309,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         ...(!isClientView && canEditProject ? [{ id: 'documents', label: 'Dokumen', icon: <FileText size={18} /> }] : []),
     ];
 
-    return (
+    return (<>
         <div className="flex flex-col w-full max-w-full pt-0 md:pt-1">
             {/* Tab Navigation - Wrap-able Pills (1 click, no dropdown) */}
             <div className="w-full mb-4 bg-white border-b border-slate-200 pb-4">
@@ -400,46 +417,62 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             </div>
                         </div>
 
-                        {/* Quick Actions */}
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-6">
+                        {/* Quick Actions (Minimalist) */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                             {!isClientView && (
                                 <>
                                     <button
                                         onClick={() => setShowDailyReportModal(true)}
-                                        className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                        className="bg-white text-slate-700 border border-slate-200 hover:border-green-500 hover:text-green-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
                                     >
-                                        <FileText size={18} /> Laporan Harian
+                                        <div className="p-2 bg-green-50 text-green-600 rounded-lg group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                            <FileText size={18} />
+                                        </div>
+                                        <span>Laporan Harian</span>
                                     </button>
+
                                     {userRole !== 'pengawas' && (
                                         <button
                                             onClick={() => setView('report-view')}
-                                            className="bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                            className="bg-white text-slate-700 border border-slate-200 hover:border-blue-500 hover:text-blue-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
                                         >
-                                            <FileText size={18} /> Laporan Detail
+                                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                <FileText size={18} />
+                                            </div>
+                                            <span>Laporan Detail</span>
                                         </button>
                                     )}
+
                                     <button
                                         onClick={() => setShowReportSettings(true)}
-                                        className="bg-emerald-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                        className="bg-white text-slate-700 border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
                                     >
-                                        <Settings size={18} /> Config WA
+                                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                            <Settings size={18} />
+                                        </div>
+                                        <span>Config WA</span>
                                     </button>
+
                                     <button
                                         onClick={() => {
                                             const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
                                             navigator.clipboard.writeText(url);
                                             alert(`Link Portal Klien berhasil disalin!\n\nKirim link ini ke pemilik proyek via WhatsApp:\n${url}`);
                                         }}
-                                        className="bg-purple-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                        className="bg-white text-slate-700 border border-slate-200 hover:border-purple-500 hover:text-purple-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
                                     >
-                                        <ExternalLink size={18} /> Portal Klien
+                                        <div className="p-2 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                            <ExternalLink size={18} />
+                                        </div>
+                                        <span>Portal Klien</span>
                                     </button>
+
                                     {canEditProject && (
                                         <button
                                             onClick={prepareEditProject}
-                                            className="bg-white text-slate-700 border border-slate-200 p-3 rounded-xl font-bold text-sm shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                            className="col-span-2 md:col-span-4 mt-2 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700 border border-transparent p-2 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors"
                                         >
-                                            <Settings size={18} /> Pengaturan
+                                            <Settings size={14} /> Pengaturan Proyek & Data
                                         </button>
                                     )}
                                 </>
@@ -447,7 +480,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             {isClientView && (
                                 <button
                                     onClick={() => setView('report-view')}
-                                    className="col-span-2 bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                    className="col-span-2 md:col-span-4 bg-blue-600 text-white p-3 rounded-xl font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
                                 >
                                     <FileText size={18} /> Lihat Laporan Detail
                                 </button>
@@ -561,8 +594,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 })()}
                             </div>
 
+
                             {/* Mini SCurve */}
-                            <div className="w-full">
+                            <div className="w-full mt-4">
                                 <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
                             </div>
 
@@ -766,9 +800,64 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             <Maximize2 size={12} /> Fullscreen
                                         </button>
                                         {!isClientView && rabViewMode !== 'client' && (
-                                            <div className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold">
-                                                Tips: Klik baris item untuk atur jadwal (Start/End Date)
-                                            </div>
+                                            <>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!confirm("AI akan mendesain ulang jadwal semua item secara otomatis berdasarkan logika konstruksi.\n\nJadwal manual yang sudah ada akan di-update.\nLanjutkan?")) return;
+
+                                                        const performScheduleGen = async () => {
+                                                            try {
+                                                                setIsGeneratingAI(true);
+
+                                                                // 1. Generate Schedule (JSON Structure)
+                                                                const updatedItems = await generateScheduleWithGemini(activeProject, activeProject.rabItems || []);
+
+                                                                // 2. Automatically Generate Manpower Explanation (Header ONLY)
+                                                                const analysisRes = await generateAnalysisWithGemini(activeProject, updatedItems);
+
+                                                                // 3. Save to dedicated headerAnalysis field (SEPARATE from Journal)
+                                                                const headerData = {
+                                                                    content: analysisRes,
+                                                                    date: new Date().toISOString(),
+                                                                    itemCount: updatedItems.length
+                                                                };
+
+                                                                // 4. Update Project (Header is SEPARATE field, not aiLogs)
+                                                                updateProject({
+                                                                    rabItems: updatedItems,
+                                                                    headerAnalysis: headerData
+                                                                } as any);
+
+                                                                alert("✅ SUKSES!\n\n1. Jadwal Proyek telah disusun ulang oleh AI.\n2. Penjelasan Tenaga Kerja telah diperbarui di Header.\n\n💡 Jurnal terpisah: klik tombol Analisa jika perlu arsip detail.");
+                                                            } catch (err: any) {
+                                                                if (err.message === 'API_BLOCKED' || err.message.includes('blocked')) {
+                                                                    const userKey = prompt("⚠️ API Key Firebase Project diblokir oleh Google.\n\nUntuk melanjutkan, masukkan API Key Gemini Anda sendiri (GRATIS):\nDapatkan di: aistudio.google.com/app/apikey");
+                                                                    if (userKey) {
+                                                                        localStorage.setItem('GEMINI_API_KEY', userKey);
+                                                                        alert("API Key tersimpan! Mencoba generate ulang...");
+                                                                        setTimeout(performScheduleGen, 500); // Retry
+                                                                    }
+                                                                } else {
+                                                                    alert("Gagal generate jadwal: " + err?.message);
+                                                                }
+                                                            } finally {
+                                                                setIsGeneratingAI(false);
+                                                            }
+                                                        };
+
+                                                        performScheduleGen();
+                                                    }}
+                                                    disabled={isGeneratingAI}
+                                                    className="text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1 disabled:opacity-50"
+                                                    title="Generate Jadwal Otomatis dengan Google Gemini AI"
+                                                >
+                                                    {isGeneratingAI ? <Sparkles size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                                    {isGeneratingAI ? 'Meracik...' : 'AI Schedule'}
+                                                </button>
+                                                <div className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold hidden md:block">
+                                                    Tips: Klik baris item untuk atur jadwal (Start/End Date)
+                                                </div>
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -790,7 +879,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     }, {});
 
                                     // Calculate aggregate timeline per category
-                                    const categoryTimelines: Record<string, { startOffset: number, width: number, avgProgress: number }> = {};
+                                    const categoryTimelines: Record<string, { startOffset: number, width: number, avgProgress: number, teamsNeeded?: number }> = {};
                                     const totalDuration = pEnd - pStart;
 
                                     Object.keys(groups).forEach(cat => {
@@ -799,6 +888,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         let maxEnd = -Infinity;
                                         let totalProgress = 0;
                                         let itemCount = 0;
+                                        let totalManDays = 0; // Accumulated Man-Days based on Integer allocations
 
                                         items.forEach((item: any) => {
                                             if (item.startDate && item.endDate) {
@@ -806,21 +896,38 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                 const iEnd = new Date(item.endDate).getTime();
                                                 if (iStart < minStart) minStart = iStart;
                                                 if (iEnd > maxEnd) maxEnd = iEnd;
+
+                                                // Calculate Individual Item Load (Integer constraint)
+                                                const durationDays = Math.max(1, Math.ceil((iEnd - iStart) / (1000 * 60 * 60 * 24)));
+                                                const idealDays = getEstimatedTeamDays(item);
+                                                const dailyPeople = Math.ceil((idealDays / durationDays) * 2); // 1 Team = 2 People
+                                                totalManDays += dailyPeople * durationDays;
                                             }
                                             totalProgress += (item.progress || 0);
                                             itemCount++;
                                         });
 
+                                        let teamsNeeded = 0;
                                         if (minStart !== Infinity && maxEnd !== -Infinity && totalDuration > 0) {
                                             const startOffset = Math.max(0, ((minStart - pStart) / totalDuration) * 100);
                                             const width = Math.min(100 - startOffset, ((maxEnd - minStart) / totalDuration) * 100);
+
+                                            // Calculate Schedule Duration in Days
+                                            const scheduledDays = Math.max(1, Math.ceil((maxEnd - minStart) / (1000 * 60 * 60 * 24)));
+
+                                            // New Integer-Corrected Logic:
+                                            // Avg People = TotalManDays / ScheduledDays
+                                            const avgPeopleNeeded = totalManDays / scheduledDays;
+                                            teamsNeeded = avgPeopleNeeded / 2; // Convert back to teams format for consistency
+
                                             categoryTimelines[cat] = {
                                                 startOffset,
                                                 width: Math.max(5, width),
-                                                avgProgress: itemCount > 0 ? totalProgress / itemCount : 0
+                                                avgProgress: itemCount > 0 ? totalProgress / itemCount : 0,
+                                                teamsNeeded
                                             };
                                         } else {
-                                            categoryTimelines[cat] = { startOffset: 0, width: 20, avgProgress: itemCount > 0 ? totalProgress / itemCount : 0 };
+                                            categoryTimelines[cat] = { startOffset: 0, width: 20, avgProgress: itemCount > 0 ? totalProgress / itemCount : 0, teamsNeeded: 0 };
                                         }
                                     });
 
@@ -862,32 +969,67 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                 </div>
                                                 {/* Row List */}
                                                 <div className="bg-white pb-2">
-                                                    {displayedRows.map((row) => (
-                                                        row.type === 'header' ? (
-                                                            <div
-                                                                key={row.id}
-                                                                onClick={() => toggleCategory(row.data)}
-                                                                className="h-8 flex items-center px-4 text-[10px] font-bold text-slate-500 bg-slate-100/50 uppercase tracking-wider border-b border-white hover:bg-slate-200 cursor-pointer select-none"
-                                                                title={row.data}
-                                                            >
-                                                                <div className="flex items-center gap-2 w-full">
-                                                                    <span className="transform transition-transform duration-200" style={{ transform: collapsedCategories[row.data] === false ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
-                                                                        ▼
-                                                                    </span>
-                                                                    <span className="truncate">{row.data}</span>
+                                                    {displayedRows.map((row) => {
+                                                        if (row.type === 'header') {
+                                                            const peopleNeeded = row.catTimeline?.teamsNeeded ? Math.ceil(row.catTimeline.teamsNeeded * 2) : 0;
+                                                            return (
+                                                                <div
+                                                                    key={row.id}
+                                                                    onClick={() => toggleCategory(row.data)}
+                                                                    className="h-8 flex items-center px-4 text-[10px] font-bold text-slate-500 bg-slate-100/50 uppercase tracking-wider border-b border-white hover:bg-slate-200 cursor-pointer select-none"
+                                                                    title={row.data}
+                                                                >
+                                                                    <div className="flex items-center gap-2 w-full min-w-0">
+                                                                        <span className="transform transition-transform duration-200 flex-shrink-0" style={{ transform: collapsedCategories[row.data] === false ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+                                                                            ▼
+                                                                        </span>
+                                                                        <div className="flex items-center gap-1 overflow-hidden">
+                                                                            <span className="truncate">{row.data}</span>
+                                                                            {!isClientView && peopleNeeded > 0 && (
+                                                                                <span
+                                                                                    className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[9px] font-extrabold whitespace-nowrap flex-shrink-0 cursor-help"
+                                                                                    title={`Rata-rata beban kerja harian kategori ini butuh ${peopleNeeded} orang (Akumulasi item yang berjalan paralel).`}
+                                                                                >
+                                                                                    Rata²: {peopleNeeded} Org
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div
-                                                                key={row.id}
-                                                                onClick={() => !isClientView && rabViewMode !== 'client' && prepareEditSchedule(row.data)}
-                                                                className={`h-8 flex items-center px-4 text-xs font-medium text-slate-700 truncate border-b border-transparent ${!isClientView && rabViewMode !== 'client' ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
-                                                                title={row.data.name}
-                                                            >
-                                                                {row.data.name}
-                                                            </div>
-                                                        )
-                                                    ))}
+                                                            );
+                                                        } else {
+                                                            const item = row.data;
+                                                            // Calculate Daily Workers for Item
+                                                            let dailyWorkersStr = '';
+                                                            if (!isClientView && item.startDate && item.endDate) {
+                                                                const iStart = new Date(item.startDate).getTime();
+                                                                const iEnd = new Date(item.endDate).getTime();
+                                                                const durationDays = Math.max(1, Math.ceil((iEnd - iStart) / (1000 * 60 * 60 * 24)));
+                                                                const idealDays = getEstimatedTeamDays(item);
+                                                                // 1 Team = 2 People
+                                                                const w = Math.ceil((idealDays / durationDays) * 2);
+                                                                if (w > 0) dailyWorkersStr = `${w}`;
+                                                            }
+
+                                                            return (
+                                                                <div
+                                                                    key={row.id}
+                                                                    onClick={() => !isClientView && rabViewMode !== 'client' && prepareEditSchedule(row.data)}
+                                                                    className={`h-8 flex items-center px-4 text-xs font-medium text-slate-700 border-b border-transparent ${!isClientView && rabViewMode !== 'client' ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
+                                                                    title={row.data.name}
+                                                                >
+                                                                    <div className="flex items-center justify-between w-full min-w-0 gap-2">
+                                                                        <span className="truncate">{row.data.name}</span>
+                                                                        {dailyWorkersStr && (
+                                                                            <span className="text-[10px] text-slate-400 font-mono bg-slate-50 px-1 rounded flex-shrink-0" title={`Estimasi: Butuh ${dailyWorkersStr} Tukang/Hari agar selesai tepat waktu`}>
+                                                                                👥{dailyWorkersStr}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                    })}
                                                     {/* Button Spacer */}
                                                     {timelineRows.length > 8 && (
                                                         <div className="h-10 mt-2" />
@@ -1024,6 +1166,248 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             </div>
                         )}
 
+                        {/* --- AI INTELLIGENCE DASHBOARD (GEMINI 3 FLASH) --- */}
+                        {!isClientView && rabViewMode !== 'client' && (
+                            <div className="mt-8 bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-indigo-100 shadow-sm overflow-hidden mx-1">
+                                <div className="p-4 border-b border-indigo-50 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-indigo-50/30">
+                                    <div>
+                                        <h3 className="font-bold text-indigo-900 flex items-center gap-2 text-sm md:text-base">
+                                            <Sparkles size={18} className="text-indigo-600" />
+                                            Jurnal Evaluasi Cerdas
+                                            <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-mono border border-indigo-200">Gemini 3 Flash</span>
+                                        </h3>
+                                        <p className="text-[10px] text-indigo-400 mt-1 pl-7 hidden md:block">
+                                            Analisa mendalam untuk arsip evaluasi proyek & pembelajaran.
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={async () => {
+                                                const confirm = window.confirm("Mulai Analisa Manpower?");
+                                                if (!confirm) return;
+
+                                                const context = window.prompt("Informasi Tambahan Lapangan (Opsional):\nContoh: 'Hujan deras kemarin', 'Progress item X melambat'");
+
+                                                try {
+                                                    setIsGeneratingAI(true);
+                                                    const res = await generateAnalysisWithGemini(activeProject, activeProject.rabItems || [], context || "");
+
+                                                    // Save to Log
+                                                    const newLog: any = {
+                                                        id: Date.now().toString(),
+                                                        date: new Date().toISOString(),
+                                                        type: 'manpower',
+                                                        content: res
+                                                    };
+
+                                                    const currentLogs = (activeProject as any).aiLogs || [];
+                                                    const updatedLogs = [...currentLogs, newLog];
+                                                    const updatedProject = { ...activeProject, aiLogs: updatedLogs };
+
+                                                    // Handle Update
+                                                    if (updateProject) updateProject(updatedProject);
+
+                                                    alert("Analisa Berhasil Disimpan di Jurnal!");
+                                                } catch (e: any) { alert("Gagal: " + e.message); }
+                                                finally { setIsGeneratingAI(false); }
+                                            }}
+                                            disabled={isGeneratingAI}
+                                            className="px-3 py-2 bg-white border border-indigo-200 text-indigo-700 text-xs rounded-lg font-semibold hover:bg-indigo-50 hover:shadow-sm transition flex items-center gap-2"
+                                        >
+                                            {isGeneratingAI ? <Sparkles size={14} className="animate-spin" /> : <Users size={14} />}
+                                            Analisa Manpower
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                const confirm = window.confirm("Mulai Analisa Risiko?");
+                                                if (!confirm) return;
+
+                                                const context = window.prompt("Informasi Kondisi Lapangan (Opsional):\nContoh: 'Akses jalan sempit', 'Dekat selokan', 'Musim hujan'");
+
+                                                try {
+                                                    setIsGeneratingAI(true);
+                                                    const res = await generateRiskReportWithGemini(activeProject, activeProject.rabItems || [], context || "");
+
+                                                    const newLog: any = {
+                                                        id: Date.now().toString(),
+                                                        date: new Date().toISOString(),
+                                                        type: 'risk',
+                                                        content: res
+                                                    };
+
+                                                    const currentLogs = (activeProject as any).aiLogs || [];
+                                                    const updatedLogs = [...currentLogs, newLog];
+                                                    const updatedProject = { ...activeProject, aiLogs: updatedLogs };
+
+                                                    if (updateProject) updateProject(updatedProject);
+
+                                                    alert("Analisa Berhasil Disimpan di Jurnal!");
+                                                } catch (e: any) { alert("Gagal: " + e.message); }
+                                                finally { setIsGeneratingAI(false); }
+                                            }}
+                                            disabled={isGeneratingAI}
+                                            className="px-3 py-2 bg-white border border-rose-200 text-rose-700 text-xs rounded-lg font-semibold hover:bg-rose-50 hover:shadow-sm transition flex items-center gap-2"
+                                        >
+                                            {isGeneratingAI ? <AlertTriangle size={14} className="animate-spin" /> : <ShieldAlert size={14} />}
+                                            Analisa Risiko
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Filter Bar */}
+                                <div className="px-4 py-3 bg-white border-b border-indigo-50 flex items-center gap-2 overflow-x-auto">
+                                    <button
+                                        onClick={() => { setJournalFilter('all'); setJournalExpanded(false); }}
+                                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition whitespace-nowrap ${journalFilter === 'all' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                    >
+                                        Semua
+                                    </button>
+                                    <button
+                                        onClick={() => { setJournalFilter('manpower'); setJournalExpanded(false); }}
+                                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition whitespace-nowrap flex items-center gap-1 ${journalFilter === 'manpower' ? 'bg-indigo-100 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                    >
+                                        <Users size={12} /> Manpower
+                                    </button>
+                                    <button
+                                        onClick={() => { setJournalFilter('risk'); setJournalExpanded(false); }}
+                                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition whitespace-nowrap flex items-center gap-1 ${journalFilter === 'risk' ? 'bg-rose-100 border-rose-200 text-rose-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                    >
+                                        <AlertTriangle size={12} /> Risiko
+                                    </button>
+
+                                    <div className="w-px h-5 bg-slate-200 mx-1 flex-shrink-0"></div>
+
+                                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1 hover:border-indigo-300 transition flex-shrink-0">
+                                        <Calendar size={12} className="text-slate-400" />
+                                        <input
+                                            type="date"
+                                            value={journalDateFilter}
+                                            onChange={(e) => { setJournalDateFilter(e.target.value); setJournalExpanded(false); }}
+                                            className="text-[10px] text-slate-600 focus:outline-none w-24 bg-transparent"
+                                        />
+                                        {journalDateFilter && (
+                                            <button onClick={() => setJournalDateFilter('')} className="bg-slate-100 text-slate-400 hover:text-rose-500 rounded-full p-0.5 ml-1"><X size={10} /></button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-slate-50/50 min-h-[100px]">
+                                    {/* Filtering Logic */}
+                                    {(() => {
+                                        const allLogs = (activeProject as any).aiLogs || [];
+                                        const filteredLogs = allLogs
+                                            .filter((l: any) => {
+                                                const matchesType = journalFilter === 'all' || l.type === journalFilter;
+
+                                                // Timezone Fix: Compare using Local Time
+                                                const d = new Date(l.date);
+                                                const logDateLocal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+                                                const matchesDate = journalDateFilter ? logDateLocal === journalDateFilter : true;
+                                                return matchesType && matchesDate;
+                                            })
+                                            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                                        const displayedLogs = journalExpanded ? filteredLogs : filteredLogs.slice(0, 5);
+                                        const hasMore = filteredLogs.length > 5;
+
+                                        if (filteredLogs.length === 0) {
+                                            return (
+                                                <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                                                    <div className="bg-slate-100 p-3 rounded-full mb-3">
+                                                        <History size={24} className="opacity-50" />
+                                                    </div>
+                                                    <p className="text-xs italic">Belum ada riwayat {journalFilter !== 'all' ? journalFilter : ''}.</p>
+                                                    <p className="text-[10px] mt-1">Klik tombol di atas untuk mulai analisa AI.</p>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div className="space-y-3">
+                                                {displayedLogs.map((log: any, index: number) => (
+                                                    <details key={log.id} open={index === 0} className="bg-white rounded-xl border border-slate-200 shadow-sm group">
+                                                        <summary className="list-none cursor-pointer p-4 bg-white hover:bg-slate-50 rounded-xl transition-colors select-none">
+                                                            <div className="flex justify-between items-center">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`p-2 rounded-lg flex-shrink-0 ${log.type === 'manpower' ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                                        {log.type === 'manpower' ? <Users size={16} /> : <AlertTriangle size={16} />}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <h4 className="text-sm font-bold text-slate-700">
+                                                                                {log.type === 'manpower' ? 'Analisa Tenaga Kerja' : 'Analisa Risiko'}
+                                                                            </h4>
+                                                                            {index === 0 && journalFilter === 'all' && (
+                                                                                <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">Terbaru</span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                                                            <Calendar size={10} />
+                                                                            {new Date(log.date).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+                                                                            <span className="text-slate-300">•</span>
+                                                                            <span className="group-open:hidden italic transition-opacity">Klik untuk perbesar</span>
+                                                                            <span className="hidden group-open:inline italic text-blue-500">Membaca...</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <button
+                                                                        className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition"
+                                                                        title="Hapus Log"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault(); // Prevent accordion toggle
+                                                                            if (window.confirm('Hapus log ini?')) {
+                                                                                const currentLogs = (activeProject as any).aiLogs || [];
+                                                                                const newLogs = currentLogs.filter((l: any) => l.id !== log.id);
+                                                                                const updated = { ...activeProject, aiLogs: newLogs };
+                                                                                if (updateProject) updateProject(updated);
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                    <div className="text-slate-400 group-open:rotate-180 transition-transform duration-200">
+                                                                        <TrendingUp size={16} />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </summary>
+                                                        <div className="px-4 pb-4 pt-0 border-t border-slate-100 mt-2">
+                                                            <div className="mt-3 text-sm text-slate-600 whitespace-pre-wrap font-sans leading-relaxed animate-in fade-in slide-in-from-top-1">
+                                                                {log.content}
+                                                            </div>
+                                                        </div>
+                                                    </details>
+                                                ))}
+
+                                                {/* Show More Button */}
+                                                {!journalExpanded && hasMore && (
+                                                    <button
+                                                        onClick={() => setJournalExpanded(true)}
+                                                        className="w-full py-3 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition dashed border-dashed flex items-center justify-center gap-2"
+                                                    >
+                                                        <History size={14} />
+                                                        Tampilkan {filteredLogs.length - 5} Analisa Lama Lainnya...
+                                                    </button>
+                                                )}
+
+                                                {/* Collapse Button */}
+                                                {journalExpanded && filteredLogs.length > 5 && (
+                                                    <button
+                                                        onClick={() => setJournalExpanded(false)}
+                                                        className="w-full py-2 text-xs text-indigo-500 hover:text-indigo-700 transition"
+                                                    >
+                                                        Lipat Kembali
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                        )}
+
 
                         {/* Mobile Progress Summary for Client View */}
                         {isClientView && (
@@ -1061,19 +1445,251 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             <div className="lg:col-span-3">
                                 <SCurveChart stats={getStats(activeProject)} project={activeProject} />
                             </div>
+
+                            {/* SCHEDULE ANALYSIS SECTION (HEADER - Separate from Journal) */}
+                            {(activeProject.scheduleAnalysis || (activeProject as any).headerAnalysis) && (
+                                <div className="lg:col-span-3">
+                                    {(() => {
+                                        // 1. Determine Content Source: headerAnalysis (auto) vs Manual
+                                        const headerData = (activeProject as any).headerAnalysis;
+
+                                        const contentToShow = headerData?.content || activeProject.scheduleAnalysis;
+                                        const isAI = !!headerData;
+
+                                        // Detect if data has changed since last generation
+                                        const lastItemCount = headerData?.itemCount || 0;
+                                        const currentItemCount = activeProject.rabItems?.length || 0;
+                                        const isDataChanged = isAI && lastItemCount !== currentItemCount;
+
+
+                                        return (
+                                            <div className={`p-6 rounded-3xl border ${isAI ? 'bg-indigo-50/50 border-indigo-100' : 'bg-slate-50 border-slate-200'} transition-all`}>
+                                                <details className="group" open={true}>
+                                                    <summary className="flex justify-between items-center font-bold text-slate-700 cursor-pointer list-none">
+                                                        <div className="flex items-center gap-2">
+                                                            {isAI ? <Sparkles size={20} className="text-indigo-600" /> : <Users size={20} className="text-orange-500" />}
+                                                            <div className="flex flex-col">
+                                                                <span className={isAI ? 'text-indigo-900' : 'text-slate-700'}>
+                                                                    {isAI ? 'Analisa Kebutuhan Tenaga Kerja (AI)' : 'Analisa Manpower & Durasi (Estimasi Manual)'}
+                                                                </span>
+                                                                {isAI && <span className="text-[10px] font-normal text-indigo-500">{new Date(headerData.date).toLocaleString()} • Gemini AI</span>}
+                                                                {isDataChanged && (
+                                                                    <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold animate-pulse flex items-center gap-1">
+                                                                        <AlertTriangle size={10} /> Data Berubah ({lastItemCount} → {currentItemCount} item)
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {/* AI Trigger Button in Header */}
+                                                            {!isClientView && rabViewMode !== 'client' && (
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.preventDefault();
+                                                                        const confirm = window.confirm("Refresh Analisa Kebutuhan Tenaga Kerja?\n\n(Disarankan jika ada perubahan item RAB)");
+                                                                        if (!confirm) return;
+
+                                                                        try {
+                                                                            setIsGeneratingAI(true);
+                                                                            const res = await generateAnalysisWithGemini(activeProject, activeProject.rabItems || []);
+
+                                                                            // Save to headerAnalysis (SEPARATE from Journal)
+                                                                            const headerData = {
+                                                                                content: res,
+                                                                                date: new Date().toISOString(),
+                                                                                itemCount: activeProject.rabItems?.length || 0
+                                                                            };
+
+                                                                            if (updateProject) updateProject({ headerAnalysis: headerData } as any);
+                                                                            alert("✅ Penjelasan Tenaga Kerja Diperbarui!");
+                                                                        } catch (err: any) { alert("Gagal: " + err.message); }
+                                                                        finally { setIsGeneratingAI(false); }
+                                                                    }}
+                                                                    disabled={isGeneratingAI}
+                                                                    className={`px-3 py-1 rounded-full text-[10px] font-bold border transition flex items-center gap-1 ${isAI
+                                                                        ? 'bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50'
+                                                                        : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 shadow-md animate-pulse'}`}
+                                                                >
+                                                                    <Sparkles size={10} />
+                                                                    {isGeneratingAI ? 'Thinking...' : (isAI ? 'Update Analisa' : '✨ Mulai Analisa AI')}
+                                                                </button>
+                                                            )}
+
+                                                            {!isClientView && rabViewMode !== 'client' && !isEditingAnalysis && !isAI && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        setLocalAnalysis(activeProject.scheduleAnalysis || '');
+                                                                        setIsEditingAnalysis(true);
+                                                                    }}
+                                                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition"
+                                                                    title="Edit Teks Manual"
+                                                                >
+                                                                    <Edit size={16} />
+                                                                </button>
+                                                            )}
+                                                            <span className="transition group-open:rotate-180">
+                                                                <TrendingUp size={16} />
+                                                            </span>
+                                                        </div>
+                                                    </summary>
+
+                                                    <div className="mt-4 pt-4 border-t border-slate-200/50">
+                                                        {isEditingAnalysis && !isAI ? (
+                                                            <div className="space-y-3">
+                                                                <textarea
+                                                                    value={localAnalysis}
+                                                                    onChange={(e) => setLocalAnalysis(e.target.value)}
+                                                                    className="w-full p-4 border border-slate-300 rounded-xl text-sm font-mono text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                    rows={12}
+                                                                />
+                                                                <div className="flex justify-end gap-2">
+                                                                    <button
+                                                                        onClick={() => setIsEditingAnalysis(false)}
+                                                                        className="px-4 py-2 text-slate-600 font-bold text-xs hover:bg-white rounded-lg transition"
+                                                                    >
+                                                                        Batal
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            updateProject({ scheduleAnalysis: localAnalysis });
+                                                                            setIsEditingAnalysis(false);
+                                                                            alert("Analisa berhasil diperbarui.");
+                                                                        }}
+                                                                        className="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition shadow-sm"
+                                                                    >
+                                                                        Simpan
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`text-sm ${isAI ? 'font-sans text-indigo-900 leading-relaxed' : 'font-mono text-slate-600'} whitespace-pre-wrap`}>
+                                                                {contentToShow || (
+                                                                    <div className="text-center py-4 text-slate-400 italic">
+                                                                        Belum ada analisa. Klik tombol AI di atas untuk generate.
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </details>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+
+                            {/* WEEKLY REPORTS SECTION (NEW) */}
+                            <div className="lg:col-span-3">
+                                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div>
+                                            <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                                <FileText size={20} className="text-blue-600" /> Laporan Progress Mingguan
+                                            </h3>
+                                            <p className="text-sm text-slate-500">Rekap deviasi dan trend progress proyek</p>
+                                        </div>
+                                        {(!isClientView && rabViewMode !== 'client' && handleGenerateWeeklyReport) && (
+                                            <button
+                                                onClick={() => {
+                                                    const note = prompt("Masukkan Catatan / Evaluasi Minggu Ini:", "Progress berjalan lancar.");
+                                                    if (note !== null) handleGenerateWeeklyReport(note);
+                                                }}
+                                                className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-700 transition flex items-center gap-2 shadow-md active:scale-95"
+                                            >
+                                                <Plus size={16} /> Buat Laporan Minggu Ini
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {(!activeProject.weeklyReports || activeProject.weeklyReports.length === 0) ? (
+                                        <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                            <p className="text-sm text-slate-400 font-medium">Belum ada laporan mingguan.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {[...activeProject.weeklyReports].sort((a, b) => b.weekNumber - a.weekNumber).map((report) => (
+                                                <div key={report.id} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-shadow relative overflow-hidden group">
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="bg-slate-100 p-2 rounded-lg">
+                                                                <Calendar size={18} className="text-slate-500" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-bold text-sm text-slate-800">Minggu ke-{report.weekNumber}</h4>
+                                                                <span className="text-[10px] text-slate-500">{new Date(report.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - {new Date(report.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className={`text-[10px] font-bold px-2 py-1 rounded-full border ${report.trend === 'Improving' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                            report.trend === 'Worsening' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                                'bg-slate-50 text-slate-600 border-slate-200'
+                                                            }`}>
+                                                            {report.trend === 'Improving' ? '📈 Membaik' :
+                                                                report.trend === 'Worsening' ? '📉 Memburuk' : '➡️ Stabil'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-2 mb-3 bg-slate-50 p-2 rounded-xl">
+                                                        <div className="text-center">
+                                                            <div className="text-[10px] text-slate-400 uppercase font-bold">Plan</div>
+                                                            <div className="font-bold text-slate-700">{report.planProgress.toFixed(1)}%</div>
+                                                        </div>
+                                                        <div className="text-center border-l border-slate-200">
+                                                            <div className="text-[10px] text-slate-400 uppercase font-bold">Real</div>
+                                                            <div className="font-bold text-blue-600">{report.realProgress.toFixed(1)}%</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex justify-between items-center">
+                                                        <div className="text-[10px] text-slate-400">
+                                                            Deviasi: <span className={`font-bold ${report.deviation >= 0 ? 'text-green-600' : 'text-red-500'}`}>{report.deviation > 0 ? '+' : ''}{report.deviation.toFixed(1)}%</span>
+                                                        </div>
+                                                        {report.previousDeviation !== undefined && (
+                                                            <div className="text-[10px] text-slate-400">
+                                                                Prev: {report.previousDeviation.toFixed(1)}%
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {report.notes && (
+                                                        <div className="mt-2 pt-2 border-t border-slate-100">
+                                                            <p className="text-[10px] text-slate-500 italic">" {report.notes} "</p>
+                                                        </div>
+                                                    )}
+
+                                                    {!isClientView && handleUpdateWeeklyReport && (
+                                                        <button
+                                                            onClick={() => {
+                                                                const newNote = prompt("Edit Catatan Evaluasi:", report.notes || "");
+                                                                if (newNote !== null) handleUpdateWeeklyReport(report.id, newNote);
+                                                            }}
+                                                            className="absolute top-2 right-2 p-1 text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <Edit size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                             <div className="lg:col-span-3">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 px-1">
                                     <div>
                                         <h3 className="font-bold text-lg text-slate-700">Rincian Pekerjaan (RAB)</h3>
                                         <p className="text-xs text-slate-400">Update progres pekerjaan di sini.</p>
                                     </div>
-                                    {!isClientView && canEditProject && (
+                                    {!isClientView && rabViewMode !== 'client' && canEditProject && (
                                         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                             <button onClick={() => { setSelectedRabItem(null); openModal('newRAB'); }} className="flex-1 sm:flex-none text-xs bg-blue-600 text-white px-4 py-2.5 rounded-xl font-bold shadow-md active:scale-95 transition-transform flex items-center justify-center gap-1">
                                                 <Plus size={16} /> Item Baru
                                             </button>
                                             <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-white text-slate-600 px-3 py-2.5 rounded-xl font-bold border shadow-sm hover:bg-slate-50 flex items-center gap-1"><Upload size={14} /></button>
                                             <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-50 text-purple-600 px-3 py-2.5 rounded-xl font-bold border border-purple-100 hover:bg-purple-100 flex items-center gap-1"><Sparkles size={14} /></button>
+                                            {handleAutoSchedule && (
+                                                <button onClick={handleAutoSchedule} className="text-xs bg-orange-50 text-orange-600 px-3 py-2.5 rounded-xl font-bold border border-orange-100 hover:bg-orange-100 flex items-center gap-1" title="Buat Jadwal Otomatis"><Calendar size={14} /></button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -1095,101 +1711,140 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             )}
                                         </div>
                                     )}
-                                    {Object.keys(rabGroups).sort().map(category => (
-                                        <div key={category} className="bg-white rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden">
-                                            <div className="bg-slate-50/80 p-4 border-b flex justify-between items-center backdrop-blur-sm sticky top-0 z-10">
-                                                <span className="font-bold text-slate-700 text-sm uppercase tracking-wide">{category}</span>
-                                                <span className="text-[10px] font-bold bg-white px-2 py-1 rounded-lg text-slate-400 border shadow-sm">
-                                                    {rabGroups[category].length} Item
-                                                </span>
-                                            </div>
+                                    {(() => {
+                                        // GROUPING LOGIC: Merge "Main - Sub" categories back together for display
+                                        const mainCategories: Record<string, string[]> = {};
+                                        const sortedKeys = Object.keys(rabGroups).sort();
 
-                                            {(!isClientView && rabViewMode === 'internal') && (
-                                                <div className="divide-y divide-slate-100">
-                                                    {rabGroups[category].map(item => (
-                                                        <div key={item.id} className={`p-4 hover:bg-slate-50 transition-colors ${item.isAddendum ? 'bg-orange-50/50' : ''}`}>
-                                                            <div className="flex justify-between items-start mb-3">
-                                                                <div className="flex-1 pr-2">
-                                                                    <div className="font-bold text-slate-800 text-sm mb-1 leading-snug">
-                                                                        {item.name}
-                                                                        {item.isAddendum && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded ml-1 align-middle font-bold border border-orange-200">CCO</span>}
-                                                                        {(() => {
-                                                                            const logs = activeProject?.qcLogs?.filter(l => l.rabItemId === item.id).sort((a, b) => b.id - a.id);
-                                                                            const latest = logs?.[0];
-                                                                            if (!latest) return null;
-                                                                            return (
-                                                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-2 align-middle font-bold border flex-inline items-center gap-1 ${latest.status === 'Passed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
-                                                                                    {latest.status === 'Passed' ? <CheckCircle size={10} /> : <X size={10} />} QC {latest.status === 'Passed' ? 'OK' : 'Gagal'}
-                                                                                </span>
-                                                                            );
-                                                                        })()}
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                                                                        <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">Vol: {item.volume} {item.unit}</span>
-                                                                        <span>x</span>
-                                                                        <span className="font-mono">{formatRupiah(item.unitPrice)}</span>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="text-right flex flex-col items-end">
-                                                                    <div className="font-bold text-slate-700 text-sm mb-1">{formatRupiah(item.volume * item.unitPrice)}</div>
-                                                                    {item.priceLockedAt && <Lock size={10} className="text-amber-500" />}
-                                                                </div>
-                                                            </div>
+                                        sortedKeys.forEach(cat => {
+                                            const parts = cat.split(' - ');
+                                            const main = parts[0];
+                                            if (!mainCategories[main]) mainCategories[main] = [];
+                                            mainCategories[main].push(cat);
+                                        });
 
-                                                            <div className="mb-4">
-                                                                <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1.5">
-                                                                    <span>Progress Fisik</span>
-                                                                    <span className={item.progress === 100 ? 'text-green-600' : 'text-blue-600'}>{item.progress}%</span>
-                                                                </div>
-                                                                <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
-                                                                    <div
-                                                                        className={`h-full rounded-full transition-all duration-700 ${item.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                                                                        style={{ width: `${item.progress}%` }}
-                                                                    ></div>
-                                                                </div>
-                                                            </div>
+                                        return Object.keys(mainCategories).sort().map(mainCat => {
+                                            const subCats = mainCategories[mainCat]; // Array of full category names belonging to this Main Header
+                                            const totalMainItems = subCats.reduce((acc, sub) => acc + rabGroups[sub].length, 0);
 
-                                                            {canEditProject && (
-                                                                <div className="flex gap-2 border-t pt-3 border-dashed border-slate-200">
-                                                                    <button
-                                                                        onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }}
-                                                                        className="flex-1 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl active:scale-95 transition-all hover:bg-blue-700 shadow-md shadow-blue-200 flex items-center justify-center gap-2"
-                                                                    >
-                                                                        <TrendingUp size={14} /> Update Progress
-                                                                    </button>
-                                                                    <button onClick={() => { setSelectedRabItem(item); setModalType('qcModal'); setShowModal(true); }} className="px-3 py-2 bg-green-50 text-green-600 rounded-xl active:scale-95 hover:bg-green-100 border border-green-200" title="Quality Control"><CheckCircle size={16} /></button>
-                                                                    <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded-xl active:scale-95 hover:bg-slate-100"><History size={16} /></button>
-                                                                    <button onClick={() => prepareEditRABItem(item)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-yellow-500 hover:border-yellow-200"><Edit size={16} /></button>
-                                                                    <button onClick={() => deleteRABItem(item.id)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-red-500 hover:border-red-200"><Trash2 size={16} /></button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            {rabViewMode === 'client' && (
-                                                <div className="divide-y divide-slate-100">
-                                                    {rabGroups[category].map(item => (
-                                                        <div key={item.id} className="p-4 flex justify-between items-center hover:bg-slate-50">
-                                                            <div className="min-w-0 flex-1 pr-4">
-                                                                <div className="font-bold text-slate-800 text-sm truncate mb-0.5">{item.name}</div>
-                                                                <div className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded w-fit">Vol: {item.volume} {item.unit}</div>
-                                                            </div>
-                                                            <div className="text-right flex-shrink-0">
-                                                                <div className={`text-xs px-3 py-1.5 rounded-lg font-bold border ${item.progress === 100 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-                                                                    {item.progress}%
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    <div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t flex justify-between items-center">
-                                                        <span className="uppercase text-[10px] text-slate-400 tracking-wider">Subtotal</span>
-                                                        <span className="text-sm">{formatRupiah(rabGroups[category].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</span>
+                                            return (
+                                                <div key={mainCat} className="bg-white rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden mb-4">
+                                                    {/* MAIN CATEGORY HEADER */}
+                                                    <div className="bg-slate-50/80 p-4 border-b flex justify-between items-center backdrop-blur-sm">
+                                                        <span className="font-bold text-slate-800 text-sm uppercase tracking-wide">{mainCat}</span>
+                                                        <span className="text-[10px] font-bold bg-white px-2 py-1 rounded-lg text-slate-400 border shadow-sm">
+                                                            {totalMainItems} Item
+                                                        </span>
                                                     </div>
+
+                                                    {/* SUB CATEGORIES LOOP */}
+                                                    {subCats.map(fullCategoryName => {
+                                                        const isSub = fullCategoryName.includes(' - ');
+                                                        let subName = isSub ? fullCategoryName.split(' - ').slice(1).join(' - ') : '';
+                                                        if (subName.includes('||')) subName = subName.split('||')[1];
+
+                                                        return (
+                                                            <div key={fullCategoryName}>
+                                                                {/* SUB HEADER (Only show if it's a sub-category and there are multiple subgroups, or just styling preference) */}
+                                                                {isSub && (
+                                                                    <div className="bg-blue-50/30 px-4 py-2 border-b border-t border-slate-100 text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-2">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                                                                        {subName}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* ITEMS LIST */}
+                                                                {(!isClientView && rabViewMode === 'internal') && (
+                                                                    <div className="divide-y divide-slate-100">
+                                                                        {rabGroups[fullCategoryName].map(item => (
+                                                                            <div key={item.id} className={`p-4 hover:bg-slate-50 transition-colors ${item.isAddendum ? 'bg-orange-50/50' : ''}`}>
+                                                                                <div className="flex justify-between items-start mb-3">
+                                                                                    <div className="flex-1 pr-2">
+                                                                                        <div className="font-bold text-slate-800 text-sm mb-1 leading-snug">
+                                                                                            {item.name}
+                                                                                            {item.isAddendum && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded ml-1 align-middle font-bold border border-orange-200">CCO</span>}
+                                                                                            {(() => {
+                                                                                                const logs = activeProject?.qcLogs?.filter(l => l.rabItemId === item.id).sort((a, b) => b.id - a.id);
+                                                                                                const latest = logs?.[0];
+                                                                                                if (!latest) return null;
+                                                                                                return (
+                                                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-2 align-middle font-bold border flex-inline items-center gap-1 ${latest.status === 'Passed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
+                                                                                                        {latest.status === 'Passed' ? <CheckCircle size={10} /> : <X size={10} />} QC {latest.status === 'Passed' ? 'OK' : 'Gagal'}
+                                                                                                    </span>
+                                                                                                );
+                                                                                            })()}
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                                            <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">Vol: {item.volume} {item.unit}</span>
+                                                                                            <span>x</span>
+                                                                                            <span className="font-mono">{formatRupiah(item.unitPrice)}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="text-right flex flex-col items-end">
+                                                                                        <div className="font-bold text-slate-700 text-sm mb-1">{formatRupiah(item.volume * item.unitPrice)}</div>
+                                                                                        {item.priceLockedAt && <Lock size={10} className="text-amber-500" />}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div className="mb-4">
+                                                                                    <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1.5">
+                                                                                        <span>Progress Fisik</span>
+                                                                                        <span className={item.progress === 100 ? 'text-green-600' : 'text-blue-600'}>{item.progress}%</span>
+                                                                                    </div>
+                                                                                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+                                                                                        <div
+                                                                                            className={`h-full rounded-full transition-all duration-700 ${item.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                                                                            style={{ width: `${item.progress}%` }}
+                                                                                        ></div>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {canEditProject && (
+                                                                                    <div className="flex gap-2 border-t pt-3 border-dashed border-slate-200">
+                                                                                        <button
+                                                                                            onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }}
+                                                                                            className="flex-1 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl active:scale-95 transition-all hover:bg-blue-700 shadow-md shadow-blue-200 flex items-center justify-center gap-2"
+                                                                                        >
+                                                                                            <TrendingUp size={14} /> Update Progress
+                                                                                        </button>
+                                                                                        <button onClick={() => { setSelectedRabItem(item); setModalType('qcModal'); setShowModal(true); }} className="px-3 py-2 bg-green-50 text-green-600 rounded-xl active:scale-95 hover:bg-green-100 border border-green-200" title="Quality Control"><CheckCircle size={16} /></button>
+                                                                                        <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded-xl active:scale-95 hover:bg-slate-100"><History size={16} /></button>
+                                                                                        <button onClick={() => prepareEditRABItem(item)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-yellow-500 hover:border-yellow-200"><Edit size={16} /></button>
+                                                                                        <button onClick={() => deleteRABItem(item.id)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-red-500 hover:border-red-200"><Trash2 size={16} /></button>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                {rabViewMode === 'client' && (
+                                                                    <div className="divide-y divide-slate-100">
+                                                                        {rabGroups[fullCategoryName].map(item => (
+                                                                            <div key={item.id} className="p-4 flex justify-between items-center hover:bg-slate-50">
+                                                                                <div className="min-w-0 flex-1 pr-4">
+                                                                                    <div className="font-bold text-slate-800 text-sm truncate mb-0.5">{item.name}</div>
+                                                                                    <div className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded w-fit">Vol: {item.volume} {item.unit}</div>
+                                                                                </div>
+                                                                                <div className="text-right flex-shrink-0">
+                                                                                    <div className={`text-xs px-3 py-1.5 rounded-lg font-bold border ${item.progress === 100 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                                                        {item.progress}%
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                        <div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t flex justify-between items-center">
+                                                                            <span className="uppercase text-[10px] text-slate-400 tracking-wider">Subtotal</span>
+                                                                            <span className="text-sm">{formatRupiah(rabGroups[fullCategoryName].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                            );
+                                        });
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -2272,213 +2927,215 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
             </div>
 
             {/* FULLSCREEN TIMELINE MODAL - Landscape Mode for Mobile */}
-            {showFullscreenTimeline && (
-                <div className="fixed inset-0 z-[100] bg-white">
-                    {/* Rotated container for landscape view on portrait phone */}
-                    <div
-                        className="absolute inset-0 origin-center"
-                        style={{
-                            // Rotate 90deg on portrait phones, use viewport height as width
-                            transform: 'rotate(90deg)',
-                            width: '100vh',
-                            height: '100vw',
-                            top: 'calc((100vh - 100vw) / 2)',
-                            left: 'calc((100vw - 100vh) / 2)',
-                        }}
-                    >
-                        {/* Header */}
-                        <div className="h-12 bg-slate-800 text-white flex items-center justify-between px-4 shadow-lg">
-                            <h3 className="font-bold flex items-center gap-2">
-                                <History size={18} /> Timeline: {activeProject.name}
-                            </h3>
-                            <button
-                                onClick={() => setShowFullscreenTimeline(false)}
-                                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-bold"
-                            >
-                                <Minimize2 size={16} /> Tutup
-                            </button>
-                        </div>
+            {
+                showFullscreenTimeline && (
+                    <div className="fixed inset-0 z-[100] bg-white">
+                        {/* Rotated container for landscape view on portrait phone */}
+                        <div
+                            className="absolute inset-0 origin-center"
+                            style={{
+                                // Rotate 90deg on portrait phones, use viewport height as width
+                                transform: 'rotate(90deg)',
+                                width: '100vh',
+                                height: '100vw',
+                                top: 'calc((100vh - 100vw) / 2)',
+                                left: 'calc((100vw - 100vh) / 2)',
+                            }}
+                        >
+                            {/* Header */}
+                            <div className="h-12 bg-slate-800 text-white flex items-center justify-between px-4 shadow-lg">
+                                <h3 className="font-bold flex items-center gap-2">
+                                    <History size={18} /> Timeline: {activeProject.name}
+                                </h3>
+                                <button
+                                    onClick={() => setShowFullscreenTimeline(false)}
+                                    className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-bold"
+                                >
+                                    <Minimize2 size={16} /> Tutup
+                                </button>
+                            </div>
 
-                        {/* Timeline Content */}
-                        <div className="flex-1 overflow-auto bg-white" style={{ height: 'calc(100% - 48px)' }}>
-                            {(() => {
-                                const pStart = new Date(activeProject.startDate).getTime();
-                                const pEnd = new Date(activeProject.endDate).getTime();
-                                const durationDays = Math.ceil((pEnd - pStart) / (1000 * 60 * 60 * 24));
-                                const totalWeeks = Math.max(4, Math.ceil(durationDays / 7));
-                                const totalDuration = pEnd - pStart;
+                            {/* Timeline Content */}
+                            <div className="flex-1 overflow-auto bg-white" style={{ height: 'calc(100% - 48px)' }}>
+                                {(() => {
+                                    const pStart = new Date(activeProject.startDate).getTime();
+                                    const pEnd = new Date(activeProject.endDate).getTime();
+                                    const durationDays = Math.ceil((pEnd - pStart) / (1000 * 60 * 60 * 24));
+                                    const totalWeeks = Math.max(4, Math.ceil(durationDays / 7));
+                                    const totalDuration = pEnd - pStart;
 
-                                const groups = activeProject.rabItems.reduce((acc: any, item: any) => {
-                                    const cat = item.category || 'Tanpa Kategori';
-                                    if (!acc[cat]) acc[cat] = [];
-                                    acc[cat].push(item);
-                                    return acc;
-                                }, {});
+                                    const groups = activeProject.rabItems.reduce((acc: any, item: any) => {
+                                        const cat = item.category || 'Tanpa Kategori';
+                                        if (!acc[cat]) acc[cat] = [];
+                                        acc[cat].push(item);
+                                        return acc;
+                                    }, {});
 
-                                // Calculate aggregate timeline per category
-                                const categoryTimelines: Record<string, { startOffset: number, width: number, avgProgress: number }> = {};
-                                Object.keys(groups).forEach(cat => {
-                                    const items = groups[cat];
-                                    let minStart = Infinity;
-                                    let maxEnd = -Infinity;
-                                    let totalProgress = 0;
-                                    let itemCount = 0;
+                                    // Calculate aggregate timeline per category
+                                    const categoryTimelines: Record<string, { startOffset: number, width: number, avgProgress: number }> = {};
+                                    Object.keys(groups).forEach(cat => {
+                                        const items = groups[cat];
+                                        let minStart = Infinity;
+                                        let maxEnd = -Infinity;
+                                        let totalProgress = 0;
+                                        let itemCount = 0;
 
-                                    items.forEach((item: any) => {
-                                        if (item.startDate && item.endDate) {
-                                            const iStart = new Date(item.startDate).getTime();
-                                            const iEnd = new Date(item.endDate).getTime();
-                                            if (iStart < minStart) minStart = iStart;
-                                            if (iEnd > maxEnd) maxEnd = iEnd;
-                                        }
-                                        totalProgress += (item.progress || 0);
-                                        itemCount++;
-                                    });
-
-                                    if (minStart !== Infinity && maxEnd !== -Infinity && totalDuration > 0) {
-                                        const startOffset = Math.max(0, ((minStart - pStart) / totalDuration) * 100);
-                                        const width = Math.min(100 - startOffset, ((maxEnd - minStart) / totalDuration) * 100);
-                                        categoryTimelines[cat] = {
-                                            startOffset,
-                                            width: Math.max(5, width),
-                                            avgProgress: itemCount > 0 ? totalProgress / itemCount : 0
-                                        };
-                                    } else {
-                                        categoryTimelines[cat] = { startOffset: 0, width: 20, avgProgress: itemCount > 0 ? totalProgress / itemCount : 0 };
-                                    }
-                                });
-
-                                // Build rows with collapse state (reuse main collapsedCategories state)
-                                const allRows: Array<{ type: 'header' | 'item', data: any, catTimeline?: any }> = [];
-                                Object.keys(groups).sort().forEach(cat => {
-                                    const isCollapsed = collapsedCategories[cat] !== false;
-                                    allRows.push({
-                                        type: 'header',
-                                        data: cat,
-                                        catTimeline: categoryTimelines[cat]
-                                    });
-                                    if (!isCollapsed) {
-                                        groups[cat].forEach((item: any) => {
-                                            allRows.push({ type: 'item', data: item });
+                                        items.forEach((item: any) => {
+                                            if (item.startDate && item.endDate) {
+                                                const iStart = new Date(item.startDate).getTime();
+                                                const iEnd = new Date(item.endDate).getTime();
+                                                if (iStart < minStart) minStart = iStart;
+                                                if (iEnd > maxEnd) maxEnd = iEnd;
+                                            }
+                                            totalProgress += (item.progress || 0);
+                                            itemCount++;
                                         });
-                                    }
-                                });
 
-                                return (
-                                    <div className="grid grid-cols-[140px_1fr] h-full">
-                                        {/* Left Column - Labels */}
-                                        <div className="bg-slate-50 border-r border-slate-200 overflow-y-auto">
-                                            <div className="h-10 border-b border-slate-200 px-3 flex items-center font-bold text-xs text-slate-500 bg-slate-100 sticky top-0">
-                                                Item Pekerjaan
-                                            </div>
-                                            {allRows.map((row, idx) => (
-                                                row.type === 'header' ? (
-                                                    <div
-                                                        key={`h-${idx}`}
-                                                        onClick={() => toggleCategory(row.data)}
-                                                        className="h-7 flex items-center px-3 text-[10px] font-bold text-slate-500 bg-slate-200/50 uppercase tracking-wider cursor-pointer hover:bg-slate-300/50 select-none"
-                                                    >
-                                                        <span className="transform transition-transform duration-200 mr-2" style={{ transform: collapsedCategories[row.data] === false ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
-                                                            ▼
-                                                        </span>
-                                                        <span className="truncate">{row.data}</span>
-                                                    </div>
-                                                ) : (
-                                                    <div key={row.data.id} className="h-7 flex items-center px-3 pl-6 text-[11px] font-medium text-slate-700 truncate border-b border-slate-100">
-                                                        {row.data.name}
-                                                    </div>
-                                                )
-                                            ))}
-                                        </div>
+                                        if (minStart !== Infinity && maxEnd !== -Infinity && totalDuration > 0) {
+                                            const startOffset = Math.max(0, ((minStart - pStart) / totalDuration) * 100);
+                                            const width = Math.min(100 - startOffset, ((maxEnd - minStart) / totalDuration) * 100);
+                                            categoryTimelines[cat] = {
+                                                startOffset,
+                                                width: Math.max(5, width),
+                                                avgProgress: itemCount > 0 ? totalProgress / itemCount : 0
+                                            };
+                                        } else {
+                                            categoryTimelines[cat] = { startOffset: 0, width: 20, avgProgress: itemCount > 0 ? totalProgress / itemCount : 0 };
+                                        }
+                                    });
 
-                                        {/* Right Column - Gantt Bars */}
-                                        <div className="overflow-auto">
-                                            <div className="min-w-max">
-                                                {/* Week Headers */}
-                                                <div className="h-10 border-b border-slate-200 flex items-center bg-slate-50 sticky top-0">
-                                                    {[...Array(totalWeeks)].map((_, i) => (
-                                                        <div key={i} className="w-16 flex-shrink-0 border-l border-slate-200 first:border-l-0 text-[10px] text-slate-400 pl-2 py-1">
-                                                            Mgg {i + 1}
-                                                        </div>
-                                                    ))}
+                                    // Build rows with collapse state (reuse main collapsedCategories state)
+                                    const allRows: Array<{ type: 'header' | 'item', data: any, catTimeline?: any }> = [];
+                                    Object.keys(groups).sort().forEach(cat => {
+                                        const isCollapsed = collapsedCategories[cat] !== false;
+                                        allRows.push({
+                                            type: 'header',
+                                            data: cat,
+                                            catTimeline: categoryTimelines[cat]
+                                        });
+                                        if (!isCollapsed) {
+                                            groups[cat].forEach((item: any) => {
+                                                allRows.push({ type: 'item', data: item });
+                                            });
+                                        }
+                                    });
+
+                                    return (
+                                        <div className="grid grid-cols-[140px_1fr] h-full">
+                                            {/* Left Column - Labels */}
+                                            <div className="bg-slate-50 border-r border-slate-200 overflow-y-auto">
+                                                <div className="h-10 border-b border-slate-200 px-3 flex items-center font-bold text-xs text-slate-500 bg-slate-100 sticky top-0">
+                                                    Item Pekerjaan
                                                 </div>
+                                                {allRows.map((row, idx) => (
+                                                    row.type === 'header' ? (
+                                                        <div
+                                                            key={`h-${idx}`}
+                                                            onClick={() => toggleCategory(row.data)}
+                                                            className="h-7 flex items-center px-3 text-[10px] font-bold text-slate-500 bg-slate-200/50 uppercase tracking-wider cursor-pointer hover:bg-slate-300/50 select-none"
+                                                        >
+                                                            <span className="transform transition-transform duration-200 mr-2" style={{ transform: collapsedCategories[row.data] === false ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+                                                                ▼
+                                                            </span>
+                                                            <span className="truncate">{row.data}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div key={row.data.id} className="h-7 flex items-center px-3 pl-6 text-[11px] font-medium text-slate-700 truncate border-b border-slate-100">
+                                                            {row.data.name}
+                                                        </div>
+                                                    )
+                                                ))}
+                                            </div>
 
-                                                {/* Data Rows */}
-                                                {allRows.map((row, idx) => {
-                                                    if (row.type === 'header') {
-                                                        // Category aggregate timeline bar
-                                                        const catTimeline = row.catTimeline || { startOffset: 0, width: 20, avgProgress: 0 };
+                                            {/* Right Column - Gantt Bars */}
+                                            <div className="overflow-auto">
+                                                <div className="min-w-max">
+                                                    {/* Week Headers */}
+                                                    <div className="h-10 border-b border-slate-200 flex items-center bg-slate-50 sticky top-0">
+                                                        {[...Array(totalWeeks)].map((_, i) => (
+                                                            <div key={i} className="w-16 flex-shrink-0 border-l border-slate-200 first:border-l-0 text-[10px] text-slate-400 pl-2 py-1">
+                                                                Mgg {i + 1}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Data Rows */}
+                                                    {allRows.map((row, idx) => {
+                                                        if (row.type === 'header') {
+                                                            // Category aggregate timeline bar
+                                                            const catTimeline = row.catTimeline || { startOffset: 0, width: 20, avgProgress: 0 };
+                                                            return (
+                                                                <div
+                                                                    key={`h-${idx}`}
+                                                                    className="h-7 bg-slate-100/50 border-b border-slate-100 flex items-center px-2 cursor-pointer hover:bg-slate-200/50"
+                                                                    style={{ width: `${totalWeeks * 64}px` }}
+                                                                    onClick={() => toggleCategory(row.data)}
+                                                                >
+                                                                    <div className="flex-1 relative h-4 bg-slate-200/80 rounded-full overflow-hidden">
+                                                                        <div
+                                                                            className="absolute top-0 bottom-0 bg-slate-400 opacity-40"
+                                                                            style={{ left: `${catTimeline.startOffset}%`, width: `${catTimeline.width}%` }}
+                                                                        />
+                                                                        <div
+                                                                            className="absolute top-0 bottom-0 bg-slate-600"
+                                                                            style={{ left: `${catTimeline.startOffset}%`, width: `${catTimeline.width * (catTimeline.avgProgress / 100)}%` }}
+                                                                        >
+                                                                            {catTimeline.width * (catTimeline.avgProgress / 100) > 10 && (
+                                                                                <span className="text-[8px] text-white px-1 font-bold flex items-center h-full">
+                                                                                    {catTimeline.avgProgress.toFixed(0)}%
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        const item = row.data;
+                                                        let startOffset = 0;
+                                                        let width = 15;
+
+                                                        if (item.startDate && item.endDate && totalDuration > 0) {
+                                                            const iStart = new Date(item.startDate).getTime();
+                                                            const iEnd = new Date(item.endDate).getTime();
+                                                            startOffset = Math.max(0, ((iStart - pStart) / totalDuration) * 100);
+                                                            width = Math.max(5, ((iEnd - iStart) / totalDuration) * 100);
+                                                            if (startOffset + width > 100) width = 100 - startOffset;
+                                                        }
+
                                                         return (
-                                                            <div
-                                                                key={`h-${idx}`}
-                                                                className="h-7 bg-slate-100/50 border-b border-slate-100 flex items-center px-2 cursor-pointer hover:bg-slate-200/50"
-                                                                style={{ width: `${totalWeeks * 64}px` }}
-                                                                onClick={() => toggleCategory(row.data)}
-                                                            >
-                                                                <div className="flex-1 relative h-4 bg-slate-200/80 rounded-full overflow-hidden">
+                                                            <div key={item.id} className="h-7 flex items-center px-2 border-b border-slate-100" style={{ width: `${totalWeeks * 64}px` }}>
+                                                                <div className="flex-1 relative h-4 bg-slate-100 rounded-full overflow-hidden">
                                                                     <div
-                                                                        className="absolute top-0 bottom-0 bg-slate-400 opacity-40"
-                                                                        style={{ left: `${catTimeline.startOffset}%`, width: `${catTimeline.width}%` }}
+                                                                        className={`absolute top-0 bottom-0 opacity-40 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
+                                                                        style={{ left: `${startOffset}%`, width: `${width}%` }}
                                                                     />
                                                                     <div
-                                                                        className="absolute top-0 bottom-0 bg-slate-600"
-                                                                        style={{ left: `${catTimeline.startOffset}%`, width: `${catTimeline.width * (catTimeline.avgProgress / 100)}%` }}
+                                                                        className={`absolute top-0 bottom-0 ${['bg-blue-600', 'bg-green-600', 'bg-orange-600', 'bg-purple-600'][idx % 4]}`}
+                                                                        style={{ left: `${startOffset}%`, width: `${width * (item.progress / 100)}%` }}
                                                                     >
-                                                                        {catTimeline.width * (catTimeline.avgProgress / 100) > 10 && (
+                                                                        {width * (item.progress / 100) > 10 && (
                                                                             <span className="text-[8px] text-white px-1 font-bold flex items-center h-full">
-                                                                                {catTimeline.avgProgress.toFixed(0)}%
+                                                                                {item.progress}%
                                                                             </span>
                                                                         )}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         );
-                                                    }
-
-                                                    const item = row.data;
-                                                    let startOffset = 0;
-                                                    let width = 15;
-
-                                                    if (item.startDate && item.endDate && totalDuration > 0) {
-                                                        const iStart = new Date(item.startDate).getTime();
-                                                        const iEnd = new Date(item.endDate).getTime();
-                                                        startOffset = Math.max(0, ((iStart - pStart) / totalDuration) * 100);
-                                                        width = Math.max(5, ((iEnd - iStart) / totalDuration) * 100);
-                                                        if (startOffset + width > 100) width = 100 - startOffset;
-                                                    }
-
-                                                    return (
-                                                        <div key={item.id} className="h-7 flex items-center px-2 border-b border-slate-100" style={{ width: `${totalWeeks * 64}px` }}>
-                                                            <div className="flex-1 relative h-4 bg-slate-100 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className={`absolute top-0 bottom-0 opacity-40 ${['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500'][idx % 4]}`}
-                                                                    style={{ left: `${startOffset}%`, width: `${width}%` }}
-                                                                />
-                                                                <div
-                                                                    className={`absolute top-0 bottom-0 ${['bg-blue-600', 'bg-green-600', 'bg-orange-600', 'bg-purple-600'][idx % 4]}`}
-                                                                    style={{ left: `${startOffset}%`, width: `${width * (item.progress / 100)}%` }}
-                                                                >
-                                                                    {width * (item.progress / 100) > 10 && (
-                                                                        <span className="text-[8px] text-white px-1 font-bold flex items-center h-full">
-                                                                            {item.progress}%
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                    })}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })()}
+                                    );
+                                })()}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
-    );
+                )
+            }
+        </div >
+    </>);
 };
 
 export default ProjectDetailView;

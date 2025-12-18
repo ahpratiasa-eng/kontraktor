@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet, FolderKanban, BarChart3 } from 'lucide-react';
+import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet, FolderKanban, BarChart3, Key } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface SidebarProps {
@@ -50,6 +50,11 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogou
                 {canAccessManagement() && (
                     <button onClick={() => setView('landing-settings')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'landing-settings' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
                         <Building2 size={20} /> Landing Page
+                    </button>
+                )}
+                {canAccessManagement() && (
+                    <button onClick={() => setView('api-keys')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'api-keys' ? 'bg-amber-50 text-amber-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        <Key size={20} /> API Keys
                     </button>
                 )}
                 {userRole !== 'pengawas' && (

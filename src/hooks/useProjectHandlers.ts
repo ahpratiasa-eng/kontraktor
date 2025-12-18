@@ -1,7 +1,7 @@
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db, appId } from '../lib/firebase';
+import { db, appId, firebaseConfig } from '../lib/firebase';
 import type {
-    Project, RABItem, Transaction, Worker, Material, MaterialLog, TaskLog, AHSItem
+    Project, RABItem, Transaction, Worker, Material, MaterialLog, TaskLog, AHSItem, WeeklyReport
 } from '../types';
 import { calculateAHSTotal } from '../types';
 import { calculateProjectHealth, formatRupiah } from '../utils/helpers';
@@ -184,6 +184,149 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         setRabPrice(item.unitPrice);
         setModalType('newRAB');
         setShowModal(true);
+    };
+
+    // ========== Auto Schedule Generator (NEW) ==========
+    // ========== Auto Schedule Generator (NEW) ==========
+    const handleAutoSchedule = async () => {
+        if (!activeProject) return;
+        if (!activeProject.startDate || !activeProject.endDate) {
+            alert("Mohon isi Tanggal Mulai dan Selesai Proyek terlebih dahulu di Pengaturan Proyek!");
+            return;
+        }
+
+        const mode = prompt('Pilih Mode Penjadwalan:\n\n1. TIMPA SEMUA (Reset total berdasarkan algoritma)\n2. ISI YANG KOSONG SAJA (Aman untuk pekerjaan tambah/addendum)\n\nKetik 1 atau 2:', '2');
+        if (mode !== '1' && mode !== '2') return;
+
+        try {
+            const { generateSmartSchedule, getSchedulePreview } = await import('../utils/scheduleGenerator');
+
+            // Generate Analysis
+            const analysisLines = getSchedulePreview(activeProject);
+            const analysisText = analysisLines.join('\n');
+
+            // Show PREVIEW Explanation (Brief) then Save
+            if (mode === '1') {
+                const confirmPreview = confirm("Sistem akan mengatur ulang jadwal berdasarkan Volume & Produktivitas.\n\nAnalisa detil kebutuhan tukang akan disimpan di halaman Progress.\n\nLanjutkan reset jadwal?");
+                if (!confirmPreview) return;
+            }
+
+            const updatedItems = generateSmartSchedule(activeProject, { keepExisting: mode === '2' });
+            if (updatedItems.length > 0) {
+                // Save Items AND the Analysis Text
+                await updateProject({
+                    rabItems: updatedItems,
+                    scheduleAnalysis: analysisText
+                });
+                alert('Jadwal berhasil diupdate! Analisa kebutuhan tukang telah disimpan.');
+            } else {
+                alert('Gagal membuat jadwal.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Terjadi kesalahan saat membuat jadwal.');
+        }
+    };
+
+    // ========== Weekly Report Generator ==========
+    const handleGenerateWeeklyReport = async (notes: string = '') => {
+        if (!activeProject) return;
+
+        // 1. Calculate Stats
+        const { realProgress, planProgress } = calculateProjectHealth(activeProject);
+        const deviation = realProgress - planProgress;
+
+        // 2. Week Calculation
+        const pStart = new Date(activeProject.startDate);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - pStart.getTime());
+        const weekNumber = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+        if (weekNumber < 1) {
+            alert("Proyek belum berjalan 1 minggu.");
+            return;
+        }
+
+        // 3. Compare with Previous
+        const safeReports = activeProject.weeklyReports || [];
+        // Check if report for this week already exists?
+        // Let's iterate to find if weekNumber exists.
+        const existingIndex = safeReports.findIndex(r => r.weekNumber === weekNumber);
+
+        if (existingIndex !== -1 && !confirm(`Laporan Minggu ke-${weekNumber} sudah ada. Timpa?`)) return;
+
+        // Get Last Report for Trend
+        // Sort by week desc
+        const sortedReports = [...safeReports].sort((a, b) => b.weekNumber - a.weekNumber);
+        const lastReport = sortedReports.find(r => r.weekNumber < weekNumber); // Find closest previous week
+
+        let trend: 'Improving' | 'Worsening' | 'Stable' = 'Stable';
+        const previousDev = lastReport ? lastReport.deviation : 0;
+
+        // Trend Logic:
+        // Improving if we are Catching Up (Positive Delta in Deviation)
+        // OR if Deviation was -5, and now is -3. (Diff is +2).
+        // If Deviation was +2 and now is +4 (Diff +2). That's actually "Advancing".
+        // Let's define "Improving" as: The gap between Real and Plan is shrinking (if negative) or growing (if positive).
+        // Simpler: Is current deviation better than previous?
+        // If Prev = -5%, Curr = -3%. Better.
+        // If Prev = +2%, Curr = +1%. Worse (slowed down). 
+        // So simply: trend = (deviation - previousDev) > 0 ? Improving : Worsening
+
+        // However, user specifically asked for "Deviasi minggu sebelumnya".
+        // Let's use simple logic: 
+        if (deviation > previousDev) trend = 'Improving';
+        else if (deviation < previousDev) trend = 'Worsening';
+        else trend = 'Stable';
+
+        const weekStart = new Date(pStart.getTime() + (weekNumber - 1) * 7 * 24 * 60 * 60 * 1000);
+        const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+
+        const newReport: WeeklyReport = {
+            id: Date.now().toString(),
+            weekNumber,
+            startDate: weekStart.toISOString().split('T')[0],
+            endDate: weekEnd.toISOString().split('T')[0],
+            createdDate: new Date().toISOString(),
+            planProgress,
+            realProgress,
+            deviation,
+            previousDeviation: previousDev,
+            trend,
+            notes,
+            status: 'Submitted'
+        };
+
+        let updatedReports = [...safeReports];
+        if (existingIndex !== -1) {
+            updatedReports[existingIndex] = newReport;
+        } else {
+            updatedReports.push(newReport);
+        }
+
+        try {
+            await updateProject({ weeklyReports: updatedReports });
+            alert(`Laporan Minggu ke-${weekNumber} berhasil disimpan!`);
+        } catch (e) {
+            console.error(e);
+            alert("Gagal menyimpan laporan.");
+        }
+    };
+
+    const handleUpdateWeeklyReport = async (reportId: string, notes: string) => {
+        if (!activeProject || !activeProject.weeklyReports) return;
+
+        const updatedReports = activeProject.weeklyReports.map(r =>
+            r.id === reportId ? { ...r, notes } : r
+        );
+
+        try {
+            await updateProject({ weeklyReports: updatedReports });
+            // alert("Catatan laporan diperbarui!"); // Silent update is better for text edits? Or small toast.
+        } catch (e) {
+            console.error(e);
+            alert("Gagal memperbarui catatan.");
+        }
     };
 
     // ========== Project Handlers ==========
@@ -818,7 +961,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             }
         };
 
-        const apiKey = "AIzaSyB7ta6cVVnYp0JQMUSnv1rMSNZivr9_p4E";
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || firebaseConfig.apiKey;
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: 'POST',
@@ -857,21 +1000,60 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         }
     };
 
-    const handleImportRAB = (importedItems: any[]) => {
-        if (!activeProject) return;
+    const handleImportRAB = async (importedItems: any[]) => {
         const newItems = importedItems.map(item => ({
             id: Date.now() + Math.random(),
-            category: item.Kategori || item.category || 'Uncategorized',
-            name: item['Nama Item'] || item.name || 'Unnamed Item',
-            unit: item.Satuan || item.unit || 'ls',
-            volume: Number(item.Volume || item.volume) || 0,
-            unitPrice: Number(item['Harga Satuan'] || item.unitPrice) || 0,
+            category: item.category || 'Uncategorized',
+            name: item.name || 'Unnamed Item',
+            unit: item.unit || 'ls',
+            volume: Number(item.volume) || 0,
+            unitPrice: Number(item.unitPrice) || 0,
             progress: 0,
             isAddendum: false
         }));
-        updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
-        alert(`Berhasil import ${newItems.length} item dari Excel!`);
-        setShowModal(false);
+
+        if (!activeProject) {
+            // Case: User imports from "New Project" menu but hasn't created one yet.
+            // Action: Automatically create a new project with these items.
+            if (!confirm(`Ditemukan ${newItems.length} item RAB. Buat proyek baru otomatis dengan data ini?`)) return;
+
+            const newP: any = {
+                // id: `new_${Date.now()}`, // REMOVE THIS: Let Firestore generate the ID!
+                name: `Proyek Import ${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}`,
+                client: 'Edit Klien',
+                location: 'Lokasi Proyek',
+                budgetLimit: 0,
+                startDate: new Date().toISOString().split('T')[0],
+                endDate: new Date().toISOString().split('T')[0],
+                status: 'Berjalan',
+                rabItems: newItems,
+                transactions: [],
+                workers: [],
+                materials: [],
+                materialLogs: [],
+                tasks: [],
+                attendanceLogs: [],
+                attendanceEvidences: [],
+                taskLogs: [],
+                galleryItems: [],
+                isDeleted: false,
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                await addDoc(collection(db, 'app_data', appId, 'projects'), newP);
+                alert("Proyek baru berhasil dibuat dari Excel! Silakan edit detail proyeknya.");
+                setShowModal(false);
+            } catch (e) {
+                console.error("Auto-create project failed:", e);
+                alert("Gagal membuat proyek otomatis.");
+            }
+        } else {
+            // Case: Adding items to existing project
+            updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
+            alert(`Berhasil menambahkan ${newItems.length} item ke RAB proyek aktif!`);
+            setShowModal(false);
+        }
     };
 
     const handleSaveSchedule = async () => {
@@ -948,12 +1130,29 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
     // ========== Deleters & Helpers ==========
     const handleSoftDeleteProject = async (p: Project) => {
-        if (confirm(`Yakin ingin memindahkan proyek "${p.name}" ke Sampah?`)) {
+        if (!confirm(`Yakin ingin memindahkan proyek "${p.name}" ke Sampah?`)) return;
+        try {
+            // Try standard delete first (Assumes p.id is the document ID)
+            await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: true });
+        } catch (e) {
+            console.warn("Direct delete failed (ID mismatch?), trying fallback query...", e);
             try {
-                await updateDoc(doc(db, 'app_data', appId, 'projects', p.id), { isDeleted: true });
-            } catch (e) {
-                alert("Gagal menghapus.");
+                // Fallback: Query by the 'id' field potentially stored inside data
+                const { query, where, getDocs } = await import('firebase/firestore');
+                const colRef = collection(db, 'app_data', appId, 'projects');
+                const q = query(colRef, where('id', '==', p.id));
+                const snap = await getDocs(q);
+
+                if (!snap.empty) {
+                    const realDocRef = snap.docs[0].ref;
+                    await updateDoc(realDocRef, { isDeleted: true });
+                    console.log("Successfully deleted zombie project via fallback.");
+                    return;
+                }
+            } catch (err2) {
+                console.error("Fallback delete also failed:", err2);
             }
+            alert("Gagal menghapus. ID proyek tidak ditemukan.");
         }
     };
 
@@ -1065,6 +1264,9 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         // Modal
         openModal,
         prepareEditSchedule,
+        handleAutoSchedule,
+        handleGenerateWeeklyReport,
+        handleUpdateWeeklyReport,
     };
 };
 

@@ -105,7 +105,7 @@ interface ModalManagerProps {
 
 const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const {
-        modalType, showModal, setShowModal,
+        modalType, setModalType, showModal, setShowModal,
         handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleSaveMaterial, handleEditMaterial, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB, handleSaveSchedule,
         handleSaveTransaction, handleSaveQC, handleSaveDefect,
         inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate, inputHeroImage, setInputHeroImage,
@@ -213,19 +213,21 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         XLSX.writeFile(wb, "Template_RAB_KontraktorPro.xlsx");
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const bstr = evt.target?.result;
-            const wb = XLSX.read(bstr, { type: 'binary' });
-            const wsname = wb.SheetNames[0];
-            const ws = wb.Sheets[wsname];
-            const data = XLSX.utils.sheet_to_json(ws);
-            handleImportRAB(data);
-        };
-        reader.readAsBinaryString(file);
+
+        try {
+            // Dynamic import the new utility
+            const { parseRABExcel } = await import('../utils/excelImport');
+            const items = await parseRABExcel(file);
+            handleImportRAB(items);
+            alert(`Berhasil mengimpor ${items.length} item pekerjaan!`);
+            setShowModal(false);
+        } catch (error) {
+            console.error(error);
+            alert('Gagal membaca file Excel. Pastikan format sesuai.');
+        }
     };
 
     if (!showModal) return null;
@@ -240,7 +242,15 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                 <div className="p-6">
                     {modalType === 'newProject' && (
                         <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-4">Proyek Baru</h3>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-xl">Proyek Baru</h3>
+                                <button
+                                    onClick={() => setModalType('importRAB')}
+                                    className="text-xs bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200 font-bold flex items-center gap-1 hover:bg-green-100"
+                                >
+                                    <Upload size={14} /> Import dari Excel
+                                </button>
+                            </div>
                             <input className="w-full p-3 border rounded-xl" placeholder="Nama Proyek (Wajib)" value={inputName} onChange={e => setInputName(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Klien / Pemilik" value={inputClient} onChange={e => setInputClient(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="No WA Owner (Contoh: 62812345678)" value={inputOwnerPhone} onChange={e => setInputOwnerPhone(e.target.value)} />
@@ -779,8 +789,9 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-800 space-y-2">
                                 <p className="font-bold">Panduan:</p>
                                 <ul className="list-disc pl-5">
-                                    <li>Gunakan format template yang disediakan.</li>
-                                    <li>Pastikan kolom <b>Kategori, Nama Item, Satuan, Volume, Harga Satuan</b> terisi.</li>
+                                    <li>Sistem cerdas akan mencari kolom: <b>Uraian, Volume, Satuan, Harga Satuan</b>.</li>
+                                    <li>Format Excel bebas (tidak harus template), asalkan ada header kolom tersebut.</li>
+                                    <li>Baris tanpa volume akan dianggap sebagai Kategori Pekerjaan.</li>
                                 </ul>
                             </div>
 

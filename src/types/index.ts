@@ -78,6 +78,13 @@ export type GalleryItem = {
   progress?: number;
 };
 
+export type AILog = {
+  id: string;
+  date: string; // ISO String
+  type: 'manpower' | 'risk' | 'schedule';
+  content: string; // The full AI report
+};
+
 export type ProjectDocument = {
   id: number;
   name: string;
@@ -130,6 +137,26 @@ export type Project = {
   documents?: ProjectDocument[];  // Dokumen kontrak/SPK
   qcLogs?: QualityChecklist[];    // Laporan QC/Checklist
   defects?: Defect[];             // Temuan/Komplain/Defect List
+  weeklyReports?: WeeklyReport[]; // Laporan Mingguan (Progress & Deviasi)
+  scheduleAnalysis?: string;      // Analisa Manpower & Durasi (Saved from Auto Schedule)
+};
+
+export type WeeklyReport = {
+  id: string;
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  createdDate: string;
+  // Progress Data
+  planProgress: number;
+  realProgress: number;
+  deviation: number;
+  // Trend Analysis
+  previousDeviation?: number;
+  trend?: 'Improving' | 'Worsening' | 'Stable';
+  // Content
+  notes?: string;
+  status: 'Draft' | 'Submitted';
 };
 
 export type ChecklistItem = {

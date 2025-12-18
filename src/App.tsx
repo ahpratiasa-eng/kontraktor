@@ -18,6 +18,7 @@ import TrashBinView from './components/TrashBinView';
 import UserManagementView from './components/UserManagementView';
 import LandingSettingsView from './components/LandingSettingsView';
 import AnalyticsView from './components/AnalyticsView';
+import ApiKeysView from './components/ApiKeysView';
 
 import {
   doc, deleteDoc, setDoc
@@ -113,7 +114,7 @@ const App = () => {
     handlePhotoUpload, saveAttendanceWithEvidence,
     getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB,
     handleSaveSchedule, prepareEditSchedule, handleSaveTransaction, handleSaveQC,
-    handleSaveDefect, handleUpdateDefectStatus
+    handleSaveDefect, handleUpdateDefectStatus, handleAutoSchedule, handleGenerateWeeklyReport, handleUpdateWeeklyReport
   } = projectHandlers;
   // Pengawas ga boleh tambah tukang
 
@@ -223,6 +224,11 @@ const App = () => {
             />
           )}
 
+          {/* API KEYS VIEW */}
+          {view === 'api-keys' && canAccessManagement() && (
+            <ApiKeysView setView={setView} />
+          )}
+
           {view === 'ahs-library' && (
             <main className="space-y-6">
               <AHSLibraryView
@@ -272,6 +278,9 @@ const App = () => {
               prepareEditProject={prepareEditProject}
               prepareEditRABItem={prepareEditRABItem}
               prepareEditSchedule={prepareEditSchedule}
+              handleAutoSchedule={handleAutoSchedule}
+              handleGenerateWeeklyReport={handleGenerateWeeklyReport}
+              handleUpdateWeeklyReport={handleUpdateWeeklyReport}
               activeProject={activeProject}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
