@@ -260,15 +260,7 @@ EXAMPLE RESPONSE:
 
 // 2. Generate Manpower & Timeline Analysis
 export const generateAnalysisWithGemini = async (project: Project, items: RABItem[], context: string = ''): Promise<string> => {
-    // 1. Prepare Basic Item Data
-    const simpleItems = items.map(item => ({
-        name: item.name,
-        category: item.category,
-        start: item.startDate,
-        end: item.endDate
-    }));
-
-    // 2. Calculate System Estimates (Group by Category) to give Context to AI
+    // 1. Calculate System Estimates (Group by Category) to give Context to AI
     const categories: Record<string, RABItem[]> = {};
     items.forEach(i => {
         const cat = i.category || 'Uncategorized';

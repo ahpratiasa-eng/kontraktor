@@ -107,7 +107,7 @@ const MANDOR_TARGETS: Record<string, number> = {
     // I. ATAP
     'baja ringan': 22,
     'genteng metal': 35,
-    'genteng keramik': 13, 'beton': 13,
+    'genteng keramik': 13,
     'nok': 9, 'bubungan': 9,
     'lisplang': 17,
 
