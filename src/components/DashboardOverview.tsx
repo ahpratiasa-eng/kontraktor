@@ -53,53 +53,53 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ projects, setView
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="bg-blue-100 p-2.5 rounded-xl">
-                            <Building2 size={20} className="text-blue-600" />
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                        <div className="bg-blue-100 p-2 sm:p-2.5 rounded-xl shrink-0">
+                            <Building2 size={18} className="text-blue-600" />
                         </div>
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Proyek</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Proyek</span>
                     </div>
-                    <div className="text-3xl font-black text-slate-800">{totalProjects}</div>
-                    <div className="text-xs text-slate-500 mt-1">
+                    <div className="text-2xl sm:text-3xl font-black text-slate-800">{totalProjects}</div>
+                    <div className="text-[10px] sm:text-xs text-slate-500 mt-1">
                         <span className="text-green-600 font-bold">{ongoingProjects}</span> berjalan ·
                         <span className="text-blue-600 font-bold ml-1">{completedProjects}</span> selesai
                     </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="bg-green-100 p-2.5 rounded-xl">
-                            <TrendingUp size={20} className="text-green-600" />
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                        <div className="bg-green-100 p-2 sm:p-2.5 rounded-xl shrink-0">
+                            <TrendingUp size={18} className="text-green-600" />
                         </div>
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pemasukan</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pemasukan</span>
                     </div>
-                    <div className="text-2xl font-black text-green-600">{formatRupiah(totalIncome)}</div>
-                    <div className="text-xs text-slate-500 mt-1">Dari semua proyek</div>
+                    <div className="text-base sm:text-2xl font-black text-green-600 truncate">{formatRupiah(totalIncome)}</div>
+                    <div className="text-[10px] sm:text-xs text-slate-500 mt-1">Dari semua proyek</div>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="bg-red-100 p-2.5 rounded-xl">
-                            <TrendingDown size={20} className="text-red-600" />
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                        <div className="bg-red-100 p-2 sm:p-2.5 rounded-xl shrink-0">
+                            <TrendingDown size={18} className="text-red-600" />
                         </div>
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pengeluaran</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pengeluaran</span>
                     </div>
-                    <div className="text-2xl font-black text-red-600">{formatRupiah(totalExpense)}</div>
-                    <div className="text-xs text-slate-500 mt-1">Dari semua proyek</div>
+                    <div className="text-base sm:text-2xl font-black text-red-600 truncate">{formatRupiah(totalExpense)}</div>
+                    <div className="text-[10px] sm:text-xs text-slate-500 mt-1">Dari semua proyek</div>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="bg-purple-100 p-2.5 rounded-xl">
-                            <Wallet size={20} className="text-purple-600" />
+                <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                        <div className="bg-purple-100 p-2 sm:p-2.5 rounded-xl shrink-0">
+                            <Wallet size={18} className="text-purple-600" />
                         </div>
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sisa Kas</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Sisa Kas</span>
                     </div>
-                    <div className={`text-2xl font-black ${totalIncome - totalExpense >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
+                    <div className={`text-base sm:text-2xl font-black truncate ${totalIncome - totalExpense >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
                         {formatRupiah(totalIncome - totalExpense)}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1">Pemasukan - Pengeluaran</div>
+                    <div className="text-[10px] sm:text-xs text-slate-500 mt-1">Pemasukan - Pengeluaran</div>
                 </div>
             </div>
 

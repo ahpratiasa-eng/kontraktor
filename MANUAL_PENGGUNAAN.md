@@ -6,7 +6,293 @@ Selamat datang di **Kontraktor Pro** (Guna Karya), solusi manajemen konstruksi c
 
 ---
 
-## 📋 Daftar Isi
+## � Flow Kerja Proyek (Dari Pembuatan Hingga Selesai)
+
+Berikut adalah panduan lengkap alur kerja proyek konstruksi menggunakan aplikasi Guna Karya:
+
+### 📋 FASE 1: PERSIAPAN PROYEK
+
+#### 1.1 Buat Proyek Baru
+```
+Dashboard → Klik "+ Proyek Baru" → Isi Form
+```
+
+**Data yang perlu diisi:**
+| Field | Keterangan |
+|-------|------------|
+| Nama Proyek | Nama yang mudah dikenali |
+| Nama Klien | Pemilik/Owner proyek |
+| Lokasi | Alamat lengkap proyek |
+| Nilai Kontrak | Total nilai proyek (Rp) |
+| Tanggal Mulai | Kapan proyek dimulai |
+| Target Selesai | Deadline proyek |
+| Hero Image | Foto utama proyek (opsional) |
+
+#### 1.2 Setup RAB (Rencana Anggaran Biaya)
+```
+Detail Proyek → Tab "Kurva S & RAB" → Tambah Item
+```
+
+**Tiga cara input RAB:**
+1. **Manual**: Tambah item satu per satu
+2. **Import Excel**: Upload file RAB dari Excel
+3. **AI Generate**: Ketik deskripsi, AI susun item otomatis
+
+**Contoh item RAB:**
+- Pekerjaan Pondasi
+- Pekerjaan Struktur
+- Pekerjaan Dinding
+- Pekerjaan Atap
+- Finishing
+
+#### 1.3 Atur Jadwal Pekerjaan
+```
+Tiap Item RAB → Klik Ikon Kalender → Set Tanggal Mulai & Selesai
+```
+
+Jadwal akan muncul di **Timeline** sebagai Gantt Chart sederhana.
+
+---
+
+### 💰 FASE 2: PENERIMAAN DANA
+
+#### 2.1 Terima DP (Down Payment)
+```
+Tab Keuangan → "+ Catat Pemasukan" → Pilih "DP"
+```
+
+**Langkah:**
+1. Pilih kategori: **DP**
+2. Isi nominal yang diterima
+3. Upload bukti transfer (wajib)
+4. Simpan
+
+#### 2.2 Terima Termin
+```
+Tab Keuangan → "+ Catat Pemasukan" → Pilih "Termin"
+```
+
+Termin biasanya dibayar bertahap sesuai progress:
+- Termin 1: 30% (setelah pondasi selesai)
+- Termin 2: 60% (setelah struktur selesai)
+- Termin 3: 90% (setelah finishing)
+- Termin 4: 100% (pelunasan)
+
+---
+
+### 👷 FASE 3: EKSEKUSI LAPANGAN
+
+#### 3.1 Daftarkan Tim Pekerja
+```
+Tab "Tim & Absensi" → "+ Tambah Tukang"
+```
+
+**Data pekerja:**
+- Nama & Role (Tukang/Kuli/Mandor)
+- Upah Asli (internal) vs Upah Charge (ke klien)
+- Sistem upah: Harian/Mingguan/Borongan
+
+#### 3.2 Absensi Harian (WAJIB)
+```
+Tab "Tim & Absensi" → "Absensi Hari Ini"
+```
+
+**Setiap hari wajib:**
+1. Pilih tanggal
+2. Set status tiap pekerja: Hadir (1) / Setengah (0.5) / Lembur (1.5) / Absen (0)
+3. **WAJIB**: Upload foto bukti lapangan
+4. **WAJIB**: Lokasi GPS terdeteksi
+5. Simpan Absensi
+
+#### 3.3 Kelola Material/Logistik
+```
+Tab "Logistik" → Update Stok
+```
+
+**Aktivitas:**
+- Catat material masuk ke proyek
+- Catat material terpakai
+- Monitor stok menipis (kartu merah)
+- Order via WhatsApp jika perlu
+
+#### 3.4 Catat Pengeluaran
+```
+Tab "Keuangan" → "+ Catat Pengeluaran"
+```
+
+**Kategori pengeluaran:**
+| Kategori | Contoh |
+|----------|--------|
+| Material | Beli semen, batu, pasir |
+| Upah | Bayar gaji tukang |
+| Operasional | Transport, makan, dll |
+| Sewa Alat | Sewa molen, scaffolding |
+| Lainnya | Biaya tak terduga |
+
+**Tips:** Selalu upload foto struk/nota sebagai bukti!
+
+#### 3.5 Dokumentasi Progress (Foto)
+```
+Tab "Galeri" → "+ Tambah Foto"
+```
+
+Upload foto progress secara rutin untuk:
+- Dokumentasi internal
+- Bukti progress ke klien
+- Arsip jika ada komplain
+
+---
+
+### 📊 FASE 4: MONITORING & REPORTING
+
+#### 4.1 Update Progress Item RAB
+```
+Tab "Kurva S & RAB" → Klik Item → Update Progress (%)
+```
+
+Setiap pekerjaan selesai, update progress:
+- 25% - Baru mulai
+- 50% - Setengah jalan
+- 75% - Hampir selesai
+- 100% - Selesai total
+
+#### 4.2 Pantau Kurva S
+Kurva S menampilkan:
+- **Garis Rencana** (biru): Target progress
+- **Garis Realisasi** (hijau): Progress aktual
+
+Jika realisasi di bawah rencana = proyek terlambat!
+
+#### 4.3 Cek Cash Flow
+```
+Tab "Keuangan" → Lihat "Total Arus Kas"
+```
+
+Monitor:
+- Total Pemasukan vs Pengeluaran
+- Sisa Kas tersedia
+- Apakah masih on budget?
+
+#### 4.4 Quality Control (QC)
+```
+Tab "Mutu (QC)" → Tambah Inspeksi
+```
+
+Catat hasil inspeksi:
+- Item yang diinspeksi
+- Status: Lulus / Gagal
+- Catatan perbaikan jika gagal
+
+---
+
+### 📤 FASE 5: TAGIHAN & PEMBAYARAN
+
+#### 5.1 Buat Invoice Termin
+```
+Tab "Keuangan" → "Invoice & Termin" → "+ Invoice Baru"
+```
+
+1. Pilih termin (1/2/3/dst)
+2. Isi persentase tagihan
+3. Generate PDF invoice
+4. Kirim ke klien
+
+#### 5.2 Bagikan Link Portal Klien
+```
+Dashboard → Klik "Portal Klien" pada proyek
+```
+
+Klien bisa lihat:
+- ✅ Progress fisik
+- ✅ Foto-foto galeri
+- ❌ Nilai keuangan (disembunyikan)
+
+---
+
+### ✅ FASE 6: PENYELESAIAN PROYEK
+
+#### 6.1 Verifikasi Semua Item 100%
+Pastikan semua item RAB sudah 100%:
+```
+Tab "Kurva S & RAB" → Cek semua item hijau
+```
+
+#### 6.2 Selesaikan Defect List
+```
+Tab "Mutu (QC)" → Daftar Temuan → Semua harus "Verified"
+```
+
+Pastikan:
+- Tidak ada komplain terbuka
+- Semua perbaikan sudah di-verifikasi
+
+#### 6.3 Terima Pelunasan
+```
+Tab "Keuangan" → "+ Catat Pemasukan" → "Pelunasan"
+```
+
+Terima sisa pembayaran:
+- Isi nominal pelunasan (biasanya 5-10% terakhir)
+- Upload bukti transfer
+
+#### 6.4 Update Status Proyek
+```
+Detail Proyek → Edit → Status: "Selesai"
+```
+
+#### 6.5 Arsip Proyek
+Proyek selesai tetap tersimpan di sistem untuk:
+- Referensi proyek berikutnya
+- Bukti portfolio
+- Audit keuangan
+
+---
+
+### 📈 RINGKASAN FLOW KERJA
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     FLOW KERJA PROYEK                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. PERSIAPAN                                                   │
+│     ├── Buat Proyek Baru                                        │
+│     ├── Input RAB                                               │
+│     └── Atur Jadwal                                             │
+│                                                                 │
+│  2. PENERIMAAN DANA                                             │
+│     ├── Terima DP                                               │
+│     └── Terima Termin (bertahap)                                │
+│                                                                 │
+│  3. EKSEKUSI LAPANGAN                                           │
+│     ├── Daftarkan Tim                                           │
+│     ├── Absensi Harian                                          │
+│     ├── Kelola Material                                         │
+│     ├── Catat Pengeluaran                                       │
+│     └── Dokumentasi Foto                                        │
+│                                                                 │
+│  4. MONITORING                                                  │
+│     ├── Update Progress RAB                                     │
+│     ├── Pantau Kurva S                                          │
+│     ├── Cek Cash Flow                                           │
+│     └── Quality Control                                         │
+│                                                                 │
+│  5. TAGIHAN                                                     │
+│     ├── Buat Invoice                                            │
+│     └── Share Portal Klien                                      │
+│                                                                 │
+│  6. PENYELESAIAN                                                │
+│     ├── Verifikasi 100%                                         │
+│     ├── Tutup Defect List                                       │
+│     ├── Terima Pelunasan                                        │
+│     └── Arsip Proyek                                            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## �📋 Daftar Isi
 
 1. [Login & Autentikasi](#1-login--autentikasi)
 2. [Dashboard Proyek](#2-dashboard-proyek)

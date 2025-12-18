@@ -128,6 +128,38 @@ export type Project = {
   taskLogs: TaskLog[];
   gallery?: GalleryItem[];
   documents?: ProjectDocument[];  // Dokumen kontrak/SPK
+  qcLogs?: QualityChecklist[];    // Laporan QC/Checklist
+  defects?: Defect[];             // Temuan/Komplain/Defect List
+};
+
+export type ChecklistItem = {
+  id: number;
+  label: string;
+  isChecked: boolean;
+};
+
+export type QualityChecklist = {
+  id: number;
+  rabItemId: number;      // Associated work item (e.g., "Pondasi")
+  date: string;
+  status: 'Draft' | 'Passed' | 'Failed';
+  inspector: string;
+  items: ChecklistItem[];
+  photoUrl?: string;
+  notes?: string;
+};
+
+export type Defect = {
+  id: number;
+  description: string;
+  location?: string;
+  photoUrl?: string;
+  status: 'Open' | 'Fixed' | 'Verified';
+  reportedBy: string;
+  reportedDate: string;
+  fixedDate?: string;
+  verifiedDate?: string;
+  rabItemId?: number; // Optional link to RAB item
 };
 
 export type DailyTransactionGroup = {

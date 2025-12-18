@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package, ChevronDown, Calendar, Wallet } from 'lucide-react';
+import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package, ChevronDown, Calendar, Wallet, CheckCircle, AlertTriangle } from 'lucide-react';
 import { NumberInput } from './UIComponents';
 
 import * as XLSX from 'xlsx';
@@ -99,13 +99,15 @@ interface ModalManagerProps {
 
     transactionProof?: string | null;
     setTransactionProof?: (s: string | null) => void;
+    handleSaveQC?: (checklist: { items: any[], photoUrl?: string }) => void;
+    handleSaveDefect?: (defect: any) => void;
 }
 
 const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const {
         modalType, showModal, setShowModal,
         handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleSaveMaterial, handleEditMaterial, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB, handleSaveSchedule,
-        handleSaveTransaction, // NEW
+        handleSaveTransaction, handleSaveQC, handleSaveDefect,
         inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate, inputHeroImage, setInputHeroImage,
         rabCategory, setRabCategory, rabItemName, setRabItemName, rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice,
         progressInput, setProgressInput, progressDate, setProgressDate, progressNote, setProgressNote,
@@ -124,9 +126,27 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         setSelectedAhsId
     } = props;
 
+    // Defect State
+    const [defectDesc, setDefectDesc] = useState('');
+    const [defectLoc, setDefectLoc] = useState('');
+    const [defectPhoto, setDefectPhoto] = useState<string | null>(null);
+
     // State for AHS picker in RAB modal
     const [showAhsPicker, setShowAhsPicker] = useState(false);
     const [ahsSearch, setAhsSearch] = useState('');
+
+    const [qcItems, setQcItems] = useState([
+        { id: 1, label: 'Dimensi Sesuai Gambar', isChecked: false },
+        { id: 2, label: 'Kerapihan Pekerjaan', isChecked: false },
+        { id: 3, label: 'Material Sesuai Spesifikasi', isChecked: false },
+        { id: 4, label: 'Kebersihan Area', isChecked: false },
+        { id: 5, label: 'Fungsi Berjalan Baik', isChecked: false }
+    ]);
+    const [qcPhoto, setQcPhoto] = useState<string | null>(null);
+
+    const toggleQCItem = (id: number) => {
+        setQcItems(prev => prev.map(item => item.id === id ? { ...item, isChecked: !item.isChecked } : item));
+    };
 
     // State for Resource picker in Worker modal
 
@@ -803,6 +823,192 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <button onClick={handleSaveSchedule} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 mt-4">
                                 Simpan Jadwal
                             </button>
+                        </div>
+                    )}
+
+                    {modalType === 'qcModal' && selectedRabItem && (
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-xl mb-4 flex items-center gap-2">
+                                <CheckCircle className="text-green-600" /> Quality Control (QC)
+                            </h3>
+                            <div className="bg-green-50 p-4 rounded-xl mb-2 text-sm text-green-900">
+                                <p className="font-bold">{selectedRabItem.name}</p>
+                                <p className="text-xs">Pastikan item pekerjaan ini memenuhi standar kualitas sebelum diserah-terimakan.</p>
+                            </div>
+
+                            {/* Checklist Area */}
+                            <div className="border rounded-xl p-4 space-y-3">
+                                <h4 className="font-bold text-sm text-slate-700">Checklist Standar</h4>
+                                {qcItems.map((item) => (
+                                    <label key={item.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={item.isChecked}
+                                            onChange={() => toggleQCItem(item.id)}
+                                            className="w-5 h-5 rounded text-green-600 focus:ring-green-500"
+                                        />
+                                        <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+
+                            {/* Evidence Photo */}
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-600 ml-1">Bukti Foto QC (Wajib)</label>
+                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center hover:bg-slate-50 transition relative overflow-hidden bg-slate-50 min-h-[150px]">
+                                    {qcPhoto ? (
+                                        <>
+                                            <img src={qcPhoto} className="h-32 object-contain rounded mb-2" />
+                                            <button
+                                                onClick={() => setQcPhoto(null)}
+                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Camera className="mx-auto text-slate-400 mb-2" size={32} />
+                                            <p className="text-sm text-slate-500">Upload Foto Inspeksi</p>
+                                        </>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            try {
+                                                const { compressImage } = await import('../utils/imageHelper');
+                                                // Assuming setIsUploading is available in scope or we just use setQcPhoto
+                                                // setIsUploading is in parent function scope, accessed via closure
+                                                setIsUploading(true);
+                                                const compressed = await compressImage(file, 1024, 0.8);
+                                                setQcPhoto(compressed);
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert('Gagal proses foto.');
+                                            } finally {
+                                                setIsUploading(false);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2 pt-2">
+                                <button
+                                    onClick={() => closeModal()}
+                                    className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700 disabled:bg-slate-300"
+                                    disabled={!qcPhoto || isUploading}
+                                    onClick={() => {
+                                        if (handleSaveQC) {
+                                            handleSaveQC({ items: qcItems, photoUrl: qcPhoto || undefined });
+                                        } else {
+                                            alert("Handler not found");
+                                        }
+                                    }}
+                                >
+                                    {isUploading ? <Loader2 className="animate-spin mx-auto" /> : 'Simpan Laporan QC'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {modalType === 'newDefect' && (
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-red-600">
+                                <AlertTriangle /> Catat Temuan (Defect)
+                            </h3>
+
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Deskripsi Temuan / Komplain</label>
+                                    <textarea
+                                        className="w-full p-3 border rounded-xl bg-white focus:ring-2 focus:ring-red-500 min-h-[80px]"
+                                        placeholder="Contoh: Dinding retak rambut, Cat tidak rata, dll..."
+                                        value={defectDesc}
+                                        onChange={e => setDefectDesc(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Lokasi Detail</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-3 border rounded-xl bg-white"
+                                        placeholder="Contoh: Kamar Tidur Utama, Lantai 2"
+                                        value={defectLoc}
+                                        onChange={e => setDefectLoc(e.target.value)}
+                                    />
+                                </div>
+
+                                {/* Photo Upload */}
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Foto Temuan (Opsional tapi disarankan)</label>
+                                    <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center hover:bg-slate-50 transition relative overflow-hidden bg-slate-50 min-h-[120px]">
+                                        {defectPhoto ? (
+                                            <>
+                                                <img src={defectPhoto} className="h-32 object-contain rounded mb-2" />
+                                                <button
+                                                    onClick={() => setDefectPhoto(null)}
+                                                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Camera className="mx-auto text-slate-400 mb-2" size={24} />
+                                                <p className="text-xs text-slate-500">Upload Foto</p>
+                                            </>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                try {
+                                                    const { compressImage } = await import('../utils/imageHelper');
+                                                    setIsUploading(true);
+                                                    const compressed = await compressImage(file, 1024, 0.8);
+                                                    setDefectPhoto(compressed);
+                                                } catch (err) {
+                                                    console.error(err);
+                                                    alert('Gagal upload foto');
+                                                } finally {
+                                                    setIsUploading(false);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
+                                <button onClick={() => closeModal()} className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl">
+                                    Batal
+                                </button>
+                                <button
+                                    className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 disabled:bg-slate-300"
+                                    disabled={!defectDesc || isUploading}
+                                    onClick={() => {
+                                        if (handleSaveDefect) {
+                                            handleSaveDefect({ description: defectDesc, location: defectLoc, photoUrl: defectPhoto || undefined });
+                                        }
+                                    }}
+                                >
+                                    Simpan Temuan
+                                </button>
+                            </div>
                         </div>
                     )}
 

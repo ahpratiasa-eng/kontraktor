@@ -664,17 +664,42 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
         // WhatsApp Notification Logic
         if (confirm("Absensi tersimpan. Kirim laporan harian ke Grup/Bos (Kontraktor)?")) {
+            // Load Settings
+            let config = { showAbsensi: true, showMaterial: true, showCashflow: true, showLocation: true };
+            try {
+                const saved = localStorage.getItem('wa_report_config');
+                if (saved) config = JSON.parse(saved);
+            } catch (e) {
+                console.error("Error loading config", e);
+            }
+
             const today = new Date().toISOString().split('T')[0];
-            const todayMats = (activeProject.materialLogs || []).filter(m => m.date === today);
-            const matText = todayMats.length > 0
-                ? todayMats.map(m => `- ${activeProject.materials.find(x => x.id === m.materialId)?.name}: ${m.quantity} (${m.type})`).join('\n')
-                : '- Nihil';
+            let msg = `*Laporan Harian Audit/Internal: ${activeProject.name}*\n📅 ${today}\n`;
 
-            const todayTx = (activeProject.transactions || []).filter(t => t.date === today);
-            const income = todayTx.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
-            const expense = todayTx.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+            if (config.showAbsensi) {
+                msg += `\n👷 Absensi: ${presentCount} Tukang\n`;
+            }
 
-            const msg = `*Laporan Harian Internal: ${activeProject.name}*\n📅 ${today}\n\n👷 Absensi: ${presentCount} Tukang\n\n📦 Material:\n${matText}\n\n💰 Cashflow Hari Ini:\nMasuk: ${formatRupiah(income)}\nKeluar: ${formatRupiah(expense)}\n\n📍 Lokasi: https://maps.google.com/?q=${evidenceLocation}\n\n_Laporan via Guna Karya_`;
+            if (config.showMaterial) {
+                const todayMats = (activeProject.materialLogs || []).filter(m => m.date === today);
+                const matText = todayMats.length > 0
+                    ? todayMats.map(m => `- ${activeProject.materials.find(x => x.id === m.materialId)?.name}: ${m.quantity} (${m.type})`).join('\n')
+                    : '- Nihil';
+                msg += `\n📦 Material:\n${matText}\n`;
+            }
+
+            if (config.showCashflow) {
+                const todayTx = (activeProject.transactions || []).filter(t => t.date === today);
+                const income = todayTx.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
+                const expense = todayTx.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+                msg += `\n💰 Cashflow Hari Ini:\nMasuk: ${formatRupiah(income)}\nKeluar: ${formatRupiah(expense)}\n`;
+            }
+
+            if (config.showLocation) {
+                msg += `\n📍 Lokasi: https://maps.google.com/?q=${evidenceLocation}\n`;
+            }
+
+            msg += `\n_Laporan via Guna Karya_`;
 
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
         }
@@ -955,7 +980,55 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         return activeProject.attendanceEvidences;
     };
 
+    const handleSaveQC = async (checklist: { items: any[], photoUrl?: string }) => {
+        if (!activeProject || !selectedRabItem) return;
+
+        const newQCLog = {
+            id: Date.now(),
+            rabItemId: selectedRabItem.id,
+            date: new Date().toISOString().split('T')[0],
+            status: checklist.items.every((i: any) => i.isChecked) ? 'Passed' : 'Failed', // Simple logic
+            inspector: user?.displayName || 'Pengawas',
+            items: checklist.items,
+            photoUrl: checklist.photoUrl,
+            notes: checklist.items.filter((i: any) => !i.isChecked).length > 0 ? 'Beberapa item belum memenuhi standar.' : 'Semua item OK.'
+        };
+
+        const updatedQCLogs = [...(activeProject.qcLogs || []), newQCLog];
+        // Cast to any because qcLogs is not yet in Project type in some contexts or if type update was missed
+        await updateProject({ qcLogs: updatedQCLogs } as any);
+        setShowModal(false);
+        alert('Laporan QC Berhasil Disimpan!');
+    };
+
+    const handleSaveDefect = async (defect: any) => {
+        if (!activeProject) return;
+        const newDefect = {
+            id: Date.now(),
+            reportedDate: new Date().toISOString().split('T')[0],
+            status: 'Open',
+            reportedBy: user?.displayName || 'Owner',
+            ...defect
+        };
+        const updatedDefects = [...(activeProject.defects || []), newDefect];
+        await updateProject({ defects: updatedDefects } as any);
+        setShowModal(false);
+        alert('Defect berhasil dicatat!');
+    };
+
+    const handleUpdateDefectStatus = async (id: number, status: 'Fixed' | 'Verified') => {
+        if (!activeProject) return;
+        const updatedDefects = activeProject.defects?.map((d: any) =>
+            d.id === id ? { ...d, status, [status === 'Fixed' ? 'fixedDate' : 'verifiedDate']: new Date().toISOString().split('T')[0] } : d
+        );
+        await updateProject({ defects: updatedDefects } as any);
+    }
+
     return {
+        // QC & Defect
+        handleSaveQC,
+        handleSaveDefect,
+        handleUpdateDefectStatus,
         // RAB
         handleSaveRAB,
         deleteRABItem,

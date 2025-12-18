@@ -112,7 +112,8 @@ const App = () => {
     handleSoftDeleteProject, handleRestoreProject, handlePermanentDeleteProject,
     handlePhotoUpload, saveAttendanceWithEvidence,
     getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB,
-    handleSaveSchedule, prepareEditSchedule, handleSaveTransaction
+    handleSaveSchedule, prepareEditSchedule, handleSaveTransaction, handleSaveQC,
+    handleSaveDefect, handleUpdateDefectStatus
   } = projectHandlers;
   // Pengawas ga boleh tambah tukang
 
@@ -170,7 +171,7 @@ const App = () => {
       )}
 
       {/* MAIN CONTENT AREA */}
-      <div className={`flex-1 ${!isClientView ? 'md:ml-64' : ''} flex flex-col relative pb-20 md:pb-0`}>
+      <div className={`flex-1 ${!isClientView ? 'md:ml-64' : ''} flex flex-col relative pb-20 md:pb-0 overflow-x-hidden`}>
 
         {/* HEADER (Desktop: Offset left, Mobile: Full) */}
         {!isClientView && (
@@ -189,7 +190,7 @@ const App = () => {
         )}
 
         {/* CONTENT */}
-        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
 
           {/* TRASH BIN VIEW */}
           {/* TRASH BIN VIEW */}
@@ -285,6 +286,7 @@ const App = () => {
               setProgressInput={setProgressInput}
               setProgressDate={setProgressDate}
               setSelectedWorkerId={setSelectedWorkerId}
+              handleUpdateDefectStatus={handleUpdateDefectStatus}
               setPaymentAmount={setPaymentAmount}
               setSelectedMaterial={setSelectedMaterial}
               deleteRABItem={deleteRABItem}
@@ -443,6 +445,8 @@ const App = () => {
         transactionType={transactionType} setTransactionType={setTransactionType}
         transactionCategory={transactionCategory} setTransactionCategory={setTransactionCategory}
         transactionProof={transactionProof} setTransactionProof={setTransactionProof}
+        handleSaveQC={handleSaveQC}
+        handleSaveDefect={handleSaveDefect}
       />
 
 
