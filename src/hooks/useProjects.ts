@@ -17,6 +17,9 @@ export const useProjects = (user: any, isClientView: boolean, clientProjectId?: 
 
         const q = query(collection(db, 'app_data', appId, 'projects'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            const source = snapshot.metadata.hasPendingWrites ? "Local" : "Server";
+            console.log(`[DEBUG onSnapshot] Source: ${source}, Docs: ${snapshot.docs.length}`);
+
             const projectsData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -45,25 +48,28 @@ export const useProjects = (user: any, isClientView: boolean, clientProjectId?: 
 
     // Update project
     const updateProject = async (data: Partial<Project>) => {
-        console.log('[DEBUG updateProject] user:', user?.email, 'activeProjectId:', activeProjectId);
         if (!user) {
-            console.error('[DEBUG updateProject] ABORTED: No user logged in');
             alert("Error: Anda belum login. Silakan refresh dan login ulang.");
             return;
         }
         if (!activeProjectId) {
-            console.error('[DEBUG updateProject] ABORTED: No activeProjectId selected');
             alert("Error: Tidak ada proyek terpilih. Silakan pilih proyek dulu.");
             return;
         }
+
+        // OPTIMISTIC UPDATE
+        setProjects(prev => prev.map(p =>
+            p.id === activeProjectId ? { ...p, ...data } : p
+        ));
+
         setIsSyncing(true);
         try {
-            console.log('[DEBUG updateProject] Saving to Firebase...', { activeProjectId, dataKeys: Object.keys(data) });
-            await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), data);
-            console.log('[DEBUG updateProject] SUCCESS');
+            // FIX: Sanitize data to remove 'undefined' values which Firestore rejects
+            const cleanData = JSON.parse(JSON.stringify(data));
+            await updateDoc(doc(db, 'app_data', appId, 'projects', activeProjectId), cleanData);
         } catch (e: any) {
-            console.error('[DEBUG updateProject] FIREBASE ERROR:', e?.code, e?.message, e);
-            alert(`Gagal simpan: ${e?.message || 'Unknown error'}. Cek console untuk detail.`);
+            console.error('FIREBASE ERROR:', e);
+            alert(`Gagal simpan: ${e?.message || 'Unknown error'}.`);
         }
         setIsSyncing(false);
     };

@@ -4,6 +4,7 @@ import {
     ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, Plus, CheckCircle,
     ShieldAlert, Minimize2, X, Camera
 } from 'lucide-react';
+import ProjectHeader from './project-detail/ProjectHeader';
 import SCurveChart from './SCurveChart';
 import {
     formatRupiah, getStats, getMonthlyGroupedTransactions,
@@ -110,7 +111,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [journalDateFilter, setJournalDateFilter] = useState('');
     const [journalExpanded, setJournalExpanded] = useState(false);
     const [showDeviationDetail, setShowDeviationDetail] = useState(false);
-    const [weather, setWeather] = useState<any>(null);
+    // const [weather, setWeather] = useState<any>(null); // Removed: moved to ProjectHeader
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
     // Schedule Analysis Editing State
@@ -133,55 +134,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [transferTargetProject, setTransferTargetProject] = useState('');
     const [isTransferring, setIsTransferring] = useState(false);
 
+    // Delete Confirmation Modal State
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
+    const [deleteItemName, setDeleteItemName] = useState('');
 
-    React.useEffect(() => {
-        if (!activeProject.location) return;
-        const fetchWeather = async () => {
-            try {
-                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(activeProject.location)}&count=1&language=id&format=json`);
-                const geoData = await geoRes.json();
-                if (!geoData.results?.[0]) return;
-                const { latitude, longitude, name } = geoData.results[0];
-                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
-                const weatherData = await weatherRes.json();
 
-                setWeather({
-                    temp: weatherData.current.temperature_2m,
-                    humidity: weatherData.current.relative_humidity_2m,
-                    wind: weatherData.current.wind_speed_10m,
-                    code: weatherData.current.weather_code,
-                    city: name,
-                    daily: weatherData.daily
-                });
-            } catch (e) { console.error("Weather error", e); }
-        };
-        fetchWeather();
-    }, [activeProject.location]);
 
-    const getWeatherIcon = (code: number) => {
-        if (code === 0) return '☀️';
-        if (code <= 3) return '⛅';
-        if (code <= 48) return '🌫️';
-        if (code <= 67) return '🌧️';
-        if (code >= 80) return '⛈️';
-        return '☁️';
-    };
-
-    const getWeatherDesc = (code: number) => {
-        if (code === 0) return 'Cerah';
-        if (code <= 3) return 'Berawan';
-        if (code <= 48) return 'Berkabut';
-        if (code <= 67) return 'Hujan Ringan';
-        if (code >= 80) return 'Hujan Lebat';
-        return 'Mendung';
-    };
-
-    const isSafeToCast = (code: number, precipProb: number) => {
-        // Aman jika tidak hujan (code < 50) dan probabilitas hujan < 40%
-        if (code < 50 && precipProb < 40) return { status: 'Aman', color: 'text-green-500', bg: 'bg-green-100' };
-        if (code < 60 && precipProb < 70) return { status: 'Waspada', color: 'text-yellow-600', bg: 'bg-yellow-100' };
-        return { status: 'Tunda Cor', color: 'text-red-500', bg: 'bg-red-100' };
-    };
 
     // Derived Values & Local Handlers
     const rabGroups = (() => {
@@ -219,6 +178,32 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         setReportConfig(newConfig);
         localStorage.setItem('wa_report_config', JSON.stringify(newConfig));
         setShowReportSettings(false);
+    };
+
+    // DELETE CONFIRMATION - Show custom modal
+    const openDeleteConfirm = (id: number, name: string) => {
+        setDeleteItemId(id);
+        setDeleteItemName(name);
+        setShowDeleteConfirm(true);
+    };
+
+    // Confirm delete action
+    const confirmDeleteRAB = async () => {
+        if (!deleteItemId) return;
+
+        const newItems = (activeProject.rabItems || []).filter(
+            (item: RABItem) => String(item.id) !== String(deleteItemId)
+        );
+
+        try {
+            await updateProject({ rabItems: newItems });
+        } catch (err: any) {
+            alert('Gagal menghapus: ' + (err.message || 'Error'));
+        }
+
+        setShowDeleteConfirm(false);
+        setDeleteItemId(null);
+        setDeleteItemName('');
     };
 
     const getAttendanceSummary = () => {
@@ -350,79 +335,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 {activeTab === 'dashboard' && (
                     <div className="pb-20">
                         {/* Hero Section */}
-                        <div className="relative min-h-[320px] rounded-3xl overflow-hidden shadow-lg mb-6 group">
-                            <img
-                                src={activeProject.heroImage ? transformGDriveUrl(activeProject.heroImage) : "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1000&q=80"}
-                                alt="Project Hero"
-                                className="absolute inset-0 w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6">
-                                <div className="flex justify-between items-end">
-                                    <div>
-                                        <span className="inline-flex items-center gap-1 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full w-fit font-bold mb-2">
-                                            <Sparkles size={10} /> On Schedule
-                                        </span>
-                                        <div className="flex items-center gap-1 text-white/80 text-xs mb-1">
-                                            <AlertTriangle size={12} className="text-white" /> LOKASI PROYEK
-                                        </div>
-                                        <h2 className="text-2xl font-bold text-white leading-tight mb-2 max-w-lg">{activeProject.name}</h2>
-
-                                        <div className="flex items-center gap-4 text-white text-xs font-medium mb-4">
-                                            <div className="flex items-center gap-1">
-                                                {weather ? getWeatherIcon(weather.code) : '☀️'} {weather ? `${weather.temp}°C, ${getWeatherDesc(weather.code)}` : 'Memuat...'}
-                                            </div>
-                                            <div className="w-1 h-1 bg-white rounded-full"></div>
-                                            <div>Minggu ke-{Math.ceil((new Date().getTime() - new Date(activeProject.startDate).getTime()) / (1000 * 60 * 60 * 24 * 7))}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Weather Forecast Cards */}
-                                    {weather && weather.daily && (
-                                        <div className="hidden md:flex gap-2">
-                                            {[0, 1, 2].map(i => {
-                                                const date = new Date();
-                                                date.setDate(date.getDate() + i);
-                                                const dayName = i === 0 ? 'Hari Ini' : date.toLocaleDateString('id-ID', { weekday: 'short' });
-                                                const code = weather.daily.weather_code[i];
-                                                const prob = weather.daily.precipitation_probability_max[i];
-                                                const safety = isSafeToCast(code, prob);
-
-                                                return (
-                                                    <div key={i} className="flex flex-col items-center bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-xl w-20 text-center shadow-lg transition hover:bg-white/20">
-                                                        <span className="text-[10px] font-bold text-white/80 mb-1">{dayName}</span>
-                                                        <span className="text-xl mb-1 filter drop-shadow-md">{getWeatherIcon(code)}</span>
-                                                        <span className="text-[10px] font-medium text-white">{Math.round(weather.daily.temperature_2m_max[i])}°C</span>
-                                                        <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold mt-1 ${safety.bg} ${safety.color}`}>{safety.status}</span>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Mobile Forecast (Vertical Stack below title on mobile) */}
-                                {weather && weather.daily && (
-                                    <div className="md:hidden flex gap-2 overflow-x-auto pb-2 scrollbar-hide pt-2 border-t border-white/10 mt-2">
-                                        {[0, 1, 2].map(i => {
-                                            const date = new Date();
-                                            date.setDate(date.getDate() + i);
-                                            const dayName = i === 0 ? 'Hari Ini' : date.toLocaleDateString('id-ID', { weekday: 'short' });
-                                            const code = weather.daily.weather_code[i];
-                                            const prob = weather.daily.precipitation_probability_max[i];
-                                            const safety = isSafeToCast(code, prob);
-
-                                            return (
-                                                <div key={i} className="flex flex-col items-center bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-xl min-w-[70px] text-center">
-                                                    <span className="text-[10px] font-bold text-white/80 mb-1">{dayName}</span>
-                                                    <span className="text-lg mb-1">{getWeatherIcon(code)}</span>
-                                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold mt-1 ${safety.bg} ${safety.color}`}>{safety.status}</span>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        {/* Hero Section */}
+                        <ProjectHeader project={activeProject} />
 
                         {/* Quick Actions (Minimalist) */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -1838,7 +1752,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                                                         <button onClick={() => { setSelectedRabItem(item); setModalType('qcModal'); setShowModal(true); }} className="px-3 py-2 bg-green-50 text-green-600 rounded-xl active:scale-95 hover:bg-green-100 border border-green-200" title="Quality Control"><CheckCircle size={16} /></button>
                                                                                         <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded-xl active:scale-95 hover:bg-slate-100"><History size={16} /></button>
                                                                                         <button onClick={() => prepareEditRABItem(item)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-yellow-500 hover:border-yellow-200"><Edit size={16} /></button>
-                                                                                        <button onClick={() => deleteRABItem(item.id)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-red-500 hover:border-red-200"><Trash2 size={16} /></button>
+                                                                                        <button onClick={(e) => { e.stopPropagation(); openDeleteConfirm(item.id, item.name); }} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-red-500 hover:border-red-200"><Trash2 size={16} /></button>
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -3190,6 +3104,38 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
             {/* Prompt Generator (Floating) */}
             <PromptGenerator project={activeProject} />
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Trash2 size={32} className="text-red-600" />
+                            </div>
+                            <h3 className="font-bold text-lg text-slate-800 mb-2">Hapus Item RAB?</h3>
+                            <p className="text-sm text-slate-500">
+                                <span className="font-semibold text-slate-700">"{deleteItemName}"</span>
+                                <br />akan dihapus permanen. Lanjutkan?
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowDeleteConfirm(false); setDeleteItemId(null); setDeleteItemName(''); }}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmDeleteRAB}
+                                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors shadow-md"
+                            >
+                                Ya, Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     </>);
 };

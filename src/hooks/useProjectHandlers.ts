@@ -76,27 +76,13 @@ interface UseProjectHandlersProps {
     setInputStartDate: (v: string) => void;
     setInputEndDate: (v: string) => void;
     setInputHeroImage: (v: string) => void;
-    setRabCategory: (v: string) => void;
-    setRabItemName: (v: string) => void;
-    setRabUnit: (v: string) => void;
-    setRabVol: (v: number) => void;
-    setRabPrice: (v: number) => void;
-    setSelectedRabItem: (v: RABItem | null) => void;
-    setSelectedAhsId: (v: string | null) => void;
-    setProgressInput: (v: number) => void;
-    setProgressDate: (v: string) => void;
-    setSelectedWorkerId: (v: number | null) => void;
-    setPaymentAmount: (v: number) => void;
-    setInputWorkerRole: (v: string) => void;
-    setInputWageUnit: (v: string) => void;
-    setInputRealRate: (v: number) => void;
-    setInputMandorRate: (v: number) => void;
-    setStockQty: (v: number) => void;
     setStockNotes: (v: string) => void;
     setEvidencePhoto: (v: string | null) => void;
     setEvidenceLocation: (v: string | null) => void;
     setIsGettingLoc: (v: boolean) => void;
     setIsGeneratingAI: (v: boolean) => void;
+    setSelectedRabItem: (v: RABItem | null) => void;
+    setSelectedWorkerId: (v: number | null) => void;
     setSelectedMaterial: (v: Material | null) => void;
     setInputMaterialName: (v: string) => void;
     setInputMaterialUnit: (v: string) => void;
@@ -108,51 +94,66 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
     const {
         user, activeProject, updateProject, setShowModal, setModalType, ahsItems,
         inputName, inputClient, inputLocation, inputOwnerPhone, inputBudget, inputStartDate, inputEndDate, inputHeroImage,
-        rabCategory, rabItemName, rabUnit, rabVol, rabPrice, selectedRabItem, selectedAhsId,
+        selectedRabItem,
         progressInput, progressDate, progressNote, paymentAmount, selectedWorkerId,
-        inputWorkerRole, inputWageUnit, inputRealRate, inputMandorRate,
-        stockType, stockQty, stockDate, stockNotes, selectedMaterial,
-        inputMaterialName, inputMaterialUnit, inputMinStock, inputInitialStock,
+        selectedMaterial,
         attendanceDate, attendanceData, evidencePhoto, evidenceLocation, aiPrompt,
         setInputName, setInputClient, setInputLocation, setInputOwnerPhone, setInputBudget, setInputStartDate, setInputEndDate, setInputHeroImage,
-        setRabCategory, setRabItemName, setRabUnit, setRabVol, setRabPrice, setSelectedRabItem, setSelectedAhsId,
+        setSelectedRabItem,
         setSelectedWorkerId,
-        setInputWorkerRole, setInputWageUnit, setInputRealRate, setInputMandorRate,
-        setStockQty, setStockNotes, setEvidencePhoto, setEvidenceLocation, setIsGettingLoc, setIsGeneratingAI, setActiveProjectId,
-        setSelectedMaterial, setInputMaterialName, setInputMaterialUnit, setInputMinStock, setInputInitialStock
+        setEvidencePhoto, setEvidenceLocation, setIsGettingLoc, setIsGeneratingAI, setActiveProjectId,
+        setSelectedMaterial
     } = props;
 
     // ========== RAB Handlers ==========
-    const handleSaveRAB = () => {
+    const handleSaveRAB = (data: {
+        category: string,
+        name: string,
+        unit: string,
+        vol: number,
+        price: number,
+        ahsId?: string | null
+    }) => {
         if (!activeProject) return;
         const isNewItem = !selectedRabItem;
         const newItem: RABItem = {
             id: selectedRabItem ? selectedRabItem.id : Date.now(),
-            category: rabCategory,
-            name: rabItemName,
-            unit: rabUnit,
-            volume: rabVol,
-            unitPrice: rabPrice,
+            category: data.category,
+            name: data.name,
+            unit: data.unit,
+            volume: data.vol,
+            unitPrice: data.price,
             progress: selectedRabItem?.progress || 0,
             isAddendum: selectedRabItem?.isAddendum || false,
             priceLockedAt: isNewItem ? new Date().toISOString() : (selectedRabItem?.priceLockedAt || new Date().toISOString()),
-            ahsItemId: isNewItem ? (selectedAhsId || undefined) : (selectedRabItem?.ahsItemId || selectedAhsId || undefined)
+            ahsId: data.ahsId || undefined,
+            ahsItemId: isNewItem ? (data.ahsId || undefined) : (selectedRabItem?.ahsItemId || data.ahsId || undefined)
         };
         const newItems = selectedRabItem
             ? activeProject.rabItems.map((i: RABItem) => i.id === newItem.id ? newItem : i)
             : [...activeProject.rabItems, newItem];
         updateProject({ rabItems: newItems });
         setShowModal(false);
-        setRabItemName('');
-        setRabVol(0);
-        setRabPrice(0);
-        setSelectedAhsId(null);
     };
 
-    const deleteRABItem = (id: number) => {
-        if (!activeProject || !confirm('Hapus item RAB ini?')) return;
-        const newItems = activeProject.rabItems.filter((i: RABItem) => i.id !== id);
-        updateProject({ rabItems: newItems });
+    const deleteRABItem = async (id: number) => {
+        if (!activeProject) return;
+
+        // Use window.confirm explicitly and ensure it blocks
+        if (!window.confirm('Hapus item RAB ini?')) return;
+
+        console.log("Menghapus item RAB ID:", id);
+
+        // Optimistic UI handled in useProjects, but we define the new state here
+        const newItems = activeProject.rabItems.filter((i: RABItem) => String(i.id) !== String(id));
+
+        // Ensure we are actually removing something
+        if (newItems.length === activeProject.rabItems.length) {
+            alert(`Gagal menghapus: Item ID ${id} tidak ditemukan.`);
+            return;
+        }
+
+        await updateProject({ rabItems: newItems });
     };
 
     const handleUpdateProgress = () => {
@@ -177,11 +178,6 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
     const prepareEditRABItem = (item: RABItem) => {
         setSelectedRabItem(item);
-        setRabCategory(item.category);
-        setRabItemName(item.name);
-        setRabUnit(item.unit);
-        setRabVol(item.volume);
-        setRabPrice(item.unitPrice);
         setModalType('newRAB');
         setShowModal(true);
     };
@@ -460,48 +456,51 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         setShowModal(false);
     };
 
-    const handleSaveWorker = () => {
+    const handleSaveWorker = (data: {
+        name: string,
+        role: string,
+        wageUnit: string,
+        realRate: number,
+        mandorRate: number
+    }) => {
         if (!activeProject) return;
+
+        let updatedWorkers;
         if (selectedWorkerId) {
             // Edit worker
-            const updatedWorkers = activeProject.workers.map((w: Worker) => {
+            updatedWorkers = activeProject.workers.map((w: Worker) => {
                 if (w.id === selectedWorkerId) {
                     return {
                         ...w,
-                        name: inputName,
-                        role: inputWorkerRole as Worker['role'],
-                        wageUnit: inputWageUnit as Worker['wageUnit'],
-                        realRate: inputRealRate,
-                        mandorRate: inputMandorRate
+                        name: data.name,
+                        role: data.role as Worker['role'],
+                        wageUnit: data.wageUnit as Worker['wageUnit'],
+                        realRate: data.realRate,
+                        mandorRate: data.mandorRate
                     };
                 }
                 return w;
             });
-            updateProject({ workers: updatedWorkers });
         } else {
             // New worker
             const newWorker: Worker = {
                 id: Date.now(),
-                name: inputName,
-                role: inputWorkerRole as Worker['role'],
-                wageUnit: inputWageUnit as Worker['wageUnit'],
-                realRate: inputRealRate,
-                mandorRate: inputMandorRate
+                name: data.name,
+                role: data.role as Worker['role'],
+                wageUnit: data.wageUnit as Worker['wageUnit'],
+                realRate: data.realRate,
+                mandorRate: data.mandorRate
             };
-            updateProject({ workers: [...(activeProject.workers || []), newWorker] });
+            updatedWorkers = [...(activeProject.workers || []), newWorker];
         }
+
+        updateProject({ workers: updatedWorkers });
         setShowModal(false);
     };
 
     const handleEditWorker = (w: Worker) => {
         setSelectedWorkerId(w.id);
-        setInputName(w.name);
-        setInputWorkerRole(w.role);
-        setInputWageUnit(w.wageUnit);
-        setInputRealRate(w.realRate);
-        setInputMandorRate(w.mandorRate);
-        setModalType('newWorker');
-        setShowModal(true);
+        openModal('newWorker');
     };
 
     const handleDeleteWorker = (w: Worker) => {
@@ -513,25 +512,24 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
     };
 
     // ========== Material/Stock Handlers ==========
-    const handleStockMovement = () => {
-        // Debugging logs to identify why it might fail silently
+    const handleStockMovement = (
+        material: Material,
+        type: 'in' | 'out',
+        qty: number,
+        date: string,
+        notes: string
+    ) => {
         if (!activeProject) { console.error("No active project"); return; }
-        if (!selectedMaterial) { console.error("No selected material"); return; }
-        if (stockQty <= 0) {
-            console.error("Stock qty invalid:", stockQty);
+        if (qty <= 0) {
             alert("Jumlah update stok harus lebih dari 0");
             return;
         }
 
         const currentMaterials = activeProject.materials || [];
         const updatedMaterials = currentMaterials.map((m: Material) => {
-            if (m.id === selectedMaterial.id) {
+            if (m.id === material.id) {
                 const currentStock = m.stock || 0;
-                // Calculate new stock
-                let newStock = stockType === 'in' ? currentStock + stockQty : currentStock - stockQty;
-
-                // Optional: Prevent negative stock? Or allow it? 
-                // Let's allow it but maybe warn? For now just allow simple math.
+                let newStock = type === 'in' ? currentStock + qty : currentStock - qty;
                 return { ...m, stock: newStock };
             }
             return m;
@@ -539,11 +537,11 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
         const newLog: MaterialLog = {
             id: Date.now(),
-            materialId: selectedMaterial.id,
-            date: stockDate,
-            type: stockType,
-            quantity: stockQty,
-            notes: stockNotes || '-',
+            materialId: material.id,
+            date: date,
+            type: type,
+            quantity: qty,
+            notes: notes || '-',
             actor: user?.displayName || 'User'
         };
 
@@ -552,31 +550,33 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             materialLogs: [newLog, ...(activeProject.materialLogs || [])]
         });
         setShowModal(false);
-        setStockQty(0);
-        setStockNotes('');
+        // State reset handled by Modal component unmounting/resetting
     };
 
-    const handleSaveMaterial = () => {
-        if (!activeProject || !inputMaterialName) return;
-
-        // Note: Edit logic handled by handleEditMaterial
+    const handleSaveMaterial = (
+        name: string,
+        unit: string,
+        minStock: number,
+        initialStock: number
+    ) => {
+        if (!activeProject || !name) return;
 
         const newMaterial: Material = {
             id: Date.now(),
-            name: inputMaterialName,
-            unit: inputMaterialUnit || 'pcs',
-            stock: inputInitialStock,
-            minStock: inputMinStock,
+            name: name,
+            unit: unit || 'pcs',
+            stock: initialStock,
+            minStock: minStock,
         };
 
         let newLogs: MaterialLog[] = [];
-        if (inputInitialStock > 0) {
+        if (initialStock > 0) {
             newLogs = [{
                 id: Date.now(),
                 materialId: newMaterial.id,
                 date: new Date().toISOString().split('T')[0],
                 type: 'in',
-                quantity: inputInitialStock,
+                quantity: initialStock,
                 notes: 'Stok Awal',
                 actor: user?.displayName || 'System'
             }];
@@ -587,15 +587,18 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             materialLogs: [...(activeProject.materialLogs || []), ...newLogs]
         });
         setShowModal(false);
-        // Reset form done by ModalManager or App
     };
 
-    const handleEditMaterial = () => {
+    const handleEditMaterial = (
+        name: string,
+        unit: string,
+        minStock: number
+    ) => {
         if (!activeProject || !selectedMaterial) return;
 
         const updatedMaterials = (activeProject.materials || []).map(m =>
             m.id === selectedMaterial.id
-                ? { ...m, name: inputMaterialName, unit: inputMaterialUnit, minStock: inputMinStock }
+                ? { ...m, name: name, unit: unit, minStock: minStock }
                 : m
         );
 
@@ -1105,32 +1108,13 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             setInputEndDate('');
             setInputHeroImage('');
         }
-        if (type === 'newRAB' && !selectedRabItem) {
-            setRabCategory('');
-            setRabItemName('');
-            setRabUnit('');
-            setRabVol(0);
-            setRabPrice(0);
-        }
-        if (type === 'newWorker' && !selectedWorkerId) {
-            setInputName('');
-            setInputWorkerRole('Tukang');
-            setInputWageUnit('Harian');
-            setInputRealRate(0);
-            setInputMandorRate(0);
-        }
         if (type === 'newMaterial') {
             if (setSelectedMaterial) setSelectedMaterial(null);
-            setInputMaterialName('');
-            setInputMaterialUnit('pcs');
-            setInputMinStock(10);
-            setInputInitialStock(0);
-            setInputInitialStock(0);
         }
         if (type === 'newTransaction') {
-            props.setTransactionDesc('');
-            props.setTransactionAmount(0);
-            props.setTransactionDate(new Date().toISOString().split('T')[0]);
+            if (props.setTransactionDesc) props.setTransactionDesc('');
+            if (props.setTransactionAmount) props.setTransactionAmount(0);
+            if (props.setTransactionDate) props.setTransactionDate(new Date().toISOString().split('T')[0]);
             if (props.setTransactionProof) props.setTransactionProof(null);
         }
         setModalType(type);

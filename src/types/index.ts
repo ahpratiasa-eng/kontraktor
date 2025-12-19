@@ -20,6 +20,7 @@ export type RABItem = {
   // Price locking fields
   priceLockedAt?: string;  // ISO timestamp when price was locked
   ahsItemId?: string;      // Reference to AHS item used (for update feature)
+  ahsId?: string;          // Alias for ahsItemId
 };
 
 export type Transaction = {

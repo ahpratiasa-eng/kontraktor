@@ -69,16 +69,10 @@ const App = () => {
   const {
     inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation,
     inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate,
-    inputEndDate, setInputEndDate, rabCategory, setRabCategory, rabItemName, setRabItemName,
-    rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice, selectedRabItem, setSelectedRabItem,
-    selectedAhsId, setSelectedAhsId, progressInput, setProgressInput, progressDate, setProgressDate,
+    inputEndDate, setInputEndDate, selectedRabItem, setSelectedRabItem,
+    progressInput, setProgressInput, progressDate, setProgressDate,
     progressNote, setProgressNote, paymentAmount, setPaymentAmount, selectedWorkerId, setSelectedWorkerId,
-    inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate,
-    inputMandorRate, setInputMandorRate, stockType, setStockType, stockQty, setStockQty,
-    stockDate, setStockDate, stockNotes, setStockNotes,
     selectedMaterial, setSelectedMaterial,
-    inputMaterialName, setInputMaterialName, inputMaterialUnit, setInputMaterialUnit,
-    inputMinStock, setInputMinStock, inputInitialStock, setInputInitialStock,
     inputHeroImage, setInputHeroImage,
     inputEmail, setInputEmail, inputRole, setInputRole, aiPrompt, setAiPrompt, isGeneratingAI,
     attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto,
@@ -122,10 +116,6 @@ const App = () => {
   // Helper to prepare material edit
   const handlePrepareEditMaterial = (m: Material) => {
     setSelectedMaterial(m);
-    setInputMaterialName(m.name);
-    setInputMaterialUnit(m.unit);
-    setInputMinStock(m.minStock);
-    setInputInitialStock(m.stock); // Just for display if needed, though we don't save it
     setModalType('newMaterial');
     setShowModal(true);
   };
@@ -421,28 +411,11 @@ const App = () => {
         inputStartDate={inputStartDate} setInputStartDate={setInputStartDate}
         inputEndDate={inputEndDate} setInputEndDate={setInputEndDate}
         inputHeroImage={inputHeroImage} setInputHeroImage={setInputHeroImage}
-        rabCategory={rabCategory} setRabCategory={setRabCategory}
-        rabItemName={rabItemName} setRabItemName={setRabItemName}
-        rabUnit={rabUnit} setRabUnit={setRabUnit}
-        rabVol={rabVol} setRabVol={setRabVol}
-        rabPrice={rabPrice} setRabPrice={setRabPrice}
         progressInput={progressInput} setProgressInput={setProgressInput}
         progressDate={progressDate} setProgressDate={setProgressDate}
         progressNote={progressNote} setProgressNote={setProgressNote}
         paymentAmount={paymentAmount} setPaymentAmount={setPaymentAmount}
-        inputWorkerRole={inputWorkerRole} setInputWorkerRole={setInputWorkerRole}
-        inputWageUnit={inputWageUnit} setInputWageUnit={setInputWageUnit}
-        inputRealRate={inputRealRate} setInputRealRate={setInputRealRate}
-        inputMandorRate={inputMandorRate} setInputMandorRate={setInputMandorRate}
-        stockType={stockType} setStockType={setStockType}
-        stockQty={stockQty} setStockQty={setStockQty}
-        stockDate={stockDate} setStockDate={setStockDate}
-        stockNotes={stockNotes} setStockNotes={setStockNotes}
         selectedMaterial={selectedMaterial}
-        inputMaterialName={inputMaterialName} setInputMaterialName={setInputMaterialName}
-        inputMaterialUnit={inputMaterialUnit} setInputMaterialUnit={setInputMaterialUnit}
-        inputMinStock={inputMinStock} setInputMinStock={setInputMinStock}
-        inputInitialStock={inputInitialStock} setInputInitialStock={setInputInitialStock}
         inputEmail={inputEmail} setInputEmail={setInputEmail}
         inputRole={inputRole} setInputRole={setInputRole}
         aiPrompt={aiPrompt} setAiPrompt={setAiPrompt}
@@ -458,8 +431,6 @@ const App = () => {
         selectedWorkerId={selectedWorkerId}
         ahsItems={ahsItems}
         resources={pricingResources}
-        selectedAhsId={selectedAhsId}
-        setSelectedAhsId={setSelectedAhsId}
         // Transaction Props
         handleSaveTransaction={handleSaveTransaction}
         transactionDesc={transactionDesc} setTransactionDesc={setTransactionDesc}
@@ -470,6 +441,8 @@ const App = () => {
         transactionProof={transactionProof} setTransactionProof={setTransactionProof}
         handleSaveQC={handleSaveQC}
         handleSaveDefect={handleSaveDefect}
+        // New Handlers
+        openModal={openModal}
       />
 
 

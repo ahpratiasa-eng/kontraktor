@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package, ChevronDown, Calendar, Wallet, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Calendar, Wallet, AlertTriangle } from 'lucide-react';
 import { NumberInput } from './UIComponents';
 import VoiceInput from './VoiceInput';
+import ReceiptScanner from './ReceiptScanner';
+
+import RABModal from './modals/RABModal';
+import WorkerModal from './modals/WorkerModal';
+import AttendanceModal from './modals/AttendanceModal';
+import StockMovementModal from './modals/StockMovementModal';
+import MaterialModal from './modals/MaterialModal';
+import QCModal from './modals/QCModal';
 
 import * as XLSX from 'xlsx';
 import type { UserRole, Material, RABItem, Project, AHSItem, PricingResource } from '../types';
-import { calculateAHSTotal } from '../types';
-import { formatRupiah } from '../utils/helpers';
+
+
 
 interface ModalManagerProps {
     modalType: string | null;
@@ -15,19 +23,21 @@ interface ModalManagerProps {
     setShowModal: (s: boolean) => void;
     // Handlers
     handleEditProject: () => void;
-    handleSaveRAB: () => void;
+    handleSaveRAB: (data: { category: string, name: string, unit: string, vol: number, price: number, ahsId?: string | null }) => void;
     handleUpdateProgress: () => void;
     handlePayWorker: () => void;
-    handleSaveWorker: () => void;
-    handleStockMovement: () => void;
-    handleSaveMaterial: () => void;
-    handleEditMaterial: () => void;
+    handleSaveWorker: (data: { name: string, role: string, wageUnit: string, realRate: number, mandorRate: number }) => void;
+    handleStockMovement: (material: Material, type: 'in' | 'out', qty: number, date: string, notes: string) => void;
+    handleSaveMaterial: (name: string, unit: string, minStock: number, initialStock: number) => void;
+    handleEditMaterial: (name: string, unit: string, minStock: number) => void;
     handleAddUser: () => void;
     handleGenerateRAB: () => void;
     saveAttendanceWithEvidence: () => void;
     handleImportRAB: (items: any[]) => void;
     handleSaveSchedule: () => void;
     getFilteredEvidence: () => any[]; // For gallery
+
+    openModal: (type: string) => void;
     handleSaveTransaction: () => void; // NEW: Save general transaction
 
     // State Setters & Values
@@ -40,43 +50,23 @@ interface ModalManagerProps {
     inputEndDate: string; setInputEndDate: (s: string) => void;
     inputHeroImage: string; setInputHeroImage: (s: string) => void;
 
-    rabCategory: string; setRabCategory: (s: string) => void;
-    rabItemName: string; setRabItemName: (s: string) => void;
-    rabUnit: string; setRabUnit: (s: string) => void;
-    rabVol: number; setRabVol: (n: number) => void;
-    rabPrice: number; setRabPrice: (n: number) => void;
-
     progressInput: number; setProgressInput: (n: number) => void;
     progressDate: string; setProgressDate: (s: string) => void;
     progressNote: string; setProgressNote: (s: string) => void;
-
     paymentAmount: number; setPaymentAmount: (n: number) => void;
 
-    // NEW: Transaction States
+    // Transaction States
     transactionDesc: string; setTransactionDesc: (s: string) => void;
     transactionAmount: number; setTransactionAmount: (n: number) => void;
     transactionDate: string; setTransactionDate: (s: string) => void;
     transactionType?: 'expense' | 'income'; setTransactionType?: (t: 'expense' | 'income') => void;
     transactionCategory?: string; setTransactionCategory?: (s: string) => void;
 
-    inputWorkerRole: string; setInputWorkerRole: (s: string) => void;
-    inputWageUnit: string; setInputWageUnit: (s: string) => void;
-    inputRealRate: number; setInputRealRate: (n: number) => void;
-    inputMandorRate: number; setInputMandorRate: (n: number) => void;
-
-    stockType: 'in' | 'out'; setStockType: (t: 'in' | 'out') => void;
-    stockQty: number; setStockQty: (n: number) => void;
-    stockDate: string; setStockDate: (s: string) => void;
-    stockNotes: string; setStockNotes: (s: string) => void;
-    selectedMaterial: Material | null;
-
-    inputMaterialName: string; setInputMaterialName: (s: string) => void;
-    inputMaterialUnit: string; setInputMaterialUnit: (s: string) => void;
-    inputMinStock: number; setInputMinStock: (n: number) => void;
-    inputInitialStock: number; setInputInitialStock: (n: number) => void;
 
     inputEmail: string; setInputEmail: (s: string) => void;
     inputRole: UserRole; setInputRole: (r: UserRole) => void;
+
+    selectedMaterial: Material | null;
 
     aiPrompt: string; setAiPrompt: (s: string) => void;
     isGeneratingAI: boolean;
@@ -95,8 +85,6 @@ interface ModalManagerProps {
     // AHS Integration
     ahsItems: AHSItem[];
     resources: PricingResource[]; // Standard prices (SHD)
-    selectedAhsId: string | null;
-    setSelectedAhsId: (id: string | null) => void;
 
     transactionProof?: string | null;
     setTransactionProof?: (s: string | null) => void;
@@ -110,21 +98,16 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         handleEditProject, handleSaveRAB, handleUpdateProgress, handlePayWorker, handleSaveWorker, handleStockMovement, handleSaveMaterial, handleEditMaterial, handleAddUser, handleGenerateRAB, saveAttendanceWithEvidence, handleImportRAB, handleSaveSchedule,
         handleSaveTransaction, handleSaveQC, handleSaveDefect,
         inputName, setInputName, inputClient, setInputClient, inputLocation, setInputLocation, inputOwnerPhone, setInputOwnerPhone, inputBudget, setInputBudget, inputStartDate, setInputStartDate, inputEndDate, setInputEndDate, inputHeroImage, setInputHeroImage,
-        rabCategory, setRabCategory, rabItemName, setRabItemName, rabUnit, setRabUnit, rabVol, setRabVol, rabPrice, setRabPrice,
         progressInput, setProgressInput, progressDate, setProgressDate, progressNote, setProgressNote,
         paymentAmount, setPaymentAmount,
         transactionDesc, setTransactionDesc, transactionAmount, setTransactionAmount, transactionDate, setTransactionDate,
         transactionType = 'expense', transactionCategory, setTransactionCategory,
         transactionProof, setTransactionProof,
-        inputWorkerRole, setInputWorkerRole, inputWageUnit, setInputWageUnit, inputRealRate, setInputRealRate, inputMandorRate, setInputMandorRate,
-        stockType, setStockType, stockQty, setStockQty, stockDate, setStockDate, stockNotes, setStockNotes, selectedMaterial,
-        inputMaterialName, setInputMaterialName, inputMaterialUnit, setInputMaterialUnit, inputMinStock, setInputMinStock, inputInitialStock, setInputInitialStock,
         inputEmail, setInputEmail, inputRole, setInputRole,
         aiPrompt, setAiPrompt, isGeneratingAI,
         attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, evidenceLocation, handlePhotoUpload, isGettingLoc,
-        activeProject, selectedRabItem, selectedWorkerId,
+        activeProject, selectedRabItem, selectedWorkerId, selectedMaterial,
         ahsItems, resources,
-        setSelectedAhsId
     } = props;
 
     // Defect State
@@ -132,47 +115,19 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
     const [defectLoc, setDefectLoc] = useState('');
     const [defectPhoto, setDefectPhoto] = useState<string | null>(null);
 
-    // State for AHS picker in RAB modal
-    const [showAhsPicker, setShowAhsPicker] = useState(false);
-    const [ahsSearch, setAhsSearch] = useState('');
 
-    const [qcItems, setQcItems] = useState([
-        { id: 1, label: 'Dimensi Sesuai Gambar', isChecked: false },
-        { id: 2, label: 'Kerapihan Pekerjaan', isChecked: false },
-        { id: 3, label: 'Material Sesuai Spesifikasi', isChecked: false },
-        { id: 4, label: 'Kebersihan Area', isChecked: false },
-        { id: 5, label: 'Fungsi Berjalan Baik', isChecked: false }
-    ]);
-    const [qcPhoto, setQcPhoto] = useState<string | null>(null);
 
-    const toggleQCItem = (id: number) => {
-        setQcItems(prev => prev.map(item => item.id === id ? { ...item, isChecked: !item.isChecked } : item));
-    };
+
+
 
     // State for Resource picker in Worker modal
 
 
     // State for Resource picker in Worker modal
-    const [showResourcePicker, setShowResourcePicker] = useState(false);
-    const [resourceSearch, setResourceSearch] = useState('');
-    const [isManualInput, setIsManualInput] = useState(false);
+    // State for Resource picker moved to WorkerModal
     const [isUploading, setIsUploading] = useState(false);
 
-    const handleSaveAttendanceWrapper = async () => {
-        try {
-            setIsUploading(true);
-            // Simulate delay only if needed to show animation, but actual handler is async usually
-            // Wait, saveAttendanceWithEvidence is void in props but likely async in implementation.
-            // We can't await void. But if we assume it's fire-and-forget, we might just show loading for a few seconds?
-            // No, passed functions are usually async.
-            await (saveAttendanceWithEvidence as any)();
-        } catch (e) {
-            console.error(e);
-            alert("Gagal menyimpan absensi");
-        } finally {
-            setIsUploading(false);
-        }
-    };
+
 
     const handleSaveTransactionWrapper = async () => {
         try {
@@ -188,21 +143,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
 
 
 
-    const handleSelectAHS = (ahs: AHSItem) => {
-        setRabCategory(ahs.category);
-        setRabItemName(ahs.name);
-        setRabUnit(ahs.unit);
-        setRabPrice(calculateAHSTotal(ahs));
-        setSelectedAhsId(ahs.id);  // Save which AHS item was used
-        setShowAhsPicker(false);
-        setAhsSearch('');
-    };
 
-    const filteredAHS = ahsItems.filter(item =>
-        item.name.toLowerCase().includes(ahsSearch.toLowerCase()) ||
-        item.code.toLowerCase().includes(ahsSearch.toLowerCase()) ||
-        item.category.toLowerCase().includes(ahsSearch.toLowerCase())
-    );
 
     const downloadTemplate = () => {
         const ws = XLSX.utils.json_to_sheet([
@@ -404,124 +345,12 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                     )}
 
                     {modalType === 'newRAB' && (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-xl">{selectedRabItem ? 'Edit Item RAB' : 'Tambah Item RAB'}</h3>
-                                {!selectedRabItem && ahsItems.length > 0 && (
-                                    <button
-                                        onClick={() => setShowAhsPicker(!showAhsPicker)}
-                                        className={`text-sm px-3 py-2 rounded-lg font-bold flex items-center gap-1 ${showAhsPicker ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600 border border-blue-200'}`}
-                                    >
-                                        <Package size={14} />
-                                        {showAhsPicker ? 'Input Manual' : 'Pilih dari AHS'}
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* AHS Picker */}
-                            {showAhsPicker && !selectedRabItem && (
-                                <div className="border rounded-xl overflow-hidden">
-                                    <div className="bg-blue-50 p-3 border-b">
-                                        <div className="relative">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                            <input
-                                                type="text"
-                                                placeholder="Cari item AHS..."
-                                                className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm"
-                                                value={ahsSearch}
-                                                onChange={e => setAhsSearch(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="max-h-60 overflow-y-auto divide-y">
-                                        {filteredAHS.length === 0 ? (
-                                            <div className="p-4 text-center text-slate-400 text-sm">
-                                                Tidak ada item AHS ditemukan
-                                            </div>
-                                        ) : (
-                                            filteredAHS.slice(0, 10).map(ahs => (
-                                                <button
-                                                    key={ahs.id}
-                                                    onClick={() => handleSelectAHS(ahs)}
-                                                    className="w-full p-3 text-left hover:bg-blue-50 transition-colors"
-                                                >
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div>
-                                                            <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded font-mono mr-2">{ahs.code}</span>
-                                                            <span className="font-bold text-sm">{ahs.name}</span>
-                                                            <div className="text-xs text-slate-500 mt-0.5">{ahs.category}</div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className="font-bold text-blue-600 text-sm">{formatRupiah(calculateAHSTotal(ahs))}</div>
-                                                            <div className="text-xs text-slate-400">/{ahs.unit}</div>
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            ))
-                                        )}
-                                    </div>
-                                    {filteredAHS.length > 10 && (
-                                        <div className="p-2 bg-slate-50 text-center text-xs text-slate-500 border-t">
-                                            Menampilkan 10 dari {filteredAHS.length} item. Gunakan pencarian untuk filter.
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Manual Input Form */}
-                            {(!showAhsPicker || selectedRabItem) && (
-                                <>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold ml-1">Kategori Pekerjaan</label>
-                                        {/* Get existing categories from project */}
-                                        {(() => {
-                                            const existingCategories = activeProject?.rabItems
-                                                ? [...new Set(activeProject.rabItems.map(item => item.category))].sort()
-                                                : [];
-                                            return (
-                                                <div className="relative">
-                                                    <select
-                                                        className="w-full p-3 border rounded-xl bg-white appearance-none pr-10"
-                                                        value={existingCategories.includes(rabCategory) ? rabCategory : '_custom'}
-                                                        onChange={e => {
-                                                            if (e.target.value !== '_custom') {
-                                                                setRabCategory(e.target.value);
-                                                            }
-                                                        }}
-                                                    >
-                                                        <option value="_custom">-- Ketik Kategori Baru --</option>
-                                                        {existingCategories.map((cat, idx) => (
-                                                            <option key={idx} value={cat}>{cat}</option>
-                                                        ))}
-                                                    </select>
-                                                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                                                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()}
-                                        {/* Show text input if custom or editing */}
-                                        {(!activeProject?.rabItems?.some(item => item.category === rabCategory) || rabCategory === '' || rabCategory === '_custom') && (
-                                            <input
-                                                className="w-full p-3 border rounded-xl mt-2"
-                                                placeholder="Contoh: A. PERSIAPAN"
-                                                value={rabCategory === '_custom' ? '' : rabCategory}
-                                                onChange={e => setRabCategory(e.target.value)}
-                                            />
-                                        )}
-                                    </div>
-                                    <input className="w-full p-3 border rounded-xl" placeholder="Nama Item / Uraian Pekerjaan" value={rabItemName} onChange={e => setRabItemName(e.target.value)} />
-                                    <div className="flex gap-2">
-                                        <input className="w-24 p-3 border rounded-xl text-center" placeholder="Satuan" value={rabUnit} onChange={e => setRabUnit(e.target.value)} />
-                                        <input type="number" step="0.01" className="flex-1 p-3 border rounded-xl" placeholder="Volume" value={rabVol || ''} onChange={e => setRabVol(parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <NumberInput className="w-full p-3 border rounded-xl" placeholder="Harga Satuan (Rp)" value={rabPrice} onChange={setRabPrice} />
-                                    <button onClick={handleSaveRAB} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">Simpan Item</button>
-                                </>
-                            )}
-                        </div>
+                        <RABModal
+                            activeProject={activeProject}
+                            selectedRabItem={selectedRabItem}
+                            ahsItems={ahsItems}
+                            onSave={handleSaveRAB}
+                        />
                     )}
 
                     {modalType === 'updateProgress' && (
@@ -557,204 +386,43 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                     )}
 
                     {modalType === 'newWorker' && (
-                        <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-4">{selectedWorkerId ? 'Edit Pekerja' : 'Tambah Pekerja Baru'}</h3>
-
-                            {/* RESOURCE PICKER */}
-                            {showResourcePicker ? (
-                                <div className="border rounded-xl p-3 bg-slate-50">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <h4 className="font-bold text-sm text-slate-700">Pilih Standar Upah</h4>
-                                        <button onClick={() => setShowResourcePicker(false)} className="bg-slate-200 p-1 rounded hover:bg-slate-300"><X size={14} /></button>
-                                    </div>
-                                    <input
-                                        className="w-full p-2 border rounded-lg mb-2 text-sm"
-                                        placeholder="Cari standar upah..."
-                                        value={resourceSearch}
-                                        onChange={e => setResourceSearch(e.target.value)}
-                                        autoFocus
-                                    />
-                                    <div className="max-h-48 overflow-y-auto space-y-1">
-                                        {resources.filter(r => r.type === 'upah' && r.name.toLowerCase().includes(resourceSearch.toLowerCase())).map(r => (
-                                            <div key={r.id} onClick={() => {
-                                                // Auto fill
-                                                setInputWorkerRole(r.name);
-                                                setInputWageUnit(r.unit === 'OH' ? 'Harian' : 'Borongan');
-                                                setInputRealRate(r.price);
-                                                // Default mandor/charge rate = real rate + margin (e.g. 20%) or same for now?
-                                                const margin = r.price * 0.2; // Example 20% margin
-                                                setInputMandorRate(r.price + margin);
-                                                setShowResourcePicker(false);
-                                            }} className="p-2 bg-white border rounded hover:bg-blue-50 cursor-pointer flex justify-between items-center transition-colors">
-                                                <div>
-                                                    <div className="text-sm font-bold text-slate-700">{r.name}</div>
-                                                    <div className="text-xs text-slate-500">{r.category}</div>
-                                                </div>
-                                                <span className="font-mono font-bold text-blue-600 text-sm">{formatRupiah(r.price)}/{r.unit}</span>
-                                            </div>
-                                        ))}
-                                        {resources.filter(r => r.type === 'upah').length === 0 && <div className="text-center text-xs text-slate-400 py-4">Belum ada data upah di Library.</div>}
-                                    </div>
-                                </div>
-                            ) : (
-                                <button onClick={() => setShowResourcePicker(true)} className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors">
-                                    <Search size={14} /> Ambil dari Standar Upah
-                                </button>
-                            )}
-
-                            <input className="w-full p-3 border rounded-xl" placeholder="Nama Lengkap" value={inputName} onChange={e => setInputName(e.target.value)} />
-                            <div className="flex gap-2">
-                                <select className="flex-1 p-3 border rounded-xl bg-white" value={inputWorkerRole} onChange={e => setInputWorkerRole(e.target.value)}>
-                                    <option>Tukang</option><option>Kuli</option><option>Kepala Tukang</option><option>Mandor</option>
-                                    {/* Allow custom roles from picker */}
-                                    {!['Tukang', 'Kuli', 'Kepala Tukang', 'Mandor'].includes(inputWorkerRole) && <option>{inputWorkerRole}</option>}
-                                </select>
-                                <select className="flex-1 p-3 border rounded-xl bg-white" value={inputWageUnit} onChange={e => setInputWageUnit(e.target.value)}>
-                                    <option>Harian</option><option>Mingguan</option><option>Bulanan</option><option>Borongan</option>
-                                </select>
-                            </div>
-                            <NumberInput className="w-full p-3 border rounded-xl" placeholder="Upah Asli (Rate Internal)" value={inputRealRate} onChange={setInputRealRate} />
-                            <NumberInput className="w-full p-3 border rounded-xl" placeholder="Upah Mandor (Rate Charge)" value={inputMandorRate} onChange={setInputMandorRate} />
-                            <div className="text-xs text-slate-400 italic px-1">*Upah Mandor adalah yang ditagihkan ke Owner/Klien. Selisih = Profit.</div>
-                            <button onClick={handleSaveWorker} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg">Simpan Data Pekerja</button>
-                        </div>
+                        <WorkerModal
+                            selectedWorkerId={selectedWorkerId}
+                            initialData={selectedWorkerId && activeProject ? activeProject.workers.find(w => w.id === selectedWorkerId) : null}
+                            resources={resources}
+                            onSave={handleSaveWorker}
+                        />
                     )}
 
                     {modalType === 'attendance' && activeProject && (
-                        <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-4">Absensi Harian</h3>
-                            <input type="date" className="w-full p-3 border rounded-xl mb-4" value={attendanceDate} onChange={e => setAttendanceDate(e.target.value)} />
-
-                            <div className="bg-slate-50 p-4 rounded-xl border mb-4">
-                                <h4 className="font-bold text-sm mb-3 flex items-center gap-2"><Camera size={16} /> Bukti Lapangan (Wajib)</h4>
-                                <label className="w-full cursor-pointer bg-white border-2 border-dashed border-slate-300 rounded-xl h-48 flex flex-col items-center justify-center hover:bg-slate-50 transition relative overflow-hidden">
-                                    {evidencePhoto ? (
-                                        <>
-                                            <img src={evidencePhoto} className="w-full h-full object-cover" />
-                                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2 text-center">
-                                                {evidenceLocation ? '📍 Lokasi Terdeteksi' : (isGettingLoc ? '📡 Mencari Lokasi...' : 'Lokasi Belum Ada')}
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Camera className="text-slate-400 mb-2" size={32} />
-                                            <span className="font-bold text-slate-500">Ambil Foto & Tag Lokasi</span>
-                                            <span className="text-xs text-slate-400 mt-1">Otomatis GPS aktif saat upload</span>
-                                        </>
-                                    )}
-                                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
-                                </label>
-                            </div>
-
-                            <div className="max-h-60 overflow-y-auto space-y-2">
-                                {activeProject.workers.map(w => (
-                                    <div key={w.id} className="flex items-center justify-between p-3 bg-white border rounded-xl">
-                                        <span className="font-bold text-sm">{w.name}</span>
-                                        <select
-                                            className="p-2 border rounded-lg text-sm bg-slate-50"
-                                            value={attendanceData[w.id]?.status || 'Hadir'}
-                                            onChange={(e) => {
-                                                setAttendanceData((prev: any) => ({ ...prev, [w.id]: { status: e.target.value } }));
-                                            }}
-                                        >
-                                            <option value="Hadir">Hadir (1)</option>
-                                            <option value="Setengah">Setengah (0.5)</option>
-                                            <option value="Lembur">Lembur (1.5)</option>
-                                            <option value="Absen">Absen (0)</option>
-                                        </select>
-                                    </div>
-                                ))}
-                            </div>
-                            <button
-                                onClick={handleSaveAttendanceWrapper}
-                                disabled={(!evidencePhoto || !evidenceLocation) || isUploading}
-                                className={`w-full p-3 rounded-xl font-bold shadow-lg mt-4 transition-colors flex items-center justify-center gap-2 ${(!evidencePhoto || !evidenceLocation) || isUploading ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                            >
-                                {isUploading && <Loader2 className="animate-spin" size={20} />}
-                                {isUploading ? 'Menyimpan & Mengupload...' : ((!evidencePhoto || !evidenceLocation) ? 'Foto & Lokasi Wajib Diisi' : 'Simpan Absensi')}
-                            </button>
-                        </div>
+                        <AttendanceModal
+                            activeProject={activeProject}
+                            attendanceDate={attendanceDate}
+                            setAttendanceDate={setAttendanceDate}
+                            attendanceData={attendanceData}
+                            setAttendanceData={setAttendanceData}
+                            evidencePhoto={evidencePhoto}
+                            evidenceLocation={evidenceLocation}
+                            isGettingLoc={isGettingLoc}
+                            handlePhotoUpload={handlePhotoUpload}
+                            onSave={saveAttendanceWithEvidence}
+                        />
                     )}
 
                     {modalType === 'stockMovement' && selectedMaterial && (
-                        <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-4">Update Stok: {selectedMaterial.name}</h3>
-                            <div className="flex gap-2">
-                                <button onClick={() => setStockType('in')} className={`flex-1 p-4 rounded-xl font-bold border ${stockType === 'in' ? 'bg-green-100 border-green-200 text-green-700' : 'bg-white'}`}>Barang Masuk (+)</button>
-                                <button onClick={() => setStockType('out')} className={`flex-1 p-4 rounded-xl font-bold border ${stockType === 'out' ? 'bg-red-100 border-red-200 text-red-700' : 'bg-white'}`}>Barang Keluar (-)</button>
-                            </div>
-                            <NumberInput className="w-full p-3 border rounded-xl text-lg font-bold" placeholder="Jumlah (Qty)" value={stockQty} onChange={setStockQty} />
-                            <input type="date" className="w-full p-3 border rounded-xl" value={stockDate} onChange={e => setStockDate(e.target.value)} />
-                            <input className="w-full p-3 border rounded-xl" placeholder="Catatan / Keterangan" value={stockNotes} onChange={e => setStockNotes(e.target.value)} />
-                            <button onClick={handleStockMovement} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg">Simpan Stok</button>
-                        </div>
+                        <StockMovementModal
+                            selectedMaterial={selectedMaterial}
+                            onSave={handleStockMovement}
+                        />
                     )}
 
                     {modalType === 'newMaterial' && (
-                        <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-4">{selectedMaterial ? 'Edit Material' : 'Tambah Material Baru'}</h3>
-                            <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-800 mb-2">
-                                <p>Material yang ditambahkan di sini akan masuk ke Stok Lapangan.</p>
-                            </div>
-
-                            {/* Material Source Selection */}
-                            {!selectedMaterial && activeProject?.rabItems && activeProject.rabItems.length > 0 && (
-                                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4">
-                                    <button
-                                        onClick={() => setIsManualInput(false)}
-                                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${!isManualInput ? 'bg-white shadow text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-                                    >
-                                        Ambil dari RAB
-                                    </button>
-                                    <button
-                                        onClick={() => setIsManualInput(true)}
-                                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${isManualInput ? 'bg-white shadow text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-                                    >
-                                        Input Manual
-                                    </button>
-                                </div>
-                            )}
-
-                            {!isManualInput && !selectedMaterial && activeProject?.rabItems ? (
-                                <div className="relative">
-                                    <select
-                                        className="w-full p-3 border rounded-xl bg-white appearance-none pr-10 font-medium text-slate-700"
-                                        value={inputMaterialName}
-                                        onChange={(e) => {
-                                            const name = e.target.value;
-                                            setInputMaterialName(name);
-                                            const item = activeProject.rabItems.find(r => r.name === name);
-                                            if (item) setInputMaterialUnit(item.unit);
-                                        }}
-                                    >
-                                        <option value="">-- Pilih Material dari RAB --</option>
-                                        {[...new Set(activeProject.rabItems.filter(i => !['oh', 'hari', 'jam', 'ls', 'unit', 'org'].includes(i.unit.toLowerCase())).map(i => i.name))].sort().map((name, idx) => {
-                                            const item = activeProject.rabItems.find(r => r.name === name);
-                                            return <option key={idx} value={name}>{name} ({item?.unit})</option>;
-                                        })}
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={20} />
-                                </div>
-                            ) : (
-                                <input className="w-full p-3 border rounded-xl" placeholder="Nama Material (misal: Semen Tiga Roda)" value={inputMaterialName} onChange={e => setInputMaterialName(e.target.value)} />
-                            )}
-                            <div className="flex gap-2">
-                                <input className="flex-1 p-3 border rounded-xl" placeholder="Satuan (misal: sak, m3)" value={inputMaterialUnit} onChange={e => setInputMaterialUnit(e.target.value)} />
-                                <NumberInput className="flex-1 p-3 border rounded-xl" placeholder="Min. Stock Alert" value={inputMinStock} onChange={setInputMinStock} />
-                            </div>
-                            {!selectedMaterial && (
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold ml-1">Stok Awal (Opsional)</label>
-                                    <NumberInput className="w-full p-3 border rounded-xl" placeholder="Stok saat ini" value={inputInitialStock} onChange={setInputInitialStock} />
-                                </div>
-                            )}
-                            <button
-                                onClick={selectedMaterial ? handleEditMaterial : handleSaveMaterial}
-                                className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700"
-                            >
-                                {selectedMaterial ? 'Simpan Perubahan' : 'Simpan Material'}
-                            </button>
-                        </div>
+                        <MaterialModal
+                            activeProject={activeProject!}
+                            selectedMaterial={selectedMaterial}
+                            onSave={handleSaveMaterial}
+                            onEdit={handleEditMaterial}
+                        />
                     )}
 
                     {modalType === 'addUser' && (
@@ -843,100 +511,13 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                         </div>
                     )}
 
+// ...
                     {modalType === 'qcModal' && selectedRabItem && (
-                        <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-4 flex items-center gap-2">
-                                <CheckCircle className="text-green-600" /> Quality Control (QC)
-                            </h3>
-                            <div className="bg-green-50 p-4 rounded-xl mb-2 text-sm text-green-900">
-                                <p className="font-bold">{selectedRabItem.name}</p>
-                                <p className="text-xs">Pastikan item pekerjaan ini memenuhi standar kualitas sebelum diserah-terimakan.</p>
-                            </div>
-
-                            {/* Checklist Area */}
-                            <div className="border rounded-xl p-4 space-y-3">
-                                <h4 className="font-bold text-sm text-slate-700">Checklist Standar</h4>
-                                {qcItems.map((item) => (
-                                    <label key={item.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={item.isChecked}
-                                            onChange={() => toggleQCItem(item.id)}
-                                            className="w-5 h-5 rounded text-green-600 focus:ring-green-500"
-                                        />
-                                        <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                                    </label>
-                                ))}
-                            </div>
-
-                            {/* Evidence Photo */}
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-600 ml-1">Bukti Foto QC (Wajib)</label>
-                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center hover:bg-slate-50 transition relative overflow-hidden bg-slate-50 min-h-[150px]">
-                                    {qcPhoto ? (
-                                        <>
-                                            <img src={qcPhoto} className="h-32 object-contain rounded mb-2" />
-                                            <button
-                                                onClick={() => setQcPhoto(null)}
-                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md"
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Camera className="mx-auto text-slate-400 mb-2" size={32} />
-                                            <p className="text-sm text-slate-500">Upload Foto Inspeksi</p>
-                                        </>
-                                    )}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                        onChange={async (e) => {
-                                            const file = e.target.files?.[0];
-                                            if (!file) return;
-                                            try {
-                                                const { compressImage } = await import('../utils/imageHelper');
-                                                // Assuming setIsUploading is available in scope or we just use setQcPhoto
-                                                // setIsUploading is in parent function scope, accessed via closure
-                                                setIsUploading(true);
-                                                const compressed = await compressImage(file, 1024, 0.8);
-                                                setQcPhoto(compressed);
-                                            } catch (err) {
-                                                console.error(err);
-                                                alert('Gagal proses foto.');
-                                            } finally {
-                                                setIsUploading(false);
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex gap-2 pt-2">
-                                <button
-                                    onClick={() => closeModal()}
-                                    className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700 disabled:bg-slate-300"
-                                    disabled={!qcPhoto || isUploading}
-                                    onClick={() => {
-                                        if (handleSaveQC) {
-                                            handleSaveQC({ items: qcItems, photoUrl: qcPhoto || undefined });
-                                        } else {
-                                            alert("Handler not found");
-                                        }
-                                    }}
-                                >
-                                    {isUploading ? <Loader2 className="animate-spin mx-auto" /> : 'Simpan Laporan QC'}
-                                </button>
-                            </div>
-                        </div>
+                        <QCModal
+                            selectedRabItem={selectedRabItem}
+                            onSave={handleSaveQC || ((() => alert("Fungsi simpan QC tidak tersedia")) as any)}
+                            onClose={closeModal}
+                        />
                     )}
 
                     {modalType === 'newDefect' && (
@@ -1093,49 +674,41 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                     />
                                 </div>
 
-                                {/* BUKTI TRANSAKSI UPLOAD */}
+                                {/* BUKTI TRANSAKSI & AI SCANNER */}
                                 <div>
-                                    <label className="text-xs font-bold text-slate-500 ml-1">
-                                        Bukti Transaksi (Opsional)
+                                    <label className="text-xs font-bold text-slate-500 ml-1 mb-2 block">
+                                        Scan Bukti / Upload Foto (AI Powered)
                                     </label>
-                                    <div className="mt-1 border-2 border-dashed border-slate-200 rounded-xl p-3 hover:bg-slate-50 transition relative overflow-hidden">
-                                        {transactionProof ? (
-                                            <div className="relative">
-                                                <img
-                                                    src={transactionProof}
-                                                    alt="Bukti"
-                                                    className="w-full h-32 object-cover rounded-lg"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setTransactionProof && setTransactionProof(null)}
-                                                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                                                >
-                                                    <X size={12} />
-                                                </button>
+                                    <ReceiptScanner
+                                        type={transactionType}
+                                        onScanComplete={(data) => {
+                                            setTransactionAmount && setTransactionAmount(data.amount);
+                                            setTransactionDate && setTransactionDate(data.date);
+                                            setTransactionDesc && setTransactionDesc(`${data.description} (Auto-Scan)`);
+                                            setTransactionCategory && setTransactionCategory(data.category);
+                                            setTransactionProof && setTransactionProof(data.imageUrl);
+                                            // Handle potential 'category' mismatch if exact string doesn't match options
+                                            // Ideally we might want to map AI category to known categories here
+                                        }}
+                                    />
+
+                                    {/* Proof Preview (Restored) */}
+                                    {transactionProof && (
+                                        <div className="mt-2 flex items-center gap-3 bg-green-50 p-2 rounded-lg border border-green-200 animate-in fade-in slide-in-from-top-1">
+                                            <img src={transactionProof} className="w-10 h-10 object-cover rounded bg-white border" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[10px] font-bold text-green-700 truncate">Bukti Terlampir</p>
+                                                <p className="text-[9px] text-green-600">Siap disimpan</p>
                                             </div>
-                                        ) : (
-                                            <label className="flex flex-col items-center justify-center py-4 cursor-pointer">
-                                                <Camera className="text-slate-400 mb-1" size={24} />
-                                                <span className="text-xs text-slate-500 font-medium">
-                                                    {transactionType === 'income' ? 'Upload bukti transfer / mutasi' : 'Upload foto struk / nota'}
-                                                </span>
-                                                <span className="text-[10px] text-slate-400 mt-0.5">Tap untuk pilih foto</span>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    onChange={async (e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (!file || !setTransactionProof) return;
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => setTransactionProof(reader.result as string);
-                                                        reader.readAsDataURL(file);
-                                                    }}
-                                                />
-                                            </label>
-                                        )}
-                                    </div>
+                                            <button
+                                                onClick={() => setTransactionProof && setTransactionProof(null)}
+                                                className="p-1 bg-white text-slate-400 hover:text-red-500 rounded-full border shadow-sm transition"
+                                                title="Hapus Bukti"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

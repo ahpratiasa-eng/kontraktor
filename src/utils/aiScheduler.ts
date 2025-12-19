@@ -177,7 +177,7 @@ export const getApiUsageStats = async (): Promise<any> => {
 
 
 // Helper: Call Gemini API with Auto-Rotation on Quota Exceeded
-const callGemini = async (prompt: string, expectJson: boolean = true, retryCount: number = 0): Promise<string> => {
+const callGemini = async (prompt: string, expectJson: boolean = true, retryCount: number = 0, imageBase64?: string): Promise<string> => {
     const key = await getApiKey();
     if (!key) throw new Error("API Key not found. Tambahkan API Key di Settings.");
 
@@ -190,13 +190,26 @@ const callGemini = async (prompt: string, expectJson: boolean = true, retryCount
         generationConfig.responseMimeType = "application/json";
     }
 
+    // Construct Content Parts (Text + Optional Image)
+    const parts: any[] = [{ text: prompt }];
+    if (imageBase64) {
+        // Remove header if present (e.g. "data:image/jpeg;base64,")
+        const cleanBase64 = imageBase64.split(',')[1] || imageBase64;
+        parts.push({
+            inlineData: {
+                mimeType: "image/jpeg",
+                data: cleanBase64
+            }
+        });
+    }
+
     const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
+                contents: [{ parts }],
                 generationConfig: generationConfig
             })
         }
@@ -213,7 +226,7 @@ const callGemini = async (prompt: string, expectJson: boolean = true, retryCount
         if (isQuotaError && retryCount < allKeys.length) {
             console.warn(`⚠️ Key #${getCurrentKeyIndex() + 1} quota exceeded. Trying next key...`);
             rotateToNextKey(allKeys.length);
-            return callGemini(prompt, expectJson, retryCount + 1); // Retry with next key
+            return callGemini(prompt, expectJson, retryCount + 1, imageBase64); // Retry with next key
         }
 
         if (data.error.message.includes('blocked') || data.error.message.includes('API key not valid') || data.error.code === 403) {
@@ -227,12 +240,51 @@ const callGemini = async (prompt: string, expectJson: boolean = true, retryCount
     }
 
     // SUCCESS: Track Usage
-    // Note: If using Firestore keys, we track by index. If using env/local, we track as key_0 (default)
     const allKeys = await getFirestoreApiKeys();
     const currentIdx = allKeys.length > 0 ? getCurrentKeyIndex() : 0;
     await trackApiUsage(currentIdx);
 
     return data.candidates[0].content.parts[0].text;
+};
+
+
+// 7. Receipt/Transaction Scanner (Vision)
+export const scanReceiptWithGemini = async (imageBase64: string, type: 'expense' | 'income'): Promise<any> => {
+    const prompt = `
+    PERAN: Akuntan Profesional & Sistem OCR Cerdas.
+    TUGAS: Ekstrak data kunci dari gambar ${type === 'income' ? 'Bukti Transfer / Pemasukan' : 'Struk / Nota Pengeluaran'} ini.
+    
+    KONTEKS:
+    Tipe Transaksi: ${type === 'income' ? 'PEMASUKAN (Income)' : 'PENGELUARAN (Expense)'}
+    
+    INSTRUKSI:
+    1. Cari TANGGAL transaksi. Jika tidak ada, gunakan null.
+    2. Cari TOTAL NOMINAL (Amount).
+    3. Cari KETERANGAN/DESKRIPSI (Untuk apa? Siapa pengirim/penerima?).
+    4. ${type === 'income' ? 'Identifikasi Kategori: "Termin", "DP", "Pelunasan", atau "Tambahan".' : 'Identifikasi Kategori: "Material", "Upah Tukang", "Operasional", "Sewa Alat", atau "Lainnya".'}
+
+    OUTPUT JSON:
+    {
+        "date": "YYYY-MM-DD",
+        "amount": 100000,
+        "description": "Pembayaran semen",
+        "category": "Material"
+    }
+    `;
+
+    const textOutput = await callGemini(prompt, true, 0, imageBase64);
+
+    try {
+        return JSON.parse(textOutput);
+    } catch (e) {
+        // Fallback cleanup if markdown blocks exist
+        const jsonStart = textOutput.indexOf('{');
+        const jsonEnd = textOutput.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+            return JSON.parse(textOutput.substring(jsonStart, jsonEnd + 1));
+        }
+        throw new Error("Gagal parsing JSON dari struk.");
+    }
 };
 
 
