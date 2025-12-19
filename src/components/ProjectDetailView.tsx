@@ -82,7 +82,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     activeProject, activeTab, updateProject, setView,
     openModal, setModalType, setShowModal, showModal, modalType, setSelectedRabItem, setProgressInput, setProgressDate,
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
-    deleteRABItem, handleEditWorker, handleDeleteWorker,
+    handleEditWorker, handleDeleteWorker,
     handleDeleteMaterial, handlePrepareEditMaterial,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
     canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, canViewProgressTab = true, // Defaults for backward compat
