@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Key, ArrowLeft, Loader2, ExternalLink, Shield } from 'lucide-react';
-import { addApiKey, getStoredApiKeys, clearApiKeys } from '../utils/aiScheduler';
+import { Key, ArrowLeft, Loader2, ExternalLink, Shield, BarChart3, RefreshCw } from 'lucide-react';
+import { addApiKey, getStoredApiKeys, clearApiKeys, getApiUsageStats } from '../utils/aiScheduler';
 import type { ViewType } from '../hooks/useModalManager';
 
 interface ApiKeysViewProps {
@@ -9,6 +9,7 @@ interface ApiKeysViewProps {
 
 const ApiKeysView: React.FC<ApiKeysViewProps> = ({ setView }) => {
     const [apiKeys, setApiKeys] = useState<string[]>([]);
+    const [usageStats, setUsageStats] = useState<any>({});
     const [newApiKey, setNewApiKey] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -20,6 +21,15 @@ const ApiKeysView: React.FC<ApiKeysViewProps> = ({ setView }) => {
         try {
             const keys = await getStoredApiKeys();
             setApiKeys(keys);
+
+            // Load stats
+            const stats = await getApiUsageStats();
+            // Transform stats { key_0: 5, key_1: 2 } to { 0: 5, 1: 2 }
+            const formattedStats: any = {};
+            keys.forEach((_, idx) => {
+                formattedStats[idx] = stats[`key_${idx}`] || 0;
+            });
+            setUsageStats(formattedStats);
         } catch (err: any) {
             setError(err.message || 'Gagal memuat API Keys dari database');
         }
@@ -85,17 +95,42 @@ const ApiKeysView: React.FC<ApiKeysViewProps> = ({ setView }) => {
             </div>
 
             {/* Info Card */}
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
-                <div className="flex items-start gap-3">
-                    <Shield size={20} className="text-blue-600 mt-0.5" />
-                    <div className="text-sm text-blue-800">
-                        <p className="font-bold mb-1">Keamanan API Keys</p>
-                        <ul className="list-disc list-inside space-y-1 text-blue-700">
-                            <li>API Keys disimpan di <strong>Firebase Database</strong>, bukan di source code</li>
-                            <li>Hanya <strong>Super Admin</strong> yang bisa menambah/menghapus keys</li>
-                            <li>Sistem akan <strong>auto-rotate</strong> ke key lain jika quota habis</li>
-                            <li>Maksimal 3 keys untuk redundansi</li>
-                        </ul>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+                    <div className="flex items-start gap-3">
+                        <Shield size={20} className="text-blue-600 mt-0.5" />
+                        <div className="text-sm text-blue-800">
+                            <p className="font-bold mb-1">Keamanan API Keys</p>
+                            <ul className="list-disc list-inside space-y-1 text-blue-700">
+                                <li>Keys disimpan di Firestore (Aman)</li>
+                                <li>Hanya Super Admin yang akses</li>
+                                <li>Sistem Auto-Rotate saat limit habis</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-200 p-4 rounded-xl">
+                    <div className="flex items-start gap-3">
+                        <BarChart3 size={20} className="text-purple-600 mt-0.5" />
+                        <div className="text-sm text-purple-800 w-full">
+                            <p className="font-bold mb-1">Total Kapasitas Harian (RPD)</p>
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <span className="text-2xl font-bold">{Object.values(usageStats).reduce((a: any, b: any) => a + b, 0) as number}</span>
+                                    <span className="text-purple-600 opacity-70"> / {apiKeys.length * 20} Request</span>
+                                </div>
+                                <div className="text-right text-xs">
+                                    <p>Reset tiap 00:00</p>
+                                </div>
+                            </div>
+                            <div className="w-full bg-purple-200 h-1.5 rounded-full mt-2">
+                                <div
+                                    className="bg-purple-600 h-1.5 rounded-full transition-all"
+                                    style={{ width: `${Math.min(100, ((Object.values(usageStats).reduce((a: any, b: any) => a + b, 0) as number) / (apiKeys.length * 20 || 1)) * 100)}%` }}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -129,21 +164,48 @@ const ApiKeysView: React.FC<ApiKeysViewProps> = ({ setView }) => {
                             <p className="text-sm">Tambahkan API Key untuk menggunakan fitur AI</p>
                         </div>
                     ) : (
-                        apiKeys.map((k, idx) => (
-                            <div key={idx} className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl">
-                                <div className="bg-amber-100 text-amber-700 p-2 rounded-lg">
-                                    <Key size={18} />
+                        apiKeys.map((k, idx) => {
+                            const stats = usageStats[idx] || 0; // Usage for this key index
+                            const limit = 20; // Hardcoded limit based on screenshot
+                            const percent = Math.min(100, (stats / limit) * 100);
+                            const isLimit = stats >= limit;
+
+                            return (
+                                <div key={idx} className="bg-slate-50 p-4 rounded-xl space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-amber-100 text-amber-700 p-2 rounded-lg">
+                                            <Key size={18} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <code className="text-sm font-mono bg-slate-200 px-2 py-1 rounded">
+                                                {k.slice(0, 12)}...{k.slice(-6)}
+                                            </code>
+                                        </div>
+                                        <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">
+                                            Key #{idx + 1}
+                                        </span>
+                                    </div>
+
+                                    {/* Usage Bar */}
+                                    <div>
+                                        <div className="flex justify-between text-xs font-bold mb-1">
+                                            <span className={isLimit ? 'text-red-500' : 'text-slate-500'}>
+                                                {isLimit ? '⚠️ QUOTA HABIS' : 'Kuota Harian'}
+                                            </span>
+                                            <span className={isLimit ? 'text-red-500' : 'text-slate-700'}>
+                                                {stats} / {limit} Request
+                                            </span>
+                                        </div>
+                                        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all ${isLimit ? 'bg-red-500' : percent > 80 ? 'bg-orange-500' : 'bg-green-500'}`}
+                                                style={{ width: `${percent}%` }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <code className="text-sm font-mono bg-slate-200 px-2 py-1 rounded">
-                                        {k.slice(0, 12)}...{k.slice(-6)}
-                                    </code>
-                                </div>
-                                <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">
-                                    Key #{idx + 1}
-                                </span>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
 
                     {apiKeys.length > 0 && (

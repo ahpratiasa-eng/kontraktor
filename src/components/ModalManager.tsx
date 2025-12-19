@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Camera, Loader2, Save, Upload, Download, FileText as FileType, Search, Package, ChevronDown, Calendar, Wallet, CheckCircle, AlertTriangle } from 'lucide-react';
 import { NumberInput } from './UIComponents';
+import VoiceInput from './VoiceInput';
 
 import * as XLSX from 'xlsx';
 import type { UserRole, Material, RABItem, Project, AHSItem, PricingResource } from '../types';
@@ -534,7 +535,12 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                             <input type="range" min="0" max="100" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" value={progressInput} onChange={e => setProgressInput(Number(e.target.value))} />
                             <div className="flex justify-between font-bold text-lg text-blue-600"><span>0%</span><span>{progressInput}%</span><span>100%</span></div>
                             <input type="date" className="w-full p-3 border rounded-xl" value={progressDate} onChange={e => setProgressDate(e.target.value)} />
-                            <textarea className="w-full p-3 border rounded-xl h-24" placeholder="Catatan progress..." value={progressNote} onChange={e => setProgressNote(e.target.value)} />
+                            <VoiceInput
+                                value={progressNote}
+                                onChange={setProgressNote}
+                                placeholder="Catatan progress (Gunakan tombol Mic untuk dikte suara)..."
+                                className="h-24"
+                            />
                             <button onClick={handleUpdateProgress} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg">Simpan Progress</button>
                         </div>
                     )}

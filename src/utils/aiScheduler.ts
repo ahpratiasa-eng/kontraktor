@@ -1,5 +1,5 @@
 import { firebaseConfig, db } from '../lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import type { RABItem, Project } from '../types';
 import { getEstimatedTeamDays, getRecommendedWorkers } from './scheduleGenerator';
 
@@ -132,6 +132,51 @@ export const clearApiKeys = async (): Promise<void> => {
     await clearApiKeysFromFirestore();
 };
 
+// NEW: Track API Usage
+export const trackApiUsage = async (keyIndex: number) => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const docId = `usage_${today}`;
+    const docRef = doc(db, 'settings', 'apiUsage');
+
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            await updateDoc(docRef, {
+                [today]: {
+                    ...docSnap.data()[today],
+                    [`key_${keyIndex}`]: increment(1),
+                    total: increment(1)
+                }
+            });
+        } else {
+            await setDoc(docRef, {
+                [today]: {
+                    [`key_${keyIndex}`]: 1,
+                    total: 1
+                }
+            }, { merge: true });
+        }
+    } catch (e) {
+        console.error("Failed to track API usage:", e);
+    }
+};
+
+// NEW: Get Usage Stats
+export const getApiUsageStats = async (): Promise<any> => {
+    const today = new Date().toISOString().split('T')[0];
+    const docRef = doc(db, 'settings', 'apiUsage');
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docSnap.data()[today] || { total: 0 };
+        }
+    } catch (e) {
+        console.error("Failed to get usage stats:", e);
+    }
+    return { total: 0 };
+};
+
+
 // Helper: Call Gemini API with Auto-Rotation on Quota Exceeded
 const callGemini = async (prompt: string, expectJson: boolean = true, retryCount: number = 0): Promise<string> => {
     const key = await getApiKey();
@@ -181,6 +226,13 @@ const callGemini = async (prompt: string, expectJson: boolean = true, retryCount
     if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
         throw new Error("No AI Data");
     }
+
+    // SUCCESS: Track Usage
+    // Note: If using Firestore keys, we track by index. If using env/local, we track as key_0 (default)
+    const allKeys = await getFirestoreApiKeys();
+    const currentIdx = allKeys.length > 0 ? getCurrentKeyIndex() : 0;
+    await trackApiUsage(currentIdx);
+
     return data.candidates[0].content.parts[0].text;
 };
 
@@ -384,4 +436,76 @@ export const generateExecutiveSummary = async (project: Project, items: RABItem[
     `;
 
     return await callGemini(prompt, false);
+};
+
+// 5. Smart Chat (Q&A) - DEPRECATED in UI but kept for fallback
+export const chatWithGemini = async (
+    project: Project,
+    items: RABItem[],
+    question: string,
+    history: { role: 'user' | 'model', text: string }[]
+): Promise<string> => {
+    const summary = {
+        name: project.name,
+        location: project.location,
+        progress: items.reduce((acc, i) => acc + (i.progress || 0), 0) / (items.length || 1),
+        itemCount: items.length,
+        budget: items.reduce((acc, i) => acc + (i.unitPrice * i.volume), 0)
+    };
+
+    const prompt = `
+    PERAN: Asisten Pintar Proyek Konstruksi "Guna Karya".
+    KONTEKS PROYEK:
+    - Nama: ${summary.name}
+    - Lokasi: ${summary.location || '-'}
+    - Progress Fisik: ${summary.progress.toFixed(1)}%
+    - Total RAB: Rp ${summary.budget.toLocaleString('id-ID')}
+    
+    USER SAAT INI: "${question}"
+    
+    INSTRUKSI:
+    Jawab pertanyaan user. Gunakan bahasa Indonesia santai.
+    `;
+
+    return await callGemini(prompt, false);
+};
+
+// 6. Magic RAB (Text to JSON) - NEW
+export const generateRabFromText = async (userInput: string): Promise<RABItem[]> => {
+    const prompt = `
+    PERAN: Estimator Konstruksi Profesional.
+    TUGAS: Konversi teks deskripsi proyek mentah dari user menjadi Tabel RAB (Rangkuman Anggaran Biaya) yang terstruktur.
+    
+    INPUT USER: "${userInput}"
+    
+    INSTRUKSI:
+    1. Analisis teks user, pecah menjadi item-item pekerjaan detail.
+    2. Tambahkan item yang WAJIB ada meski tidak diminta (Misal: user minta "buat kamar", otomatis tambahkan "Pekerjaan Dinding", "Plesteran", "Acian", "Pengecatan").
+    3. Estimasi Volume, Satuan, dan Harga Satuan (Standar Indonesia 2025).
+    4. Kelompokkan dalam Kategori (A. Persiapan, B. Struktur, dst).
+    
+    OUTPUT FORMAT: JSON ARRAY ONLY.
+    [
+        { "category": "A. PERSIAPAN", "name": "Pembersihan Lahan", "volume": 1, "unit": "ls", "unitPrice": 1500000 },
+        ...
+    ]
+    `;
+
+    const textOutput = await callGemini(prompt, true);
+
+    // Parse JSON
+    const jsonStart = textOutput.indexOf('[');
+    const jsonEnd = textOutput.lastIndexOf(']');
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error("Format AI tidak valid.");
+
+    const jsonStr = textOutput.substring(jsonStart, jsonEnd + 1);
+    const parsed = JSON.parse(jsonStr);
+
+    // Add IDs and defaults
+    return parsed.map((p: any) => ({
+        ...p,
+        id: Date.now() + Math.random(),
+        progress: 0,
+        isAddendum: false
+    }));
 };

@@ -113,6 +113,7 @@ export type PaymentTerm = {
   paidDate?: string;         // When payment was received
   paidAmount?: number;       // Actual paid amount (could differ due to adjustments)
   notes?: string;
+  type?: 'main' | 'addendum'; // 'main' = part of original contract (%), 'addendum' = extra work (nominal)
 };
 
 export type Project = {

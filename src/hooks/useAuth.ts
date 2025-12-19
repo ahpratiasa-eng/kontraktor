@@ -124,21 +124,38 @@ export const useAuth = () => {
         }
     };
 
+    const [impersonatedRole, setImpersonatedRole] = useState<UserRole | null>(null);
+
+    // ... (existing code)
+
+    // Helper to switch roles (only for dev/testing)
+    const impersonateRole = (role: UserRole | null) => {
+        setImpersonatedRole(role);
+    };
+
+    // Effective role is the impersonated one if set, otherwise the real one
+    const effectiveRole = impersonatedRole || userRole;
+
     // Role check helpers
-    const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
-    const canAccessWorkers = () => ['super_admin', 'kontraktor', 'pengawas'].includes(userRole || '');
-    const canAccessManagement = () => userRole === 'super_admin';
-    const canEditProject = () => ['super_admin', 'kontraktor'].includes(userRole || '');
-    const canSeeMoney = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
+    const canAccessFinance = () => ['super_admin', 'kontraktor', 'keuangan'].includes(effectiveRole || '');
+    const canAccessWorkers = () => ['super_admin', 'kontraktor', 'pengawas'].includes(effectiveRole || '');
+    const canAccessManagement = () => effectiveRole === 'super_admin';
+    const canEditProject = () => ['super_admin', 'kontraktor'].includes(effectiveRole || '');
+    const canSeeMoney = () => ['super_admin', 'kontraktor', 'keuangan'].includes(effectiveRole || '');
 
     // Pengawas restrictions - mencegah kecurangan
-    const canViewKurvaS = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
-    const canViewInternalRAB = () => ['super_admin', 'kontraktor', 'keuangan'].includes(userRole || '');
-    const canAddWorkers = () => ['super_admin', 'kontraktor'].includes(userRole || ''); // Pengawas ga boleh tambah tukang
+    const canViewKurvaS = () => ['super_admin', 'kontraktor', 'keuangan'].includes(effectiveRole || '');
+    const canViewInternalRAB = () => ['super_admin', 'kontraktor', 'keuangan'].includes(effectiveRole || '');
+    const canAddWorkers = () => ['super_admin', 'kontraktor'].includes(effectiveRole || ''); // Pengawas ga boleh tambah tukang
+
+    // NEW: Allow Pengawas to see the tab, but UI inside will be restricted
+    const canViewProgressTab = () => ['super_admin', 'kontraktor', 'keuangan', 'pengawas'].includes(effectiveRole || '');
 
     return {
         user,
-        userRole,
+        userRole: effectiveRole, // Return effective role for general consumption
+        originalRole: userRole,  // Return true role for checking admin status
+        impersonateRole,         // Function to switch
         authStatus,
         isClientView,
         appUsers,
@@ -152,6 +169,7 @@ export const useAuth = () => {
         canViewKurvaS,
         canViewInternalRAB,
         canAddWorkers,
+        canViewProgressTab,
         setIsClientView,
     };
 };

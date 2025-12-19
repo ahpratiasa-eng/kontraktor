@@ -93,7 +93,7 @@ const ReportView: React.FC<ReportViewProps> = ({ activeProject, setView, isClien
                         <div className="grid grid-cols-2 gap-3 md:gap-6 mb-6 print:break-inside-avoid">
                             <div className="bg-slate-50 p-3 md:p-4 border rounded-xl print:border-slate-300">
                                 <p className="text-[10px] md:text-xs uppercase text-slate-500 font-bold">Nilai Kontrak</p>
-                                <p className="text-lg md:text-2xl font-bold text-slate-800">{formatRupiah(stats.totalRAB)}</p>
+                                <p className="text-lg md:text-2xl font-bold text-slate-800">{formatRupiah(activeProject.contractValue || activeProject.budgetLimit || stats.totalRAB)}</p>
                             </div>
                             <div className="bg-blue-50 p-3 md:p-4 border border-blue-100 rounded-xl print:border-slate-300 print:bg-slate-50">
                                 <p className="text-[10px] md:text-xs uppercase text-slate-500 font-bold">Prestasi Fisik</p>

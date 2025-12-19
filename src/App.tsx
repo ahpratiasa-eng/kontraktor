@@ -41,11 +41,12 @@ const getClientProjectId = () => {
 
 const App = () => {
   const {
-    user, userRole, authStatus, isClientView, appUsers,
+    user, userRole, originalRole, impersonateRole, authStatus, isClientView, appUsers,
     handleLogin, handleLogout,
     canAccessManagement, canEditProject, canSeeMoney, canAccessWorkers, canAccessFinance,
-    canViewKurvaS, canViewInternalRAB, canAddWorkers
+    canViewKurvaS, canViewInternalRAB, canAddWorkers, canViewProgressTab
   } = useAuth();
+
 
   const clientProjectId = getClientProjectId();
 
@@ -168,6 +169,8 @@ const App = () => {
           openModal={openModal}
           handleLogout={handleLogout}
           userRole={userRole}
+          originalRole={originalRole}
+          impersonateRole={impersonateRole}
         />
       )}
 
@@ -241,13 +244,17 @@ const App = () => {
             </main>
           )}
 
-          {view === 'dashboard' && (
+          {view === 'dashboard' && userRole !== 'pengawas' && (
             <DashboardOverview
               projects={projects}
               setView={setView}
               setActiveProjectId={setActiveProjectId}
             />
           )}
+
+          {/* Redirect Pengawas if they try to access dashboard? Or just let them see empty? 
+              Better to just show nothing or maybe redirect in useEffect. 
+              For now, hiding it is safe. */ }
 
           {view === 'project-list' && (
             <DashboardView
@@ -275,6 +282,7 @@ const App = () => {
               canViewKurvaS={canViewKurvaS()}
               canViewInternalRAB={canViewInternalRAB()}
               canAddWorkers={canAddWorkers()}
+              canViewProgressTab={canViewProgressTab()}
               prepareEditProject={prepareEditProject}
               prepareEditRABItem={prepareEditRABItem}
               prepareEditSchedule={prepareEditSchedule}
@@ -289,6 +297,8 @@ const App = () => {
               setView={setView}
               updateProject={updateProject}
               openModal={openModal}
+              modalType={modalType}
+              showModal={showModal}
               setModalType={setModalType}
               setShowModal={setShowModal}
               setSelectedRabItem={setSelectedRabItem}
@@ -335,7 +345,9 @@ const App = () => {
               canViewKurvaS={canViewKurvaS()}
               canViewInternalRAB={canViewInternalRAB()}
               canAddWorkers={canAddWorkers()}
+              canViewProgressTab={canViewProgressTab()}
               prepareEditProject={prepareEditProject}
+
               prepareEditRABItem={prepareEditRABItem}
               prepareEditSchedule={prepareEditSchedule}
               activeProject={activeProject}
@@ -346,6 +358,8 @@ const App = () => {
               setView={setView}
               updateProject={updateProject}
               openModal={openModal}
+              modalType={modalType}
+              showModal={showModal}
               setModalType={setModalType}
               setShowModal={setShowModal}
               setSelectedRabItem={setSelectedRabItem}

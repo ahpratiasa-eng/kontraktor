@@ -18,6 +18,9 @@ import PayrollSummary from './PayrollSummary';
 import InvoiceTerminSection from './InvoiceTerminSection';
 import DocumentsTab from './DocumentsTab';
 import { generateDailyReport } from '../utils/pdfGenerator';
+import MaterialTransferModal from './MaterialTransferModal';
+import PromptGenerator from './PromptGenerator';
+import MagicRabModal from './MagicRabModal';
 
 import type { UserRole } from '../types';
 
@@ -30,6 +33,8 @@ interface ProjectDetailViewProps {
     updateProject: (data: Partial<Project>) => void;
     // ... existing props ...
     openModal: (type: string) => void;
+    modalType: string | null;
+    showModal: boolean;
     setModalType: (type: string) => void;
     setShowModal: (show: boolean) => void;
     setSelectedRabItem: (item: RABItem | null) => void;
@@ -53,6 +58,7 @@ interface ProjectDetailViewProps {
     canViewKurvaS?: boolean;            // Pengawas tidak bisa lihat Kurva S
     canViewInternalRAB?: boolean;       // Pengawas tidak bisa lihat detail RAB internal
     canAddWorkers?: boolean;            // Pengawas tidak bisa tambah tukang sendiri
+    canViewProgressTab?: boolean;       // Controls tab visibility
     setActiveTab: (tab: string) => void;
     prepareEditProject: () => void;
     prepareEditRABItem: (item: RABItem) => void;
@@ -73,12 +79,12 @@ interface ProjectDetailViewProps {
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     activeProject, activeTab, updateProject, setView,
-    openModal, setModalType, setShowModal, setSelectedRabItem, setProgressInput, setProgressDate,
+    openModal, setModalType, setShowModal, showModal, modalType, setSelectedRabItem, setProgressInput, setProgressDate,
     setSelectedWorkerId, setPaymentAmount, setSelectedMaterial,
     deleteRABItem, handleEditWorker, handleDeleteWorker,
     handleDeleteMaterial, handlePrepareEditMaterial,
     canAccessFinance, canAccessWorkers, canSeeMoney, canEditProject,
-    canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, // Defaults for backward compat
+    canViewKurvaS = true, canViewInternalRAB = true, canAddWorkers = true, canViewProgressTab = true, // Defaults for backward compat
     setActiveTab, prepareEditProject, prepareEditRABItem, prepareEditSchedule, isClientView,
     ahsItems, setTransactionType, setTransactionCategory, handleUpdateDefectStatus,
     projects = [], handleTransferMaterial, userRole, handleAutoSchedule,
@@ -118,6 +124,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [showDailyReportModal, setShowDailyReportModal] = useState(false);
     const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
     const [reportNote, setReportNote] = useState('');
+    const [showMagicRab, setShowMagicRab] = useState(false);
 
     // Transfer Material Modal State
     const [showTransferModal, setShowTransferModal] = useState(false);
@@ -299,8 +306,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
     const tabs = [
         { id: 'dashboard', label: 'Ringkasan', icon: <Sparkles size={18} /> },
-        // Pengawas tidak bisa lihat Kurva S (mencegah manipulasi data)
-        ...(canViewKurvaS ? [{ id: 'progress', label: 'Kurva S & RAB', icon: <TrendingUp size={18} /> }] : []),
+        // Pengawas bisa lihat tab ini, tapi isinya terbatas
+        ...(canViewProgressTab ? [{ id: 'progress', label: 'Kurva S & RAB', icon: <TrendingUp size={18} /> }] : []),
         ...(!isClientView && canAccessFinance ? [{ id: 'finance', label: 'Keuangan', icon: <Banknote size={18} /> }] : []),
         ...(!isClientView && canAccessWorkers ? [{ id: 'workers', label: 'Tim & Absensi', icon: <Users size={18} /> }] : []),
         ...(!isClientView ? [{ id: 'logistics', label: 'Logistik', icon: <Package size={18} /> }] : []),
@@ -443,29 +450,33 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         </button>
                                     )}
 
-                                    <button
-                                        onClick={() => setShowReportSettings(true)}
-                                        className="bg-white text-slate-700 border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
-                                    >
-                                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                                            <Settings size={18} />
-                                        </div>
-                                        <span>Config WA</span>
-                                    </button>
+                                    {userRole !== 'pengawas' && (
+                                        <button
+                                            onClick={() => setShowReportSettings(true)}
+                                            className="bg-white text-slate-700 border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
+                                        >
+                                            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                                <Settings size={18} />
+                                            </div>
+                                            <span>Config WA</span>
+                                        </button>
+                                    )}
 
-                                    <button
-                                        onClick={() => {
-                                            const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
-                                            navigator.clipboard.writeText(url);
-                                            alert(`Link Portal Klien berhasil disalin!\n\nKirim link ini ke pemilik proyek via WhatsApp:\n${url}`);
-                                        }}
-                                        className="bg-white text-slate-700 border border-slate-200 hover:border-purple-500 hover:text-purple-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
-                                    >
-                                        <div className="p-2 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                                            <ExternalLink size={18} />
-                                        </div>
-                                        <span>Portal Klien</span>
-                                    </button>
+                                    {userRole !== 'pengawas' && (
+                                        <button
+                                            onClick={() => {
+                                                const url = `${window.location.origin}?projectId=${activeProject.id}&mode=client`;
+                                                navigator.clipboard.writeText(url);
+                                                alert(`Link Portal Klien berhasil disalin!\n\nKirim link ini ke pemilik proyek via WhatsApp:\n${url}`);
+                                            }}
+                                            className="bg-white text-slate-700 border border-slate-200 hover:border-purple-500 hover:text-purple-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
+                                        >
+                                            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                                <ExternalLink size={18} />
+                                            </div>
+                                            <span>Portal Klien</span>
+                                        </button>
+                                    )}
 
                                     {canEditProject && (
                                         <button
@@ -595,10 +606,12 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             </div>
 
 
-                            {/* Mini SCurve */}
-                            <div className="w-full mt-4">
-                                <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
-                            </div>
+                            {/* Mini SCurve - Hide from Pengawas */}
+                            {canViewKurvaS && (
+                                <div className="w-full mt-4">
+                                    <SCurveChart stats={getStats(activeProject)} project={activeProject} compact={true} />
+                                </div>
+                            )}
 
                             {/* CATEGORY DEVIATION BREAKDOWN - with Toggle */}
                             {activeProject.rabItems && activeProject.rabItems.length > 0 && (
@@ -786,19 +799,29 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                             </div>
                         )}
 
-                        {/* Gantt Chart Section */}
-                        {activeProject.rabItems && activeProject.rabItems.length > 0 && canViewInternalRAB && (
+                        {/* Gantt Chart Section - Allow Pengawas but restrict edits/money */}
+                        {activeProject.rabItems && activeProject.rabItems.length > 0 && canViewProgressTab && (
                             <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-200 w-full max-w-full overflow-hidden">
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                                     <h3 className="font-bold text-base md:text-lg text-slate-700 flex items-center gap-2"><History size={20} /> Timeline Pekerjaan</h3>
                                     <div className="flex items-center gap-2 flex-wrap">
                                         {/* Fullscreen Button - Mobile Only */}
-                                        <button
-                                            onClick={() => setShowFullscreenTimeline(true)}
-                                            className="md:hidden text-[10px] bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-bold flex items-center gap-1 hover:bg-slate-200 transition-colors"
-                                        >
-                                            <Maximize2 size={12} /> Fullscreen
-                                        </button>
+                                        {!isClientView && (
+                                            <>
+                                                <button
+                                                    onClick={() => setModalType('importRAB')}
+                                                    className="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-green-100"
+                                                >
+                                                    <Upload className="w-4 h-4" /> Import Excel
+                                                </button>
+                                                <button
+                                                    onClick={() => setShowMagicRab(true)}
+                                                    className="px-4 py-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border border-purple-200 rounded-xl font-bold text-sm flex items-center gap-2 hover:from-purple-200 hover:to-indigo-200"
+                                                >
+                                                    <Sparkles className="w-4 h-4" /> Magic Import
+                                                </button>
+                                            </>
+                                        )}
                                         {!isClientView && rabViewMode !== 'client' && (
                                             <>
                                                 <button
@@ -830,16 +853,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                                                                 alert("✅ SUKSES!\n\n1. Jadwal Proyek telah disusun ulang oleh AI.\n2. Penjelasan Tenaga Kerja telah diperbarui di Header.\n\n💡 Jurnal terpisah: klik tombol Analisa jika perlu arsip detail.");
                                                             } catch (err: any) {
-                                                                if (err.message === 'API_BLOCKED' || err.message.includes('blocked')) {
-                                                                    const userKey = prompt("⚠️ API Key Firebase Project diblokir oleh Google.\n\nUntuk melanjutkan, masukkan API Key Gemini Anda sendiri (GRATIS):\nDapatkan di: aistudio.google.com/app/apikey");
-                                                                    if (userKey) {
-                                                                        localStorage.setItem('GEMINI_API_KEY', userKey);
-                                                                        alert("API Key tersimpan! Mencoba generate ulang...");
-                                                                        setTimeout(performScheduleGen, 500); // Retry
-                                                                    }
-                                                                } else {
-                                                                    alert("Gagal generate jadwal: " + err?.message);
-                                                                }
+                                                                console.error(err);
+                                                                alert("Gagal generate schedule: " + err.message);
                                                             } finally {
                                                                 setIsGeneratingAI(false);
                                                             }
@@ -847,6 +862,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                                                         performScheduleGen();
                                                     }}
+
                                                     disabled={isGeneratingAI}
                                                     className="text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1 disabled:opacity-50"
                                                     title="Generate Jadwal Otomatis dengan Google Gemini AI"
@@ -1017,8 +1033,17 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                             return (
                                                                 <div
                                                                     key={row.id}
-                                                                    onClick={() => !isClientView && rabViewMode !== 'client' && prepareEditSchedule(row.data)}
-                                                                    className={`h-8 flex items-center px-4 text-xs font-medium text-slate-700 border-b border-transparent ${!isClientView && rabViewMode !== 'client' ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
+                                                                    onClick={() => {
+                                                                        if (isClientView) return;
+                                                                        // Modified: Pengawas click opens Progress Modal, others open Schedule Edit
+                                                                        if (userRole === 'pengawas') {
+                                                                            setSelectedRabItem(row.data);
+                                                                            openModal('updateProgress');
+                                                                        } else if (rabViewMode !== 'client') {
+                                                                            prepareEditSchedule(row.data);
+                                                                        }
+                                                                    }}
+                                                                    className={`h-8 flex items-center px-4 text-xs font-medium text-slate-700 border-b border-transparent ${(!isClientView && (userRole === 'pengawas' || rabViewMode !== 'client')) ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
                                                                     title={row.data.name}
                                                                 >
                                                                     <div className="flex items-center justify-between w-full min-w-0 gap-2">
@@ -2189,12 +2214,14 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 >
                                     Absensi
                                 </button>
-                                <button
-                                    onClick={() => setWorkerSubTab('list')}
-                                    className={`flex-1 px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all shadow-sm ${workerSubTab === 'list' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
-                                >
-                                    Pekerja
-                                </button>
+                                {userRole !== 'pengawas' && (
+                                    <button
+                                        onClick={() => setWorkerSubTab('list')}
+                                        className={`flex-1 px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all shadow-sm ${workerSubTab === 'list' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Pekerja
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => setWorkerSubTab('evidence')}
                                     className={`flex-1 px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all shadow-sm ${workerSubTab === 'evidence' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
@@ -2253,74 +2280,77 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 <div className={`md:block ${workerSubTab !== 'attendance' ? 'block' : 'hidden'}`}>
 
                                     {/* Worker List Section */}
-                                    <div className={`mb-6 ${workerSubTab === 'evidence' ? 'hidden md:block' : ''}`}>
-                                        <div className="flex justify-between items-center mb-4 px-1">
-                                            <div>
-                                                <h3 className="font-bold text-lg text-slate-700">Daftar Pekerja</h3>
-                                                <p className="text-xs text-slate-400">{activeProject.workers?.length || 0} orang terdaftar</p>
+                                    {/* Worker List Section - Hidden for Pengawas */}
+                                    {userRole !== 'pengawas' && (
+                                        <div className={`mb-6 ${workerSubTab === 'evidence' ? 'hidden md:block' : ''}`}>
+                                            <div className="flex justify-between items-center mb-4 px-1">
+                                                <div>
+                                                    <h3 className="font-bold text-lg text-slate-700">Daftar Pekerja</h3>
+                                                    <p className="text-xs text-slate-400">{activeProject.workers?.length || 0} orang terdaftar</p>
+                                                </div>
+                                                {canAddWorkers && (
+                                                    <button onClick={() => openModal('newWorker')} className="bg-white border text-slate-700 px-4 py-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-transform">
+                                                        + Tambah Baru
+                                                    </button>
+                                                )}
                                             </div>
-                                            {canAddWorkers && (
-                                                <button onClick={() => openModal('newWorker')} className="bg-white border text-slate-700 px-4 py-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-transform">
-                                                    + Tambah Baru
-                                                </button>
-                                            )}
-                                        </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {(activeProject.workers || []).map(w => {
-                                                const f = calculateWorkerFinancials(activeProject, w.id);
-                                                return (
-                                                    <div key={w.id} className="bg-white p-4 rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] relative overflow-hidden group">
-                                                        <div className="flex justify-between items-start mb-3">
-                                                            <div className="flex gap-3">
-                                                                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-                                                                    {w.name.charAt(0)}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                {(activeProject.workers || []).map(w => {
+                                                    const f = calculateWorkerFinancials(activeProject, w.id);
+                                                    return (
+                                                        <div key={w.id} className="bg-white p-4 rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+                                                            <div className="flex justify-between items-start mb-3">
+                                                                <div className="flex gap-3">
+                                                                    <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                                                                        {w.name.charAt(0)}
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-bold text-slate-800 text-sm">{w.name}</h4>
+                                                                        <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{w.role}</span>
+                                                                    </div>
                                                                 </div>
-                                                                <div>
-                                                                    <h4 className="font-bold text-slate-800 text-sm">{w.name}</h4>
-                                                                    <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{w.role}</span>
-                                                                </div>
+                                                                {canAccessWorkers && (
+                                                                    <button onClick={() => handleEditWorker(w)} className="text-slate-300 hover:text-blue-500">
+                                                                        <Edit size={14} />
+                                                                    </button>
+                                                                )}
                                                             </div>
-                                                            {canAccessWorkers && (
-                                                                <button onClick={() => handleEditWorker(w)} className="text-slate-300 hover:text-blue-500">
-                                                                    <Edit size={14} />
-                                                                </button>
-                                                            )}
-                                                        </div>
 
-                                                        <div className="bg-slate-50 rounded-xl p-3 mb-3">
-                                                            <div className="flex justify-between items-center mb-1">
-                                                                <span className="text-[10px] text-slate-400 uppercase font-bold">Upah / {w.wageUnit}</span>
-                                                                <span className="text-xs font-bold text-slate-700">{formatRupiah(w.realRate)}</span>
-                                                            </div>
-                                                            {canSeeMoney && (
-                                                                <div className="flex justify-between items-center border-t border-slate-200 pt-1 mt-1">
-                                                                    <span className="text-[10px] text-slate-400 uppercase font-bold">Sisa Hutang</span>
-                                                                    <span className={`text-sm font-bold ${f.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>{formatRupiah(f.balance)}</span>
+                                                            <div className="bg-slate-50 rounded-xl p-3 mb-3">
+                                                                <div className="flex justify-between items-center mb-1">
+                                                                    <span className="text-[10px] text-slate-400 uppercase font-bold">Upah / {w.wageUnit}</span>
+                                                                    <span className="text-xs font-bold text-slate-700">{formatRupiah(w.realRate)}</span>
                                                                 </div>
-                                                            )}
-                                                        </div>
+                                                                {canSeeMoney && (
+                                                                    <div className="flex justify-between items-center border-t border-slate-200 pt-1 mt-1">
+                                                                        <span className="text-[10px] text-slate-400 uppercase font-bold">Sisa Hutang</span>
+                                                                        <span className={`text-sm font-bold ${f.balance > 0 ? 'text-red-500' : 'text-green-500'}`}>{formatRupiah(f.balance)}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
 
-                                                        <div className="flex gap-2">
-                                                            {canSeeMoney && f.balance > 0 && (
-                                                                <button
-                                                                    onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }}
-                                                                    className="flex-1 bg-green-500 text-white py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-green-600 active:scale-95 transition-all"
-                                                                >
-                                                                    Bayar Gaji
-                                                                </button>
-                                                            )}
-                                                            {canAccessWorkers && (
-                                                                <button onClick={() => handleDeleteWorker(w)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100 active:scale-90 transition-all">
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            )}
+                                                            <div className="flex gap-2">
+                                                                {canSeeMoney && f.balance > 0 && (
+                                                                    <button
+                                                                        onClick={() => { setSelectedWorkerId(w.id); setPaymentAmount(f.balance); openModal('payWorker'); }}
+                                                                        className="flex-1 bg-green-500 text-white py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-green-600 active:scale-95 transition-all"
+                                                                    >
+                                                                        Bayar Gaji
+                                                                    </button>
+                                                                )}
+                                                                {canAccessWorkers && (
+                                                                    <button onClick={() => handleDeleteWorker(w)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100 active:scale-90 transition-all">
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )
-                                            })}
+                                                    )
+                                                })}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
 
                                     {/* Evidence Gallery Section */}
                                     <div className={`bg-white p-5 rounded-3xl border shadow-sm ${workerSubTab === 'list' ? 'hidden md:block' : ''}`}>
@@ -3137,8 +3167,30 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                     </div>
                 )
             }
+
+            {/* Material Transfer Modal */}
+            <MaterialTransferModal
+                isOpen={showModal && modalType === 'transferMaterial'}
+                onClose={() => setShowModal(false)}
+                activeProject={activeProject}
+                projects={projects}
+                onTransfer={handleTransferMaterial}
+            />
+
+            {/* NEW: Magic RAB Modal */}
+            <MagicRabModal
+                isOpen={showMagicRab}
+                onClose={() => setShowMagicRab(false)}
+                onSave={(newItems) => {
+                    updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
+                }}
+            />
+
+            {/* Prompt Generator (Floating) */}
+            <PromptGenerator project={activeProject} />
         </div >
     </>);
 };
 
 export default ProjectDetailView;
+

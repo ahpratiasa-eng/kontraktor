@@ -39,6 +39,19 @@ const LandingSettingsView: React.FC<LandingSettingsViewProps> = ({ config, onEdi
                                     <p className="text-lg font-bold text-slate-800">{config.companyName}</p>
                                 </div>
                                 <div className="bg-slate-50 p-4 rounded-xl">
+                                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">Tema Tampilan</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-4 h-4 rounded-full border ${config.theme === 'light-blue' ? 'bg-blue-500' :
+                                                config.theme === 'dark-green' ? 'bg-emerald-500' :
+                                                    config.theme === 'light-elegant' ? 'bg-slate-800' :
+                                                        'bg-orange-500'
+                                            }`}></div>
+                                        <p className="text-lg font-bold text-slate-800 capitalize">
+                                            {(config.theme || 'dark-orange').replace('-', ' ')}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="bg-slate-50 p-4 rounded-xl">
                                     <p className="text-xs text-slate-500 font-bold uppercase mb-1">Nomor WhatsApp</p>
                                     <p className="text-lg font-bold text-green-600">+{config.whatsappNumber}</p>
                                 </div>
