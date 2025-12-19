@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Key, ArrowLeft, Loader2, ExternalLink, Shield, BarChart3, RefreshCw } from 'lucide-react';
+import { Key, ArrowLeft, Loader2, ExternalLink, Shield, BarChart3 } from 'lucide-react';
 import { addApiKey, getStoredApiKeys, clearApiKeys, getApiUsageStats } from '../utils/aiScheduler';
 import type { ViewType } from '../hooks/useModalManager';
 
@@ -27,7 +27,7 @@ const ApiKeysView: React.FC<ApiKeysViewProps> = ({ setView }) => {
             // Transform stats { key_0: 5, key_1: 2 } to { 0: 5, 1: 2 }
             const formattedStats: any = {};
             keys.forEach((_, idx) => {
-                formattedStats[idx] = stats[`key_${idx}`] || 0;
+                formattedStats[idx] = stats[`key_${idx} `] || 0;
             });
             setUsageStats(formattedStats);
         } catch (err: any) {
@@ -127,7 +127,7 @@ const ApiKeysView: React.FC<ApiKeysViewProps> = ({ setView }) => {
                             <div className="w-full bg-purple-200 h-1.5 rounded-full mt-2">
                                 <div
                                     className="bg-purple-600 h-1.5 rounded-full transition-all"
-                                    style={{ width: `${Math.min(100, ((Object.values(usageStats).reduce((a: any, b: any) => a + b, 0) as number) / (apiKeys.length * 20 || 1)) * 100)}%` }}
+                                    style={{ width: `${Math.min(100, ((Object.values(usageStats).reduce((a: any, b: any) => a + b, 0) as number) / (apiKeys.length * 20 || 1)) * 100)}% ` }}
                                 />
                             </div>
                         </div>
@@ -198,8 +198,8 @@ const ApiKeysView: React.FC<ApiKeysViewProps> = ({ setView }) => {
                                         </div>
                                         <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                                             <div
-                                                className={`h-full transition-all ${isLimit ? 'bg-red-500' : percent > 80 ? 'bg-orange-500' : 'bg-green-500'}`}
-                                                style={{ width: `${percent}%` }}
+                                                className={`h - full transition - all ${isLimit ? 'bg-red-500' : percent > 80 ? 'bg-orange-500' : 'bg-green-500'} `}
+                                                style={{ width: `${percent}% ` }}
                                             />
                                         </div>
                                     </div>

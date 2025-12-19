@@ -135,7 +135,6 @@ export const clearApiKeys = async (): Promise<void> => {
 // NEW: Track API Usage
 export const trackApiUsage = async (keyIndex: number) => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const docId = `usage_${today}`;
     const docRef = doc(db, 'settings', 'apiUsage');
 
     try {
@@ -439,18 +438,16 @@ export const generateExecutiveSummary = async (project: Project, items: RABItem[
 };
 
 // 5. Smart Chat (Q&A) - DEPRECATED in UI but kept for fallback
-export const chatWithGemini = async (
-    project: Project,
-    items: RABItem[],
-    question: string,
-    history: { role: 'user' | 'model', text: string }[]
-): Promise<string> => {
+export const chatWithGemini = async (question: string, projectContext: any): Promise<string> => {
+    const project = projectContext.project;
+    const items = projectContext.items;
+
     const summary = {
         name: project.name,
         location: project.location,
-        progress: items.reduce((acc, i) => acc + (i.progress || 0), 0) / (items.length || 1),
+        progress: items.reduce((acc: number, i: RABItem) => acc + (i.progress || 0), 0) / (items.length || 1),
         itemCount: items.length,
-        budget: items.reduce((acc, i) => acc + (i.unitPrice * i.volume), 0)
+        budget: items.reduce((acc: number, i: RABItem) => acc + (i.unitPrice * i.volume), 0)
     };
 
     const prompt = `

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, CheckCircle, Clock, AlertCircle, Plus, Download, Receipt, Wallet, Trash2 } from 'lucide-react';
+import { FileText, CheckCircle, Clock, AlertCircle, Plus, Download, Receipt, Trash2 } from 'lucide-react';
 import type { Project, PaymentTerm } from '../types';
-import { formatRupiah, getStats, parseNumber, formatNumber } from '../utils/helpers';
+import { formatRupiah, getStats } from '../utils/helpers';
 import { generateInvoice } from '../utils/invoiceGenerator';
 import { NumberInput } from './UIComponents';
 
@@ -151,12 +151,7 @@ const InvoiceTerminSection: React.FC<InvoiceTerminSectionProps> = ({ project, up
         updateProject({ paymentTerms: updatedTerms });
     };
 
-    const getStatusBadge = (term: PaymentTerm & { isDue?: boolean }) => {
-        if (term.status === 'paid') return <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] px-2 py-1 rounded-full font-bold"><CheckCircle size={12} /> Lunas</span>;
-        if (term.status === 'invoiced') return <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] px-2 py-1 rounded-full font-bold"><Receipt size={12} /> Sudah Invoice</span>;
-        if (term.isDue && term.type !== 'addendum') return <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-[10px] px-2 py-1 rounded-full font-bold animate-pulse"><AlertCircle size={12} /> Jatuh Tempo!</span>;
-        return <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-500 text-[10px] px-2 py-1 rounded-full font-bold"><Clock size={12} /> Menunggu</span>;
-    };
+
 
 
     const noTermsSetUp = !project.paymentTerms || project.paymentTerms.length === 0;

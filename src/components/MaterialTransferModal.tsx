@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Truck, X, Loader2, ArrowRight } from 'lucide-react';
-import type { Project, Material, MaterialLog } from '../types';
+import type { Project, Material } from '../types';
 
 interface MaterialTransferModalProps {
     isOpen: boolean;
@@ -13,7 +13,8 @@ interface MaterialTransferModalProps {
         item: Material,
         qty: number,
         notes: string,
-        date: string
+        date: string,
+        targetProjectName: string
     ) => Promise<void>;
 }
 
@@ -40,8 +41,11 @@ const MaterialTransferModal: React.FC<MaterialTransferModalProps> = ({ isOpen, o
         }
 
         setIsSubmitting(true);
+        const targetProject = projects.find(p => p.id === targetProjectId);
+        const targetProjectName = targetProject ? targetProject.name : 'Unknown Project';
+
         try {
-            await onTransfer(activeProject.id, targetProjectId, selectedMaterial, quantity, notes, date);
+            await onTransfer(activeProject.id, targetProjectId, selectedMaterial, quantity, notes, date, targetProjectName);
             onClose();
             // Reset form
             setSelectedMaterial(null);

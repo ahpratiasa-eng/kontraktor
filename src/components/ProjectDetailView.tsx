@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote, Calendar, TrendingUp,
     ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, Plus, CheckCircle,
-    ShieldAlert, Maximize2, Minimize2, X, Camera
+    ShieldAlert, Minimize2, X, Camera
 } from 'lucide-react';
 import SCurveChart from './SCurveChart';
 import {
@@ -71,7 +71,7 @@ interface ProjectDetailViewProps {
 
     // Transfer Material
     projects?: Project[];
-    handleTransferMaterial?: (material: Material, quantity: number, targetProjectId: string, targetProjectName: string, targetMaterialId: number | null) => Promise<void>;
+    handleTransferMaterial?: (sourceProjectId: string, targetProjectId: string, item: Material, qty: number, notes: string, date: string, targetProjectName: string) => Promise<void>;
     handleAutoSchedule?: () => void;
     handleGenerateWeeklyReport?: (notes: string) => void;
     handleUpdateWeeklyReport?: (id: string, notes: string) => void;
@@ -2932,11 +2932,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             setIsTransferring(true);
                                             try {
                                                 await handleTransferMaterial(
+                                                    activeProject.id,
+                                                    transferTargetProject,
                                                     transferMaterial,
                                                     transferQty,
-                                                    transferTargetProject,
-                                                    targetProject.name,
-                                                    null // Will create new material in target
+                                                    `Transfer ke ${targetProject.name}`,
+                                                    new Date().toISOString().split('T')[0],
+                                                    targetProject.name
                                                 );
                                                 setShowTransferModal(false);
                                             } catch (e) {

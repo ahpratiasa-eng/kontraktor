@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { Mic, MicOff } from 'lucide-react';
 
 interface VoiceInputProps {
     value: string;
@@ -21,7 +21,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ value, onChange, placeholder, c
             return;
         }
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
 
         recognition.continuous = true;
@@ -76,8 +76,8 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ value, onChange, placeholder, c
                     type="button"
                     onClick={toggleListening}
                     className={`absolute right-2 top-2 p-2 rounded-lg transition-all ${isListening
-                            ? 'bg-red-100 text-red-600 animate-pulse'
-                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
+                        ? 'bg-red-100 text-red-600 animate-pulse'
+                        : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
                         }`}
                     title={isListening ? "Stop Dikte" : "Mulai Dikte Suara"}
                 >

@@ -618,11 +618,13 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
     // ========== Transfer Material Between Projects ==========
     const handleTransferMaterial = async (
+        sourceProjectId: string,
+        targetProjectId: string,
         material: Material,
         quantity: number,
-        targetProjectId: string,
-        targetProjectName: string,
-        targetMaterialId: number | null // null if creating new material in target
+        notes: string,
+        date: string,
+        targetProjectName: string
     ) => {
         if (!activeProject) return;
         if (quantity <= 0) {
@@ -634,7 +636,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             return;
         }
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = date || new Date().toISOString().split('T')[0];
 
         // 1. Kurangi stok di proyek sumber (current project)
         const updatedSourceMaterials = (activeProject.materials || []).map(m => {
@@ -651,7 +653,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             date: today,
             type: 'transfer_out',
             quantity: quantity,
-            notes: `Kirim ke ${targetProjectName}`,
+            notes: notes || `Kirim ke ${targetProjectName}`,
             actor: user?.displayName || 'User',
             transferProjectId: targetProjectId,
             transferProjectName: targetProjectName
@@ -675,12 +677,19 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
             const targetData = targetSnap.data() as Project;
             let targetMaterials = targetData.materials || [];
-            let finalMaterialId = targetMaterialId;
+            let finalMaterialId: number;
 
-            if (targetMaterialId) {
+            // Cari material yang sama di target (Case Insensitive + Same Unit)
+            const existingMaterial = targetMaterials.find(m =>
+                m.name.trim().toLowerCase() === material.name.trim().toLowerCase() &&
+                m.unit.toLowerCase() === material.unit.toLowerCase()
+            );
+
+            if (existingMaterial) {
                 // Update existing material in target
+                finalMaterialId = existingMaterial.id;
                 targetMaterials = targetMaterials.map(m => {
-                    if (m.id === targetMaterialId) {
+                    if (m.id === existingMaterial.id) {
                         return { ...m, stock: m.stock + quantity };
                     }
                     return m;
@@ -701,7 +710,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             // Log transfer_in di proyek tujuan
             const transferInLog: MaterialLog = {
                 id: Date.now() + 1,
-                materialId: finalMaterialId!,
+                materialId: finalMaterialId,
                 date: today,
                 type: 'transfer_in',
                 quantity: quantity,
