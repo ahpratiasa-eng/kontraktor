@@ -40,13 +40,8 @@ const SmartChat: React.FC<SmartChatProps> = ({ project, rabItems }) => {
         setIsLoading(true);
 
         try {
-            // Prepare history for AI
-            const history = messages.slice(-5).map(m => ({
-                role: m.role,
-                text: m.text
-            }));
-
-            const response = await chatWithGemini(project, rabItems, userMsg.text, history);
+            const projectContext = { project, items: rabItems };
+            const response = await chatWithGemini(userMsg.text, projectContext);
 
             const aiMsg: Message = { id: Date.now() + 1, role: 'model', text: response };
             setMessages(prev => [...prev, aiMsg]);
@@ -109,8 +104,8 @@ const SmartChat: React.FC<SmartChatProps> = ({ project, rabItems }) => {
                             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div
                                     className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === 'user'
-                                            ? 'bg-blue-600 text-white rounded-tr-none'
-                                            : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none shadow-sm'
+                                        ? 'bg-blue-600 text-white rounded-tr-none'
+                                        : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none shadow-sm'
                                         }`}
                                 >
                                     {msg.text}

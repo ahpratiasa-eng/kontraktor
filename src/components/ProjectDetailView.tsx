@@ -3176,7 +3176,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 onClose={() => setShowModal(false)}
                 activeProject={activeProject}
                 projects={projects}
-                onTransfer={handleTransferMaterial}
+                onTransfer={handleTransferMaterial || (async () => { })}
             />
 
             {/* NEW: Magic RAB Modal */}
