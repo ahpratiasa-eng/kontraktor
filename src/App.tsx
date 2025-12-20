@@ -19,6 +19,7 @@ import UserManagementView from './components/UserManagementView';
 import LandingSettingsView from './components/LandingSettingsView';
 import AnalyticsView from './components/AnalyticsView';
 import ApiKeysView from './components/ApiKeysView';
+import PredictiveAnalyticsView from './components/PredictiveAnalyticsView';
 
 import {
   doc, deleteDoc, setDoc
@@ -261,6 +262,10 @@ const App = () => {
 
           {view === 'analytics' && (
             <AnalyticsView projects={projects} />
+          )}
+
+          {view === 'predictive-analytics' && activeProject && (
+            <PredictiveAnalyticsView project={activeProject} />
           )}
 
           {view === 'project-detail' && activeProject && !isClientView && (

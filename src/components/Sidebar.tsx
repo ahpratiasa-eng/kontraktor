@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet, FolderKanban, BarChart3, Key } from 'lucide-react';
+import { Building2, Plus, LayoutDashboard, Users, Trash2, LogOut, FileSpreadsheet, FolderKanban, BarChart3, Key, TrendingUp } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface SidebarProps {
@@ -42,6 +42,11 @@ const Sidebar: React.FC<SidebarProps> = ({ view, setView, openModal, handleLogou
                 {canAccessFinance() && (
                     <button onClick={() => setView('analytics')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'analytics' ? 'bg-blue-50 text-blue-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
                         <BarChart3 size={20} /> Analytics
+                    </button>
+                )}
+                {canAccessFinance() && (
+                    <button onClick={() => setView('predictive-analytics')} className={`w-full text-left p-3 rounded-lg flex items-center gap-2 ${view === 'predictive-analytics' ? 'bg-purple-50 text-purple-600 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                        <TrendingUp size={20} /> Prediksi
                     </button>
                 )}
                 {canEditProject() && (
