@@ -2,11 +2,11 @@
 
 Selamat datang di **Kontraktor Pro** (Guna Karya), solusi manajemen konstruksi cerdas berbasis web. Dokumen ini memandu Anda menggunakan fitur-fitur unggulan aplikasi.
 
-**Versi Dokumentasi:** 2.0 (Desember 2024)
+**Versi Dokumentasi:** 2.1 (Desember 2024 - Update Akhir Tahun)
 
 ---
 
-## � Flow Kerja Proyek (Dari Pembuatan Hingga Selesai)
+## 🔄 Flow Kerja Proyek (Dari Pembuatan Hingga Selesai)
 
 Berikut adalah panduan lengkap alur kerja proyek konstruksi menggunakan aplikasi Guna Karya:
 
@@ -47,7 +47,7 @@ Detail Proyek → Tab "Kurva S & RAB" → Tambah Item
 
 #### 1.3 Atur Jadwal Pekerjaan
 ```
-Tiap Item RAB → Klik Ikon Kalender → Set Tanggal Mulai & Selesai
+TiAP Item RAB → Klik Ikon Kalender → Set Tanggal Mulai & Selesai
 ```
 
 Jadwal akan muncul di **Timeline** sebagai Gantt Chart sederhana.
@@ -194,8 +194,9 @@ Tab "Keuangan" → "Invoice & Termin" → "+ Invoice Baru"
 
 1. Pilih termin (1/2/3/dst)
 2. Isi persentase tagihan
-3. Generate PDF invoice
-4. Kirim ke klien
+3. Generate PDF invoice (Branding **Guna Karya**)
+4. **Minta Approval Klien** (Lihat Section 17)
+5. Kirim ke klien
 
 #### 5.2 Bagikan Link Portal Klien
 ```
@@ -279,6 +280,7 @@ Proyek selesai tetap tersimpan di sistem untuk:
 │                                                                 │
 │  5. TAGIHAN                                                     │
 │     ├── Buat Invoice                                            │
+│     ├── Minta Client Approval (NEW)                             │
 │     └── Share Portal Klien                                      │
 │                                                                 │
 │  6. PENYELESAIAN                                                │
@@ -292,7 +294,7 @@ Proyek selesai tetap tersimpan di sistem untuk:
 
 ---
 
-## �📋 Daftar Isi
+## 📋 Daftar Isi
 
 1. [Login & Autentikasi](#1-login--autentikasi)
 2. [Dashboard Proyek](#2-dashboard-proyek)
@@ -308,6 +310,10 @@ Proyek selesai tetap tersimpan di sistem untuk:
 12. [Landing Page CMS](#12-landing-page-cms)
 13. [Tong Sampah](#13-tong-sampah)
 14. [Landing Page (Public)](#14-landing-page-public)
+15. [Manajemen Subkontraktor](#15-manajemen-subkontraktor)
+16. [Resource Calendar](#16-resource-calendar)
+17. [Client Approval](#17-client-approval)
+18. [Video Walkthrough](#18-video-walkthrough)
 
 ---
 
@@ -402,6 +408,7 @@ Setelah klik proyek, Anda masuk ke halaman detail dengan beberapa tab:
 ## 5. Keuangan (Pemasukan & Pengeluaran)
 
 ![Keuangan](docs/screenshots/05_keuangan.png)
+![Invoice](docs/screenshots/18_invoice_feature.png)
 
 ### A. Catat Pemasukan (Dana Masuk)
 1. Klik tombol **+ Pemasukan**
@@ -429,7 +436,7 @@ Setelah klik proyek, Anda masuk ke halaman detail dengan beberapa tab:
 
 ### Invoice Generator:
 - Buat tagihan termin untuk klien
-- Format PDF profesional
+- Format PDF profesional dengan kop **PT Guna Karya**
 - Otomatis hitung berdasarkan progress RAB
 
 ---
@@ -544,7 +551,7 @@ Fitur transparansi untuk pemilik proyek.
 3. Kirim link via WhatsApp ke pemilik
 
 ### Yang Bisa Dilihat Klien:
-- ✅ Progress fisik (%)
+- ✅ Progress fisik
 - ✅ Galeri foto progress
 - ✅ Kurva S sederhana
 - ❌ Nilai uang/profit kontraktor (DISEMBUNYIKAN)
@@ -622,6 +629,74 @@ Halaman depan website yang dilihat publik/calon klien.
 
 ---
 
+## 15. Manajemen Subkontraktor
+
+![Subkon](docs/screenshots/15_subkon_pekerja.png)
+
+Kelola pekerjaan yang diserahkan ke pihak ketiga (borongan/subkon).
+
+### Fitur:
+- **Daftar Subkon**: Catat nama, kontak, dan nilai kontrak subkon
+- **Progress Tracking**: Monitor progress % pekerjaan subkon
+- **Pembayaran Bertahap**: Catat pembayaran termin ke subkon
+- **Link ke RAB**: Hubungkan subkon dengan item pekerjaan spesifik
+
+### Cara Menggunakan:
+1. Buka tab **"Tim & Absensi"** -> Sub-tab **"Subkon"** (jika ada) atau di **Resource Calendar**
+2. Klik **"+ Tambah Subkon"**
+3. Isi detail kontrak dan item pekerjaannya
+4. Update progress dan pembayaran sesuai realisasi
+
+---
+
+## 16. Resource Calendar (Kalender Proyek)
+
+![Calendar](docs/screenshots/16_resource_calendar.png)
+
+Tampilan visual jadwal seluruh sumber daya proyek.
+
+### Fitur:
+- **Unified View**: Gabungan jadwal Worker, Equipment, dan Subkon dalam satu kalender
+- **Interaktif**: Klik tanggal untuk melihat detail resource yang aktif hari itu
+- **Legend Warna**:
+  - 🔵 Worker (Tukang)
+  - 🟠 Equipment (Alat)
+  - 🟣 Subkon
+
+### Cara Menggunakan:
+1. Masuk ke tab **"Tim & Absensi"** -> Klik **"📅 Kalender"**
+2. Lihat sebaran jadwal dalam bulan ini
+3. **Klik tanggal** di kotak kalender untuk melihat detail di bagian bawah ("Resource Hari Ini")
+
+---
+
+## 17. Client Approval
+
+![Approval](docs/screenshots/17_client_approval.png)
+
+Fitur kolaborasi dengan klien untuk persetujuan dokumen dan progress.
+
+### Fungsi:
+- **Transparansi**: Klien bisa melihat item yang butuh persetujuan
+- **Invoice Approval**: Klien bisa menyetujui tagihan sebelum pembayaran
+- **Progress Approval**: Klien memvalidasi klaim progress lapangan
+
+### Cara Kerja:
+- **Kontraktor**: Item muncul otomatis saat Invoice dibuat atau Progress diupdate
+- **Klien**: Masuk via Portal Klien -> Lihat bagian **"Approval Klien"**
+- **Aksi**: Klien klik **"Setuju"** atau **"Tolak"** (dengan alasan)
+- Status otomatis terupdate di sistem kontraktor (misal: Invoice jadi "Approved")
+
+---
+
+## 18. Video Walkthrough
+
+![Video Walkthrough](docs/videos/overview_walkthrough.webp)
+
+Video singkat penggunaan fitur-fitur di atas.
+
+---
+
 ## 📸 Daftar Screenshot Tersedia
 
 Screenshot dokumentasi tersimpan di folder `docs/screenshots/`:
@@ -640,10 +715,21 @@ Screenshot dokumentasi tersimpan di folder `docs/screenshots/`:
 | 12 | `12_landing_cms.png` | Kelola Landing Page |
 | 13 | `13_tong_sampah.png` | Tong Sampah Proyek |
 | 14 | `14_landing_page.png` | Landing Page (Public) |
+| 15 | `15_subkon_pekerja.png` | Tampilan Subkon di Tab Pekerja |
+| 16 | `16_resource_calendar.png` | Kalender Resource Interaktif |
+| 17 | `17_client_approval.png` | Halaman Ringkasan & Approval |
+| 18 | `18_invoice_feature.png` | Fitur Invoice & Termin Baru |
 
 ---
 
 ## 🔄 Changelog
+
+### v2.1 (Desember 2024 - Update Akhir Tahun)
+- ✅ **New**: Manajemen Subkontraktor (Kontrak & Bayar)
+- ✅ **New**: Resource Calendar yang Interaktif
+- ✅ **New**: Client Approval Workflow
+- ✅ **Update**: Branding "Guna Karya" di seluruh laporan PDF
+- 📚 **Dokumentasi**: Video Walkthrough & 16 Screenshot lengkap
 
 ### v2.0 (Desember 2024)
 - ❌ **Dihapus**: Fitur AI Scan Struk (tidak akurat)
