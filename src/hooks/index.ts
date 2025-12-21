@@ -6,6 +6,7 @@ export { useFormStates } from './useFormStates';
 export { useModalManager, useViewManager } from './useModalManager';
 export { useProjectHandlers } from './useProjectHandlers';
 export { useLandingConfig } from './useLandingConfig';
+export { useProjectTemplates } from './useProjectTemplates';
 
 // Type exports
 export type { FormStates } from './useFormStates';

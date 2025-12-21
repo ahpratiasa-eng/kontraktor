@@ -110,7 +110,10 @@ const App = () => {
     handlePhotoUpload, saveAttendanceWithEvidence,
     getFilteredEvidence, openModal, handleGenerateRAB, handleImportRAB,
     handleSaveSchedule, prepareEditSchedule, handleSaveTransaction, handleSaveQC,
-    handleSaveDefect, handleUpdateDefectStatus, handleAutoSchedule, handleGenerateWeeklyReport, handleUpdateWeeklyReport
+    handleSaveDefect, handleUpdateDefectStatus, handleAutoSchedule, handleGenerateWeeklyReport, handleUpdateWeeklyReport,
+    handleAddCashAdvance, handlePayCashAdvance,
+    handleAddEquipment, handleReturnEquipment,
+    handleAddSubkon, handleUpdateSubkon, handleAddSubkonPayment
   } = projectHandlers;
   // Pengawas ga boleh tambah tukang
 
@@ -313,6 +316,13 @@ const App = () => {
               setTransactionCategory={setTransactionCategory}
               projects={projects}
               handleTransferMaterial={handleTransferMaterial}
+              handleAddCashAdvance={handleAddCashAdvance}
+              handlePayCashAdvance={handlePayCashAdvance}
+              handleAddEquipment={handleAddEquipment}
+              handleReturnEquipment={handleReturnEquipment}
+              handleAddSubkon={handleAddSubkon}
+              handleUpdateSubkon={handleUpdateSubkon}
+              handleAddSubkonPayment={handleAddSubkonPayment}
             />
           )}
 
@@ -373,6 +383,13 @@ const App = () => {
               setTransactionCategory={setTransactionCategory}
               projects={projects}
               handleTransferMaterial={handleTransferMaterial}
+              handleAddCashAdvance={handleAddCashAdvance}
+              handlePayCashAdvance={handlePayCashAdvance}
+              handleAddEquipment={handleAddEquipment}
+              handleReturnEquipment={handleReturnEquipment}
+              handleAddSubkon={handleAddSubkon}
+              handleUpdateSubkon={handleUpdateSubkon}
+              handleAddSubkonPayment={handleAddSubkonPayment}
             />
           </div>
         )}

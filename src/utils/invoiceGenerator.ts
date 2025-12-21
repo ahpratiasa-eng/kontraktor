@@ -14,7 +14,7 @@ interface jsPDFCustom extends jsPDF {
 export const generateInvoice = (
     project: Project,
     term: PaymentTerm,
-    companyName: string = 'KONTRAKTOR PRO',
+    companyName: string = 'GUNA KARYA',
     companyAddress: string = ''
 ) => {
     const doc = new jsPDF() as jsPDFCustom;
@@ -221,18 +221,30 @@ export const generateInvoice = (
     doc.text("Invoice ini dibuat secara otomatis oleh Guna Karya.", pageWidth / 2, footerY, { align: 'center' });
     doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
-    // Save
-    // Save
+    // Save with proper filename using blob
     const safeProjectName = project.name.replace(/[^a-zA-Z0-9\s-_]/g, '').replace(/\s+/g, '_');
     const safeInvoiceNum = invoiceNumber.replace(/[^a-zA-Z0-9\s-_]/g, '-');
     const filename = `Invoice_${safeInvoiceNum}_${safeProjectName}.pdf`;
 
     try {
-        doc.save(filename);
+        // Use blob method for better browser compatibility
+        const pdfBlob = doc.output('blob');
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
     } catch (err) {
         console.error("PDF Save failed:", err);
-        // Fallback or rethrow
-        throw new Error("Gagal menyimpan file PDF. Coba gunakan browser lain atau nama proyek yang lebih sederhana.");
+        // Fallback to default save
+        try {
+            doc.save(filename);
+        } catch (e) {
+            throw new Error("Gagal menyimpan file PDF. Coba gunakan browser lain atau nama proyek yang lebih sederhana.");
+        }
     }
 
     return invoiceNumber;

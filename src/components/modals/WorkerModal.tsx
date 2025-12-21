@@ -8,7 +8,7 @@ interface WorkerModalProps {
     selectedWorkerId: number | null;
     initialData?: Worker | null;
     resources: PricingResource[];
-    onSave: (data: { name: string, role: string, wageUnit: string, realRate: number, mandorRate: number }) => void;
+    onSave: (data: { name: string, role: string, wageUnit: string, realRate: number, mandorRate: number, cashAdvanceLimit: number }) => void;
 }
 
 const WorkerModal: React.FC<WorkerModalProps> = ({
@@ -21,6 +21,7 @@ const WorkerModal: React.FC<WorkerModalProps> = ({
     const [wageUnit, setWageUnit] = useState('Harian');
     const [realRate, setRealRate] = useState(0);
     const [mandorRate, setMandorRate] = useState(0);
+    const [cashAdvanceLimit, setCashAdvanceLimit] = useState(1000000); // Default Rp 1.000.000
 
     const [showResourcePicker, setShowResourcePicker] = useState(false);
     const [resourceSearch, setResourceSearch] = useState('');
@@ -33,12 +34,14 @@ const WorkerModal: React.FC<WorkerModalProps> = ({
             setWageUnit(initialData.wageUnit);
             setRealRate(initialData.realRate);
             setMandorRate(initialData.mandorRate);
+            setCashAdvanceLimit(initialData.cashAdvanceLimit ?? 1000000);
         } else {
             setName('');
             setRole('Tukang');
             setWageUnit('Harian');
             setRealRate(0);
             setMandorRate(0);
+            setCashAdvanceLimit(1000000);
         }
     }, [initialData, selectedWorkerId]);
 
@@ -48,7 +51,8 @@ const WorkerModal: React.FC<WorkerModalProps> = ({
             role,
             wageUnit,
             realRate,
-            mandorRate
+            mandorRate,
+            cashAdvanceLimit
         });
     };
 
@@ -130,6 +134,12 @@ const WorkerModal: React.FC<WorkerModalProps> = ({
                     <label className="text-xs font-bold ml-1 text-slate-500">Upah Mandor (Rate Charge)</label>
                     <NumberInput className="w-full p-3 border rounded-xl font-mono font-bold text-green-700 bg-green-50 focus:bg-white focus:ring-2 focus:ring-green-100 transition-all" placeholder="Upah Mandor" value={mandorRate} onChange={setMandorRate} />
                     <div className="text-[10px] text-slate-400 italic px-1 pt-1">*Upah Mandor adalah yang ditagihkan ke Owner. Selisih = Profit.</div>
+                </div>
+
+                <div className="space-y-1">
+                    <label className="text-xs font-bold ml-1 text-slate-500">Limit Kasbon (Maks. kasbon per tukang)</label>
+                    <NumberInput className="w-full p-3 border rounded-xl font-mono text-orange-700 bg-orange-50 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all" placeholder="Limit Kasbon" value={cashAdvanceLimit} onChange={setCashAdvanceLimit} />
+                    <div className="text-[10px] text-slate-400 italic px-1 pt-1">*Batas maksimal kasbon yang bisa diambil tukang ini. Default Rp 1.000.000.</div>
                 </div>
 
                 <button onClick={handleSave} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all">

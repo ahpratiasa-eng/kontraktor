@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote, Calendar, TrendingUp,
     ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, Plus, CheckCircle,
-    ShieldAlert, Minimize2, X, Camera
+    ShieldAlert, Minimize2, X, Camera, Download, Copy, MessageSquare
 } from 'lucide-react';
 import ProjectHeader from './project-detail/ProjectHeader';
 import SCurveChart from './SCurveChart';
@@ -17,13 +17,18 @@ import type { Project, RABItem, Worker, Material, AHSItem } from '../types';
 import ProjectGallery from './ProjectGallery';
 import PayrollSummary from './PayrollSummary';
 import InvoiceTerminSection from './InvoiceTerminSection';
+import ProfitAnalyzer from './ProfitAnalyzer';
 import DocumentsTab from './DocumentsTab';
+import ResourceCalendar from './ResourceCalendar';
 import { generateDailyReport } from '../utils/pdfGenerator';
+import { generateMonthlyFinanceReport, generatePayrollReport, generateProgressReport, getAvailableMonths } from '../utils/reportExporter';
 import MaterialTransferModal from './MaterialTransferModal';
 import PromptGenerator from './PromptGenerator';
 import MagicRabModal from './MagicRabModal';
+import ClientApproval from './ClientApproval';
 
 import type { UserRole } from '../types';
+import { auth } from '../lib/firebase';
 
 interface ProjectDetailViewProps {
     activeProject: Project;
@@ -73,9 +78,19 @@ interface ProjectDetailViewProps {
     // Transfer Material
     projects?: Project[];
     handleTransferMaterial?: (sourceProjectId: string, targetProjectId: string, item: Material, qty: number, notes: string, date: string, targetProjectName: string) => Promise<void>;
-    handleAutoSchedule?: () => void;
+    handleAutoSchedule?: (mode: '1' | '2') => void;
     handleGenerateWeeklyReport?: (notes: string) => void;
     handleUpdateWeeklyReport?: (id: string, notes: string) => void;
+    // Cash Advance (Kasbon)
+    handleAddCashAdvance?: (workerId: number, amount: number, description: string) => void;
+    handlePayCashAdvance?: (cashAdvanceId: number, amount: number) => void;
+    // Equipment (Sewa Alat)
+    handleAddEquipment?: (equipment: any) => void;
+    handleReturnEquipment?: (equipmentId: number) => void;
+    // Subkon
+    handleAddSubkon?: (subkon: any) => void;
+    handleUpdateSubkon?: (id: number, updates: any) => void;
+    handleAddSubkonPayment?: (subkonId: number, amount: number, note: string) => void;
 }
 
 const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
@@ -89,13 +104,16 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     setActiveTab, prepareEditProject, prepareEditRABItem, prepareEditSchedule, isClientView,
     ahsItems, setTransactionType, setTransactionCategory, handleUpdateDefectStatus,
     projects = [], handleTransferMaterial, userRole, handleAutoSchedule,
-    handleGenerateWeeklyReport, handleUpdateWeeklyReport
+    handleGenerateWeeklyReport, handleUpdateWeeklyReport,
+    handleAddCashAdvance, handlePayCashAdvance,
+    handleAddEquipment, handleReturnEquipment,
+    handleAddSubkon, handleUpdateSubkon, handleAddSubkonPayment
 }) => {
     // Local State moved from App.tsx
     const [rabViewMode, setRabViewMode] = useState<'internal' | 'client'>('client');
     const [logisticsTab, setLogisticsTab] = useState<'stock' | 'recap'>('stock');
     const [financeMonthTab, setFinanceMonthTab] = useState<string>(''); // '' means latest or all
-    const [financeTab, setFinanceTab] = useState<'transactions' | 'payroll' | 'invoices'>('transactions');
+    const [financeTab, setFinanceTab] = useState<'transactions' | 'payroll' | 'invoices' | 'profit'>('transactions');
 
     // Enforce Client View Mode
     React.useEffect(() => {
@@ -117,7 +135,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     // Schedule Analysis Editing State
     const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
     const [localAnalysis, setLocalAnalysis] = useState('');
-    const [workerSubTab, setWorkerSubTab] = useState<'attendance' | 'list' | 'evidence'>('attendance');
+    const [workerSubTab, setWorkerSubTab] = useState<'attendance' | 'list' | 'evidence' | 'calendar'>('attendance');
     const [reorderItems, setReorderItems] = useState<number[]>([]);
     const [showReorderModal, setShowReorderModal] = useState(false);
 
@@ -139,6 +157,39 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
     const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
     const [deleteItemName, setDeleteItemName] = useState('');
 
+    // Payroll Export Modal State
+    const [showPayrollExportModal, setShowPayrollExportModal] = useState(false);
+    const [payrollStartDate, setPayrollStartDate] = useState(new Date(new Date().setDate(1)).toISOString().split('T')[0]);
+    const [payrollEndDate, setPayrollEndDate] = useState(new Date().toISOString().split('T')[0]);
+
+    // Monthly Finance Export Modal State
+    const [showMonthlyFinanceModal, setShowMonthlyFinanceModal] = useState(false);
+    const [selectedExportMonth, setSelectedExportMonth] = useState<{ month: number, year: number } | null>(null);
+
+    // Template Save Modal State
+    const [showTemplateSaveModal, setShowTemplateSaveModal] = useState(false);
+    const [templateName, setTemplateName] = useState('');
+    const [templateDesc, setTemplateDesc] = useState('');
+
+    // AI Context Modal State
+    const [showAIContextModal, setShowAIContextModal] = useState(false);
+    const [aiContextType, setAIContextType] = useState<'manpower' | 'risk'>('manpower');
+    const [aiContextInput, setAIContextInput] = useState('');
+
+    // Weekly Report Note Modal State
+    const [showWeeklyNoteModal, setShowWeeklyNoteModal] = useState(false);
+    const [weeklyNoteInput, setWeeklyNoteInput] = useState('');
+    const [editingReportId, setEditingReportId] = useState<string | null>(null);
+
+    // Material Shop Modal State
+    const [showShopInfoModal, setShowShopInfoModal] = useState(false);
+    const [shopName, setShopName] = useState('Toko Langganan');
+    const [shopPhone, setShopPhone] = useState('');
+    const [pendingMaterialOrder, setPendingMaterialOrder] = useState<any>(null);
+
+    // Schedule Mode Modal State
+    const [showScheduleModeModal, setShowScheduleModeModal] = useState(false);
+
 
 
 
@@ -149,6 +200,31 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         activeProject.rabItems.forEach(item => { if (!groups[item.category]) groups[item.category] = []; groups[item.category].push(item); });
         return groups;
     })();
+
+    // Client Approval Handlers
+    const handleClientApprove = async (type: string, itemId: string | number, note: string) => {
+        if (!confirm('Apakah Anda yakin ingin menyetujui item ini?')) return;
+        const idStr = String(itemId);
+
+        if (type === 'invoice') {
+            const termId = parseInt(idStr.replace('invoice-', ''));
+            const updatedTerms = (activeProject.paymentTerms || []).map(t =>
+                t.id === termId ? { ...t, status: 'approved' as const, notes: note ? `${t.notes || ''} [Client Note: ${note}]` : t.notes } : t
+            );
+            await updateProject({ paymentTerms: updatedTerms });
+        }
+    };
+
+    const handleClientReject = async (type: string, itemId: string | number, reason: string) => {
+        const idStr = String(itemId);
+        if (type === 'invoice') {
+            const termId = parseInt(idStr.replace('invoice-', ''));
+            const updatedTerms = (activeProject.paymentTerms || []).map(t =>
+                t.id === termId ? { ...t, status: 'pending' as const, notes: `[DITOLAK: ${reason}] ${t.notes || ''}` } : t
+            );
+            await updateProject({ paymentTerms: updatedTerms });
+        }
+    };
 
     // Gantt Collapse State
     const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
@@ -392,6 +468,23 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         </button>
                                     )}
 
+                                    {/* SAVE AS TEMPLATE BUTTON */}
+                                    {canEditProject && (activeProject.rabItems || []).length > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                setTemplateName(`Template ${activeProject.name}`);
+                                                setTemplateDesc(`Template dari proyek ${activeProject.name}`);
+                                                setShowTemplateSaveModal(true);
+                                            }}
+                                            className="bg-white text-slate-700 border border-slate-200 hover:border-indigo-500 hover:text-indigo-600 p-3 rounded-xl font-bold text-xs md:text-sm shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-center gap-2 group"
+                                        >
+                                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                <Copy size={18} />
+                                            </div>
+                                            <span>Simpan Template</span>
+                                        </button>
+                                    )}
+
                                     {canEditProject && (
                                         <button
                                             onClick={prepareEditProject}
@@ -431,6 +524,16 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         <span className="flex items-center gap-1 text-blue-600"><div className="w-2 h-2 rounded-full bg-blue-600"></div> Realisasi</span>
                                         <span className="flex items-center gap-1 text-slate-400"><div className="w-2 h-2 rounded-full bg-slate-300"></div> Rencana</span>
                                     </div>
+                                </div>
+
+                                {/* CLIENT APPROVAL SECTION */}
+                                <div className="mt-4 mb-6">
+                                    <ClientApproval
+                                        project={activeProject}
+                                        onApprove={handleClientApprove}
+                                        onReject={handleClientReject}
+                                        isClientView={isClientView}
+                                    />
                                 </div>
 
                                 {/* DEVIATION INDICATOR - More Prominent */}
@@ -1124,34 +1227,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     </div>
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={async () => {
-                                                const confirm = window.confirm("Mulai Analisa Manpower?");
-                                                if (!confirm) return;
-
-                                                const context = window.prompt("Informasi Tambahan Lapangan (Opsional):\nContoh: 'Hujan deras kemarin', 'Progress item X melambat'");
-
-                                                try {
-                                                    setIsGeneratingAI(true);
-                                                    const res = await generateAnalysisWithGemini(activeProject, activeProject.rabItems || [], context || "");
-
-                                                    // Save to Log
-                                                    const newLog: any = {
-                                                        id: Date.now().toString(),
-                                                        date: new Date().toISOString(),
-                                                        type: 'manpower',
-                                                        content: res
-                                                    };
-
-                                                    const currentLogs = (activeProject as any).aiLogs || [];
-                                                    const updatedLogs = [...currentLogs, newLog];
-                                                    const updatedProject = { ...activeProject, aiLogs: updatedLogs };
-
-                                                    // Handle Update
-                                                    if (updateProject) updateProject(updatedProject);
-
-                                                    alert("Analisa Berhasil Disimpan di Jurnal!");
-                                                } catch (e: any) { alert("Gagal: " + e.message); }
-                                                finally { setIsGeneratingAI(false); }
+                                            onClick={() => {
+                                                setAIContextType('manpower');
+                                                setAIContextInput('');
+                                                setShowAIContextModal(true);
                                             }}
                                             disabled={isGeneratingAI}
                                             className="px-3 py-2 bg-white border border-indigo-200 text-indigo-700 text-xs rounded-lg font-semibold hover:bg-indigo-50 hover:shadow-sm transition flex items-center gap-2"
@@ -1160,32 +1239,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             Analisa Manpower
                                         </button>
                                         <button
-                                            onClick={async () => {
-                                                const confirm = window.confirm("Mulai Analisa Risiko?");
-                                                if (!confirm) return;
-
-                                                const context = window.prompt("Informasi Kondisi Lapangan (Opsional):\nContoh: 'Akses jalan sempit', 'Dekat selokan', 'Musim hujan'");
-
-                                                try {
-                                                    setIsGeneratingAI(true);
-                                                    const res = await generateRiskReportWithGemini(activeProject, activeProject.rabItems || [], context || "");
-
-                                                    const newLog: any = {
-                                                        id: Date.now().toString(),
-                                                        date: new Date().toISOString(),
-                                                        type: 'risk',
-                                                        content: res
-                                                    };
-
-                                                    const currentLogs = (activeProject as any).aiLogs || [];
-                                                    const updatedLogs = [...currentLogs, newLog];
-                                                    const updatedProject = { ...activeProject, aiLogs: updatedLogs };
-
-                                                    if (updateProject) updateProject(updatedProject);
-
-                                                    alert("Analisa Berhasil Disimpan di Jurnal!");
-                                                } catch (e: any) { alert("Gagal: " + e.message); }
-                                                finally { setIsGeneratingAI(false); }
+                                            onClick={() => {
+                                                setAIContextType('risk');
+                                                setAIContextInput('');
+                                                setShowAIContextModal(true);
                                             }}
                                             disabled={isGeneratingAI}
                                             className="px-3 py-2 bg-white border border-rose-200 text-rose-700 text-xs rounded-lg font-semibold hover:bg-rose-50 hover:shadow-sm transition flex items-center gap-2"
@@ -1534,8 +1591,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         {(!isClientView && rabViewMode !== 'client' && handleGenerateWeeklyReport) && (
                                             <button
                                                 onClick={() => {
-                                                    const note = prompt("Masukkan Catatan / Evaluasi Minggu Ini:", "Progress berjalan lancar.");
-                                                    if (note !== null) handleGenerateWeeklyReport(note);
+                                                    setEditingReportId(null);
+                                                    setWeeklyNoteInput('Progress berjalan lancar.');
+                                                    setShowWeeklyNoteModal(true);
                                                 }}
                                                 className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-700 transition flex items-center gap-2 shadow-md active:scale-95"
                                             >
@@ -1602,8 +1660,9 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                     {!isClientView && handleUpdateWeeklyReport && (
                                                         <button
                                                             onClick={() => {
-                                                                const newNote = prompt("Edit Catatan Evaluasi:", report.notes || "");
-                                                                if (newNote !== null) handleUpdateWeeklyReport(report.id, newNote);
+                                                                setEditingReportId(report.id);
+                                                                setWeeklyNoteInput(report.notes || '');
+                                                                setShowWeeklyNoteModal(true);
                                                             }}
                                                             className="absolute top-2 right-2 p-1 text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                         >
@@ -1630,7 +1689,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-white text-slate-600 px-3 py-2.5 rounded-xl font-bold border shadow-sm hover:bg-slate-50 flex items-center gap-1"><Upload size={14} /></button>
                                             <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-50 text-purple-600 px-3 py-2.5 rounded-xl font-bold border border-purple-100 hover:bg-purple-100 flex items-center gap-1"><Sparkles size={14} /></button>
                                             {handleAutoSchedule && (
-                                                <button onClick={handleAutoSchedule} className="text-xs bg-orange-50 text-orange-600 px-3 py-2.5 rounded-xl font-bold border border-orange-100 hover:bg-orange-100 flex items-center gap-1" title="Buat Jadwal Otomatis"><Calendar size={14} /></button>
+                                                <button onClick={() => setShowScheduleModeModal(true)} className="text-xs bg-orange-50 text-orange-600 px-3 py-2.5 rounded-xl font-bold border border-orange-100 hover:bg-orange-100 flex items-center gap-1" title="Buat Jadwal Otomatis"><Calendar size={14} /></button>
                                             )}
                                         </div>
                                     )}
@@ -1877,6 +1936,12 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 >
                                     Invoice & Termin
                                 </button>
+                                <button
+                                    onClick={() => setFinanceTab('profit')}
+                                    className={`flex-1 md:flex-none px-4 py-3 text-xs font-bold rounded-xl transition-all shadow-sm ${financeTab === 'profit' ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    📊 Analisa Profit
+                                </button>
                             </div>
 
                             {financeTab === 'transactions' && (
@@ -1960,6 +2025,49 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                         <span className="text-[10px] font-normal opacity-80">(DP/Termin)</span>
                                                     </div>
                                                 </button>
+                                            </div>
+
+                                            {/* EXPORT SECTION */}
+                                            <div className="mt-4 pt-4 border-t border-slate-100">
+                                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Export Laporan</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {/* Monthly Finance Report */}
+                                                    <div className="relative group">
+                                                        <button
+                                                            className="px-4 py-2.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-slate-700 hover:text-blue-700 rounded-xl font-bold text-xs flex items-center gap-2 transition-all"
+                                                            onClick={() => {
+                                                                const months = getAvailableMonths(activeProject);
+                                                                if (months.length === 0) {
+                                                                    alert('Tidak ada transaksi untuk diexport.');
+                                                                    return;
+                                                                }
+                                                                setSelectedExportMonth({ month: months[0].month, year: months[0].year });
+                                                                setShowMonthlyFinanceModal(true);
+                                                            }}
+                                                        >
+                                                            <Download size={14} />
+                                                            Laporan Keuangan Bulanan
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Payroll Report */}
+                                                    <button
+                                                        onClick={() => setShowPayrollExportModal(true)}
+                                                        className="px-4 py-2.5 bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-300 text-slate-700 hover:text-orange-700 rounded-xl font-bold text-xs flex items-center gap-2 transition-all"
+                                                    >
+                                                        <Download size={14} />
+                                                        Rekap Gaji Pekerja
+                                                    </button>
+
+                                                    {/* Progress Report */}
+                                                    <button
+                                                        onClick={() => generateProgressReport(activeProject)}
+                                                        className="px-4 py-2.5 bg-slate-50 hover:bg-green-50 border border-slate-200 hover:border-green-300 text-slate-700 hover:text-green-700 rounded-xl font-bold text-xs flex items-center gap-2 transition-all"
+                                                    >
+                                                        <Download size={14} />
+                                                        Laporan Progress (Klien)
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -2104,6 +2212,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                         setPaymentAmount(f.balance > 0 ? f.balance : 0);
                                         openModal('payWorker');
                                     }}
+                                    onAddCashAdvance={handleAddCashAdvance}
+                                    onPayCashAdvance={handlePayCashAdvance}
+                                    onAddEquipment={handleAddEquipment}
+                                    onReturnEquipment={handleReturnEquipment}
+                                    onAddSubkon={handleAddSubkon}
+                                    onUpdateSubkon={handleUpdateSubkon}
+                                    onAddSubkonPayment={handleAddSubkonPayment}
                                 />
                             )}
 
@@ -2113,6 +2228,12 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     updateProject={updateProject}
                                 />
                             )}
+
+                            {financeTab === 'profit' && (
+                                <div className="max-w-2xl mx-auto w-full px-1 md:px-0">
+                                    <ProfitAnalyzer project={activeProject} />
+                                </div>
+                            )}
                         </div>
                     )
                 }
@@ -2120,8 +2241,8 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 {
                     activeTab === 'workers' && canAccessWorkers && (
                         <div className="pb-24">
-                            {/* Mobile Sub-Navigation */}
-                            <div className="md:hidden flex gap-1 bg-slate-100 p-1 rounded-2xl w-full mb-6">
+                            {/* Sub-Navigation (Visible on all screens) */}
+                            <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl w-full mb-6 overflow-x-auto">
                                 <button
                                     onClick={() => setWorkerSubTab('attendance')}
                                     className={`flex-1 px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all shadow-sm ${workerSubTab === 'attendance' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
@@ -2142,10 +2263,16 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 >
                                     Bukti Foto
                                 </button>
+                                <button
+                                    onClick={() => setWorkerSubTab('calendar')}
+                                    className={`flex-1 px-3 py-2.5 text-[10px] font-bold rounded-xl transition-all shadow-sm ${workerSubTab === 'calendar' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    📅 Kalender
+                                </button>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className={`md:block ${workerSubTab === 'attendance' ? 'block' : 'hidden'}`}>
+                            <div className="flex flex-col gap-6">
+                                <div className={`${workerSubTab === 'attendance' ? 'block' : 'hidden'}`}>
                                     <button onClick={() => openModal('attendance')} className="w-full bg-blue-600 text-white p-4 rounded-2xl shadow-lg font-bold mb-6 active:scale-95 transition-transform flex items-center justify-center gap-2">
                                         <Users size={20} /> Isi Absensi Hari Ini
                                     </button>
@@ -2196,7 +2323,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     {/* Worker List Section */}
                                     {/* Worker List Section - Hidden for Pengawas */}
                                     {userRole !== 'pengawas' && (
-                                        <div className={`mb-6 ${workerSubTab === 'evidence' ? 'hidden md:block' : ''}`}>
+                                        <div className={`mb-6 ${workerSubTab === 'list' ? 'block' : 'hidden'}`}>
                                             <div className="flex justify-between items-center mb-4 px-1">
                                                 <div>
                                                     <h3 className="font-bold text-lg text-slate-700">Daftar Pekerja</h3>
@@ -2267,7 +2394,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     )}
 
                                     {/* Evidence Gallery Section */}
-                                    <div className={`bg-white p-5 rounded-3xl border shadow-sm ${workerSubTab === 'list' ? 'hidden md:block' : ''}`}>
+                                    <div className={`bg-white p-5 rounded-3xl border shadow-sm ${workerSubTab === 'evidence' ? 'block' : 'hidden'}`}>
                                         <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><ImageIcon size={18} /> Galeri Bukti Absensi</h3>
                                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                                             {getFilteredEvidence().map((ev: any) => (
@@ -2298,6 +2425,13 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Resource Calendar */}
+                            {workerSubTab === 'calendar' && (
+                                <div className="bg-white p-5 rounded-3xl border shadow-sm">
+                                    <ResourceCalendar project={activeProject} />
+                                </div>
+                            )}
                         </div>
                     )
                 }
@@ -2395,22 +2529,10 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                         disabled={reorderItems.length === 0}
                                                         onClick={() => {
                                                             const selectedMaterials = activeProject.materials!.filter(m => reorderItems.includes(m.id));
-
-                                                            const shopName = prompt("Nama Toko Bangunan / Supplier:", "Toko Langganan");
-                                                            if (shopName === null) return;
-
-                                                            const shopPhone = prompt("Nomor WA Toko (Opsional, awali 628...):", "");
-
-                                                            const list = selectedMaterials
-                                                                .map(m => `- ${m.name}: butuh estimasi ${(m.minStock * 2) - m.stock > 0 ? (m.minStock * 2) - m.stock : 10} ${m.unit}`)
-                                                                .join('\n');
-
-                                                            const msg = `Halo ${shopName},\nSaya mau pesan material untuk proyek *${activeProject.name}*:\n\n${list}\n\nMohon info ketersediaan & harga total. Terima kasih.`;
-
-                                                            const targetUrl = shopPhone ? `https://wa.me/${shopPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-
-                                                            window.open(targetUrl, '_blank');
-                                                            setShowReorderModal(false);
+                                                            setPendingMaterialOrder(selectedMaterials);
+                                                            setShopName('Toko Langganan');
+                                                            setShopPhone('');
+                                                            setShowShopInfoModal(true);
                                                         }}
                                                         className="flex-[2] py-3 px-4 rounded-xl font-bold text-white bg-green-600 shadow-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                                     >
@@ -3133,6 +3255,453 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 Ya, Hapus
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Payroll Export Modal */}
+            {showPayrollExportModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-6">
+                            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+                                <Download size={20} className="text-orange-600" />
+                                Export Rekap Gaji
+                            </h3>
+                            <p className="text-sm text-slate-500">Pilih periode rekap gaji pekerja</p>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 mb-1.5 block">Tanggal Mulai</label>
+                                <input
+                                    type="date"
+                                    value={payrollStartDate}
+                                    onChange={(e) => setPayrollStartDate(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 mb-1.5 block">Tanggal Akhir</label>
+                                <input
+                                    type="date"
+                                    value={payrollEndDate}
+                                    onChange={(e) => setPayrollEndDate(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowPayrollExportModal(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    generatePayrollReport(activeProject, payrollStartDate, payrollEndDate);
+                                    setShowPayrollExportModal(false);
+                                }}
+                                className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 transition-colors shadow-md flex items-center justify-center gap-2"
+                            >
+                                <Download size={16} />
+                                Export PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Monthly Finance Export Modal */}
+            {showMonthlyFinanceModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-6">
+                            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+                                <Download size={20} className="text-blue-600" />
+                                Export Keuangan Bulanan
+                            </h3>
+                            <p className="text-sm text-slate-500">Pilih bulan laporan</p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="text-xs font-bold text-slate-500 mb-1.5 block">Pilih Bulan</label>
+                            <select
+                                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white"
+                                value={selectedExportMonth ? `${selectedExportMonth.year}-${selectedExportMonth.month}` : ''}
+                                onChange={(e) => {
+                                    const [year, month] = e.target.value.split('-').map(Number);
+                                    setSelectedExportMonth({ year, month });
+                                }}
+                            >
+                                {getAvailableMonths(activeProject).map((m) => (
+                                    <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
+                                        {m.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowMonthlyFinanceModal(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (selectedExportMonth) {
+                                        generateMonthlyFinanceReport(activeProject, selectedExportMonth.month, selectedExportMonth.year);
+                                    }
+                                    setShowMonthlyFinanceModal(false);
+                                }}
+                                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center gap-2"
+                            >
+                                <Download size={16} />
+                                Export PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Template Save Modal */}
+            {showTemplateSaveModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-6">
+                            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+                                <Copy size={20} className="text-indigo-600" />
+                                Simpan sebagai Template
+                            </h3>
+                            <p className="text-sm text-slate-500">Template bisa digunakan untuk proyek baru</p>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 mb-1.5 block">Nama Template *</label>
+                                <input
+                                    type="text"
+                                    value={templateName}
+                                    onChange={(e) => setTemplateName(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Contoh: Template Rumah 2 Lantai"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 mb-1.5 block">Deskripsi (Opsional)</label>
+                                <textarea
+                                    value={templateDesc}
+                                    onChange={(e) => setTemplateDesc(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 min-h-[80px]"
+                                    placeholder="Deskripsi singkat template ini..."
+                                />
+                            </div>
+                            <div className="bg-indigo-50 p-3 rounded-xl text-xs text-indigo-700">
+                                <p><strong>Yang akan disimpan:</strong></p>
+                                <p>• {activeProject.rabItems?.length || 0} item RAB</p>
+                                <p>• {activeProject.workers?.length || 0} data pekerja</p>
+                                <p>• {activeProject.materials?.length || 0} data material</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowTemplateSaveModal(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (!templateName.trim()) {
+                                        alert('Nama template wajib diisi');
+                                        return;
+                                    }
+                                    try {
+                                        const { doc, setDoc } = await import('firebase/firestore');
+                                        const { db } = await import('../lib/firebase');
+
+                                        const templateId = `template_${Date.now()}`;
+                                        const templateData = {
+                                            id: templateId,
+                                            name: templateName,
+                                            description: templateDesc || `Template dari proyek ${activeProject.name}`,
+                                            createdAt: new Date().toISOString(),
+                                            createdBy: auth.currentUser?.email || 'unknown',
+                                            rabItems: (activeProject.rabItems || []).map(item => ({
+                                                category: item.category,
+                                                name: item.name,
+                                                unit: item.unit,
+                                                volume: item.volume,
+                                                unitPrice: item.unitPrice,
+                                                isAddendum: item.isAddendum,
+                                            })),
+                                            workers: (activeProject.workers || []).map(w => ({
+                                                name: w.name,
+                                                role: w.role,
+                                                realRate: w.realRate,
+                                                mandorRate: w.mandorRate,
+                                                wageUnit: w.wageUnit,
+                                            })),
+                                            materials: (activeProject.materials || []).map(m => ({
+                                                name: m.name,
+                                                unit: m.unit,
+                                                minStock: m.minStock,
+                                            })),
+                                        };
+
+                                        await setDoc(doc(db, 'project_templates', templateId), templateData);
+                                        setShowTemplateSaveModal(false);
+                                        alert('✅ Template berhasil disimpan!');
+                                    } catch (err: any) {
+                                        alert('Gagal: ' + (err.message || 'Error'));
+                                    }
+                                }}
+                                disabled={!templateName.trim()}
+                                className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed"
+                            >
+                                Simpan Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* AI Context Modal */}
+            {showAIContextModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-6">
+                            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+                                {aiContextType === 'manpower' ? (
+                                    <><Users size={20} className="text-indigo-600" /> Analisa Manpower</>
+                                ) : (
+                                    <><ShieldAlert size={20} className="text-rose-600" /> Analisa Risiko</>
+                                )}
+                            </h3>
+                            <p className="text-sm text-slate-500">
+                                {aiContextType === 'manpower'
+                                    ? 'AI akan menganalisa kebutuhan tenaga kerja berdasarkan RAB dan progress.'
+                                    : 'AI akan mengidentifikasi potensi risiko dan mitigasinya.'}
+                            </p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="text-xs font-bold text-slate-500 mb-1.5 block">
+                                Informasi Tambahan Lapangan (Opsional)
+                            </label>
+                            <textarea
+                                value={aiContextInput}
+                                onChange={(e) => setAIContextInput(e.target.value)}
+                                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
+                                placeholder={aiContextType === 'manpower'
+                                    ? "Contoh: Hujan deras kemarin, Progress item X melambat"
+                                    : "Contoh: Akses jalan sempit, Dekat selokan, Musim hujan"}
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowAIContextModal(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    setShowAIContextModal(false);
+                                    try {
+                                        setIsGeneratingAI(true);
+                                        const res = aiContextType === 'manpower'
+                                            ? await generateAnalysisWithGemini(activeProject, activeProject.rabItems || [], aiContextInput)
+                                            : await generateRiskReportWithGemini(activeProject, activeProject.rabItems || [], aiContextInput);
+
+                                        const newLog: any = {
+                                            id: Date.now().toString(),
+                                            date: new Date().toISOString(),
+                                            type: aiContextType,
+                                            content: res
+                                        };
+                                        const currentLogs = (activeProject as any).aiLogs || [];
+                                        const updatedLogs = [...currentLogs, newLog];
+                                        if (updateProject) updateProject({ ...activeProject, aiLogs: updatedLogs } as any);
+                                        alert("Analisa Berhasil Disimpan di Jurnal!");
+                                    } catch (e: any) { alert("Gagal: " + e.message); }
+                                    finally { setIsGeneratingAI(false); }
+                                }}
+                                className={`flex-1 py-3 text-white rounded-xl font-bold text-sm transition-colors shadow-md ${aiContextType === 'manpower' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-600 hover:bg-rose-700'
+                                    }`}
+                            >
+                                Mulai Analisa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Weekly Note Modal */}
+            {showWeeklyNoteModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-6">
+                            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+                                <FileText size={20} className="text-blue-600" />
+                                {editingReportId ? 'Edit Catatan Evaluasi' : 'Buat Laporan Mingguan'}
+                            </h3>
+                            <p className="text-sm text-slate-500">
+                                {editingReportId ? 'Ubah catatan evaluasi laporan mingguan' : 'Masukkan catatan evaluasi untuk minggu ini'}
+                            </p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="text-xs font-bold text-slate-500 mb-1.5 block">Catatan / Evaluasi</label>
+                            <textarea
+                                value={weeklyNoteInput}
+                                onChange={(e) => setWeeklyNoteInput(e.target.value)}
+                                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 min-h-[120px]"
+                                placeholder="Contoh: Progress berjalan lancar, cuaca mendukung."
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowWeeklyNoteModal(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (editingReportId && handleUpdateWeeklyReport) {
+                                        handleUpdateWeeklyReport(editingReportId, weeklyNoteInput);
+                                    } else if (handleGenerateWeeklyReport) {
+                                        handleGenerateWeeklyReport(weeklyNoteInput);
+                                    }
+                                    setShowWeeklyNoteModal(false);
+                                }}
+                                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-md"
+                            >
+                                {editingReportId ? 'Simpan Perubahan' : 'Buat Laporan'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Shop Info Modal */}
+            {showShopInfoModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-6">
+                            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+                                <ShoppingCart size={20} className="text-green-600" />
+                                Info Toko / Supplier
+                            </h3>
+                            <p className="text-sm text-slate-500">Masukkan info toko untuk order via WhatsApp</p>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 mb-1.5 block">Nama Toko / Supplier *</label>
+                                <input
+                                    type="text"
+                                    value={shopName}
+                                    onChange={(e) => setShopName(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500"
+                                    placeholder="Contoh: Toko Bangunan Jaya"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 mb-1.5 block">Nomor WhatsApp (Opsional)</label>
+                                <input
+                                    type="text"
+                                    value={shopPhone}
+                                    onChange={(e) => setShopPhone(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500"
+                                    placeholder="Contoh: 628123456789"
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1">Kosongkan jika ingin copy pesan saja</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowShopInfoModal(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!shopName.trim()) {
+                                        alert('Nama toko wajib diisi');
+                                        return;
+                                    }
+                                    const list = pendingMaterialOrder
+                                        .map((m: any) => `- ${m.name}: butuh estimasi ${(m.minStock * 2) - m.stock > 0 ? (m.minStock * 2) - m.stock : 10} ${m.unit}`)
+                                        .join('\n');
+                                    const msg = `Halo ${shopName},\nSaya mau pesan material untuk proyek *${activeProject.name}*:\n\n${list}\n\nMohon info ketersediaan & harga total. Terima kasih.`;
+                                    const targetUrl = shopPhone ? `https://wa.me/${shopPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                                    window.open(targetUrl, '_blank');
+                                    setShowShopInfoModal(false);
+                                    setShowReorderModal(false);
+                                }}
+                                disabled={!shopName.trim()}
+                                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm hover:bg-green-700 transition-colors shadow-md flex items-center justify-center gap-2 disabled:bg-slate-300"
+                            >
+                                <MessageSquare size={16} />
+                                Buka WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Schedule Mode Modal */}
+            {showScheduleModeModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-6">
+                            <h3 className="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
+                                <Calendar size={20} className="text-orange-600" />
+                                Mode Penjadwalan Otomatis
+                            </h3>
+                            <p className="text-sm text-slate-500">Pilih mode generate jadwal pekerjaan</p>
+                        </div>
+
+                        <div className="space-y-3 mb-6">
+                            <button
+                                onClick={() => {
+                                    if (handleAutoSchedule) handleAutoSchedule('1');
+                                    setShowScheduleModeModal(false);
+                                }}
+                                className="w-full p-4 text-left bg-orange-50 border-2 border-orange-200 rounded-xl hover:bg-orange-100 hover:border-orange-400 transition-all"
+                            >
+                                <div className="font-bold text-orange-800 mb-1">🔄 TIMPA SEMUA</div>
+                                <p className="text-xs text-orange-700">Reset total jadwal berdasarkan algoritma. Jadwal lama akan dihapus.</p>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (handleAutoSchedule) handleAutoSchedule('2');
+                                    setShowScheduleModeModal(false);
+                                }}
+                                className="w-full p-4 text-left bg-green-50 border-2 border-green-200 rounded-xl hover:bg-green-100 hover:border-green-400 transition-all"
+                            >
+                                <div className="font-bold text-green-800 mb-1">✅ ISI YANG KOSONG SAJA</div>
+                                <p className="text-xs text-green-700">Aman untuk pekerjaan tambah/addendum. Jadwal yang sudah ada tetap dipertahankan.</p>
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setShowScheduleModeModal(false)}
+                            className="w-full py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                        >
+                            Batal
+                        </button>
                     </div>
                 </div>
             )}

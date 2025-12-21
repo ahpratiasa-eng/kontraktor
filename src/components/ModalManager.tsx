@@ -10,6 +10,7 @@ import AttendanceModal from './modals/AttendanceModal';
 import StockMovementModal from './modals/StockMovementModal';
 import MaterialModal from './modals/MaterialModal';
 import QCModal from './modals/QCModal';
+import TemplatePicker from './TemplatePicker';
 
 import * as XLSX from 'xlsx';
 import type { UserRole, Material, RABItem, Project, AHSItem, PricingResource } from '../types';
@@ -26,7 +27,7 @@ interface ModalManagerProps {
     handleSaveRAB: (data: { category: string, name: string, unit: string, vol: number, price: number, ahsId?: string | null }) => void;
     handleUpdateProgress: () => void;
     handlePayWorker: () => void;
-    handleSaveWorker: (data: { name: string, role: string, wageUnit: string, realRate: number, mandorRate: number }) => void;
+    handleSaveWorker: (data: { name: string, role: string, wageUnit: string, realRate: number, mandorRate: number, cashAdvanceLimit: number }) => void;
     handleStockMovement: (material: Material, type: 'in' | 'out', qty: number, date: string, notes: string) => void;
     handleSaveMaterial: (name: string, unit: string, minStock: number, initialStock: number) => void;
     handleEditMaterial: (name: string, unit: string, minStock: number) => void;
@@ -184,14 +185,22 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                 <div className="p-6">
                     {modalType === 'newProject' && (
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center mb-4">
+                            <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
                                 <h3 className="font-bold text-xl">Proyek Baru</h3>
-                                <button
-                                    onClick={() => setModalType('importRAB')}
-                                    className="text-xs bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200 font-bold flex items-center gap-1 hover:bg-green-100"
-                                >
-                                    <Upload size={14} /> Import dari Excel
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setModalType('selectTemplate')}
+                                        className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-200 font-bold flex items-center gap-1 hover:bg-indigo-100"
+                                    >
+                                        <Download size={14} /> Dari Template
+                                    </button>
+                                    <button
+                                        onClick={() => setModalType('importRAB')}
+                                        className="text-xs bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200 font-bold flex items-center gap-1 hover:bg-green-100"
+                                    >
+                                        <Upload size={14} /> Import Excel
+                                    </button>
+                                </div>
                             </div>
                             <input className="w-full p-3 border rounded-xl" placeholder="Nama Proyek (Wajib)" value={inputName} onChange={e => setInputName(e.target.value)} />
                             <input className="w-full p-3 border rounded-xl" placeholder="Klien / Pemilik" value={inputClient} onChange={e => setInputClient(e.target.value)} />
@@ -375,14 +384,50 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                     )}
 
                     {modalType === 'payWorker' && (
-                        <div className="space-y-4">
-                            <h3 className="font-bold text-xl mb-4">Bayar Upah Pekerja</h3>
-                            <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100 mb-4">
-                                <p className="text-sm">Pembayaran ini akan dicatat sebagai Pengeluaran (Upah Tukang).</p>
-                            </div>
-                            <NumberInput className="w-full p-3 border rounded-xl font-bold text-lg" placeholder="Nominal Pembayaran" value={paymentAmount} onChange={setPaymentAmount} />
-                            <button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-green-700">Bayar Sekarang</button>
-                        </div>
+                        (() => {
+                            // Calculate kasbon balance for selected worker
+                            const workerKasbon = (activeProject?.cashAdvances || [])
+                                .filter(ca => ca.workerId === selectedWorkerId && ca.status !== 'paid')
+                                .reduce((sum, ca) => sum + ca.remainingAmount, 0);
+                            const selectedWorker = activeProject?.workers?.find(w => w.id === selectedWorkerId);
+
+                            return (
+                                <div className="space-y-4">
+                                    <h3 className="font-bold text-xl mb-4">Bayar Upah Pekerja</h3>
+
+                                    {selectedWorker && (
+                                        <div className="bg-slate-50 p-4 rounded-xl border mb-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-bold text-slate-700">{selectedWorker.name}</span>
+                                                <span className="text-xs text-slate-500">{selectedWorker.role}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Kasbon Balance Info */}
+                                    {workerKasbon > 0 && (
+                                        <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm font-bold text-orange-700">💰 Saldo Kasbon</span>
+                                                <span className="text-lg font-black text-orange-600">
+                                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(workerKasbon)}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-orange-600">
+                                                Tukang ini punya kasbon aktif. Anda bisa potong dari pembayaran di menu Kasbon Tukang.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                                        <p className="text-sm">Pembayaran ini akan dicatat sebagai Pengeluaran (Upah Tukang).</p>
+                                    </div>
+
+                                    <NumberInput className="w-full p-3 border rounded-xl font-bold text-lg" placeholder="Nominal Pembayaran" value={paymentAmount} onChange={setPaymentAmount} />
+                                    <button onClick={handlePayWorker} className="w-full bg-green-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-green-700">Bayar Sekarang</button>
+                                </div>
+                            );
+                        })()
                     )}
 
                     {modalType === 'newWorker' && (
@@ -483,6 +528,31 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                                     onChange={handleFileUpload}
                                 />
                             </div>
+                        </div>
+                    )}
+
+                    {/* SELECT TEMPLATE MODAL */}
+                    {modalType === 'selectTemplate' && (
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><Download size={24} className="text-indigo-600" /> Pilih Template</h3>
+
+                            <div className="bg-indigo-50 p-4 rounded-xl text-sm text-indigo-800 mb-4">
+                                <p>Pilih template untuk mengisi RAB dan tim secara otomatis:</p>
+                            </div>
+
+                            <TemplatePicker
+                                onSelect={(template) => {
+                                    // Apply template data and go back to newProject
+                                    handleImportRAB(template.rabItems.map((item, idx) => ({
+                                        ...item,
+                                        id: idx + 1,
+                                        progress: 0,
+                                    })) as any);
+                                    setModalType('newProject');
+                                    alert(`✅ Template "${template.name}" berhasil diterapkan!\n\nRAB sudah terisi otomatis. Lengkapi info proyek lalu klik Buat Proyek.`);
+                                }}
+                                onBack={() => setModalType('newProject')}
+                            />
                         </div>
                     )}
 
@@ -619,31 +689,80 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
 
 
                             <div className="space-y-3">
-                                {/* CATEGORY SELECTOR */}
+                                {/* CATEGORY SELECTOR - Select with RAB categories + Lainnya */}
                                 <div>
                                     <label className="text-xs font-bold text-slate-500 ml-1">Kategori</label>
-                                    <select
-                                        className="w-full p-3 border rounded-xl bg-white"
-                                        value={transactionCategory}
-                                        onChange={e => setTransactionCategory && setTransactionCategory(e.target.value)}
-                                    >
-                                        {transactionType === 'expense' ? (
-                                            <>
-                                                <option value="Material">Material</option>
-                                                <option value="Upah Tukang">Upah Tukang</option>
-                                                <option value="Operasional">Operasional</option>
-                                                <option value="Sewa Alat">Sewa Alat</option>
-                                                <option value="Lainnya">Lainnya</option>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <option value="Termin">Termin</option>
-                                                <option value="DP">Uang Muka (DP)</option>
-                                                <option value="Pelunasan">Pelunasan</option>
-                                                <option value="Tambahan">Tambahan</option>
-                                            </>
-                                        )}
-                                    </select>
+                                    {transactionType === 'expense' ? (
+                                        <>
+                                            <select
+                                                className="w-full p-3 border rounded-xl bg-white"
+                                                value={transactionCategory === '__LAINNYA__' ||
+                                                    (transactionCategory && ![
+                                                        ...(activeProject?.rabItems?.map(r => r.category).filter(Boolean) || []),
+                                                        'Material', 'Upah Tukang', 'Operasional', 'Sewa Alat', 'Kasbon Tukang'
+                                                    ].includes(transactionCategory)) ? '__LAINNYA__' : transactionCategory}
+                                                onChange={e => {
+                                                    if (setTransactionCategory) {
+                                                        if (e.target.value === '__LAINNYA__') {
+                                                            setTransactionCategory('__LAINNYA__');
+                                                        } else {
+                                                            setTransactionCategory(e.target.value);
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {/* RAB Categories from project */}
+                                                {activeProject?.rabItems &&
+                                                    [...new Set(activeProject.rabItems.map(r => r.category))].filter(Boolean).length > 0 && (
+                                                        <optgroup label="📋 Kategori RAB">
+                                                            {[...new Set(activeProject.rabItems.map(r => r.category))].filter(Boolean).map(cat => (
+                                                                <option key={`rab-${cat}`} value={cat}>{cat}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    )}
+                                                {/* Default categories */}
+                                                <optgroup label="📁 Kategori Umum">
+                                                    <option value="Material">Material</option>
+                                                    <option value="Upah Tukang">Upah Tukang</option>
+                                                    <option value="Operasional">Operasional</option>
+                                                    <option value="Sewa Alat">Sewa Alat</option>
+                                                    <option value="Kasbon Tukang">Kasbon Tukang</option>
+                                                </optgroup>
+                                                <option value="__LAINNYA__">✏️ Lainnya (ketik manual)</option>
+                                            </select>
+
+                                            {/* Custom input when Lainnya is selected */}
+                                            {(transactionCategory === '__LAINNYA__' ||
+                                                (transactionCategory && ![
+                                                    ...(activeProject?.rabItems?.map(r => r.category).filter(Boolean) || []),
+                                                    'Material', 'Upah Tukang', 'Operasional', 'Sewa Alat', 'Kasbon Tukang', '__LAINNYA__'
+                                                ].includes(transactionCategory))) && (
+                                                    <input
+                                                        type="text"
+                                                        className="w-full p-3 border rounded-xl bg-white mt-2"
+                                                        placeholder="Ketik nama kategori..."
+                                                        value={transactionCategory === '__LAINNYA__' ? '' : transactionCategory}
+                                                        onChange={e => setTransactionCategory && setTransactionCategory(e.target.value)}
+                                                        autoFocus
+                                                    />
+                                                )}
+
+                                            <p className="text-[10px] text-slate-400 ml-1 mt-1">
+                                                💡 Pilih kategori RAB agar Analisa Profit akurat
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <select
+                                            className="w-full p-3 border rounded-xl bg-white"
+                                            value={transactionCategory}
+                                            onChange={e => setTransactionCategory && setTransactionCategory(e.target.value)}
+                                        >
+                                            <option value="Termin">Termin</option>
+                                            <option value="DP">Uang Muka (DP)</option>
+                                            <option value="Pelunasan">Pelunasan</option>
+                                            <option value="Tambahan">Tambahan</option>
+                                        </select>
+                                    )}
                                 </div>
 
                                 <div>

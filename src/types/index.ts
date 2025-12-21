@@ -49,6 +49,49 @@ export type MaterialLog = {
   transferProjectName?: string;
 };
 
+export type CashAdvance = {
+  id: number;
+  workerId: number;
+  date: string;
+  amount: number;           // Jumlah kasbon awal
+  remainingAmount: number;  // Sisa yang belum terpotong
+  description: string;
+  status: 'unpaid' | 'partial' | 'paid';
+};
+
+export type Equipment = {
+  id: number;
+  name: string;             // Nama alat (Molen, Scaffolding, dll)
+  vendor: string;           // Nama toko/vendor sewa
+  vendorPhone?: string;     // No HP vendor
+  rentDate: string;         // Tanggal mulai sewa
+  dueDate: string;          // Tanggal harus kembali
+  dailyRate: number;        // Tarif per hari
+  quantity: number;         // Jumlah unit
+  status: 'active' | 'returned' | 'overdue';
+  returnDate?: string;      // Tanggal dikembalikan
+  notes?: string;
+};
+
+export type Subkon = {
+  id: number;
+  name: string;             // Nama subkon/mandor borongan
+  phone?: string;           // No HP
+  workDescription: string;  // Deskripsi pekerjaan
+  rabItemIds: number[];     // Link ke item RAB yang dikerjakan
+  totalValue: number;       // Nilai borongan
+  startDate: string;
+  endDate: string;
+  progress: number;         // Progress % (0-100)
+  status: 'active' | 'completed' | 'cancelled';
+  payments: {
+    date: string;
+    amount: number;
+    note?: string;
+  }[];
+  notes?: string;
+};
+
 export type Worker = {
   id: number;
   name: string;
@@ -56,6 +99,7 @@ export type Worker = {
   realRate: number;
   mandorRate: number;
   wageUnit: 'Harian' | 'Mingguan' | 'Bulanan';
+  cashAdvanceLimit?: number; // Limit kasbon per tukang (default 1.000.000)
 };
 
 export type Task = { id: number; name: string; weight: number; progress: number; lastUpdated: string; };
@@ -68,6 +112,10 @@ export type AttendanceEvidence = {
   location: string;
   uploader: string;
   timestamp: string;
+  // Site Diary fields
+  weather?: 'cerah' | 'mendung' | 'hujan' | 'hujan_lebat';
+  issues?: string;
+  visitors?: string;
 };
 
 export type GalleryItem = {
@@ -99,7 +147,7 @@ export type ProjectDocument = {
 export type TaskLog = { id: number; date: string; taskId: number; previousProgress: number; newProgress: number; note: string; };
 
 // ========== PAYMENT TERMS (TERMIN) ==========
-export type PaymentTermStatus = 'pending' | 'due' | 'invoiced' | 'paid';
+export type PaymentTermStatus = 'pending' | 'due' | 'invoiced' | 'approved' | 'paid';
 
 export type PaymentTerm = {
   id: number;
@@ -141,6 +189,9 @@ export type Project = {
   defects?: Defect[];             // Temuan/Komplain/Defect List
   weeklyReports?: WeeklyReport[]; // Laporan Mingguan (Progress & Deviasi)
   scheduleAnalysis?: string;      // Analisa Manpower & Durasi (Saved from Auto Schedule)
+  cashAdvances?: CashAdvance[];   // Kasbon Tukang
+  equipment?: Equipment[];        // Sewa Alat
+  subkons?: Subkon[];             // Subkontraktor
 };
 
 export type WeeklyReport = {
@@ -226,6 +277,20 @@ export type LandingPageConfig = {
   instagramHandle: string;
   portfolioItems: PortfolioItem[];
   theme?: LandingTheme;
+};
+
+// ========== PROJECT TEMPLATES ==========
+
+export type ProjectTemplate = {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  createdBy: string;
+  // Template Data (from Project, without runtime data)
+  rabItems: Omit<RABItem, 'id' | 'progress' | 'startDate' | 'endDate'>[];
+  workers: Omit<Worker, 'id'>[];
+  materials: Omit<Material, 'id' | 'stock'>[];
 };
 
 // ========== AHS (ANALISA HARGA SATUAN) ==========

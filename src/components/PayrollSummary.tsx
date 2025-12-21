@@ -1,14 +1,24 @@
 import React from 'react';
 import { DollarSign, Users, AlertTriangle, CheckCircle, TrendingDown } from 'lucide-react';
-import type { Project, Worker } from '../types';
+import type { Project, Worker, Equipment, Subkon } from '../types';
 import { calculateTotalDays, calculateWorkerFinancials, formatRupiah } from '../utils/helpers';
+import CashAdvanceSection from './CashAdvanceSection';
+import EquipmentSection from './EquipmentSection';
+import SubkonSection from './SubkonSection';
 
 interface PayrollSummaryProps {
     project: Project;
     onPayWorker?: (worker: Worker) => void;
+    onAddCashAdvance?: (workerId: number, amount: number, description: string) => void;
+    onPayCashAdvance?: (cashAdvanceId: number, amount: number) => void;
+    onAddEquipment?: (equipment: Omit<Equipment, 'id' | 'status'>) => void;
+    onReturnEquipment?: (equipmentId: number) => void;
+    onAddSubkon?: (subkon: Omit<Subkon, 'id' | 'status' | 'payments' | 'progress'>) => void;
+    onUpdateSubkon?: (id: number, updates: Partial<Subkon>) => void;
+    onAddSubkonPayment?: (subkonId: number, amount: number, note: string) => void;
 }
 
-const PayrollSummary: React.FC<PayrollSummaryProps> = ({ project, onPayWorker }) => {
+const PayrollSummary: React.FC<PayrollSummaryProps> = ({ project, onPayWorker, onAddCashAdvance, onPayCashAdvance, onAddEquipment, onReturnEquipment, onAddSubkon, onUpdateSubkon, onAddSubkonPayment }) => {
     const workers = project.workers || [];
 
     // Calculate summary for all workers
@@ -223,6 +233,34 @@ const PayrollSummary: React.FC<PayrollSummaryProps> = ({ project, onPayWorker })
                     </table>
                 </div>
             </div>
+
+            {/* Cash Advance (Kasbon) Section */}
+            {onAddCashAdvance && onPayCashAdvance && (
+                <CashAdvanceSection
+                    project={project}
+                    onAddCashAdvance={onAddCashAdvance}
+                    onPayCashAdvance={onPayCashAdvance}
+                />
+            )}
+
+            {/* Equipment (Sewa Alat) Section */}
+            {onAddEquipment && onReturnEquipment && (
+                <EquipmentSection
+                    project={project}
+                    onAddEquipment={onAddEquipment}
+                    onReturnEquipment={onReturnEquipment}
+                />
+            )}
+
+            {/* Subkon Section */}
+            {onAddSubkon && onUpdateSubkon && onAddSubkonPayment && (
+                <SubkonSection
+                    project={project}
+                    onAddSubkon={onAddSubkon}
+                    onUpdateSubkon={onUpdateSubkon}
+                    onAddPayment={onAddSubkonPayment}
+                />
+            )}
         </div>
     );
 };

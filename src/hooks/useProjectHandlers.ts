@@ -1,7 +1,7 @@
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db, appId, firebaseConfig } from '../lib/firebase';
 import type {
-    Project, RABItem, Transaction, Worker, Material, MaterialLog, TaskLog, AHSItem, WeeklyReport
+    Project, RABItem, Transaction, Worker, Material, MaterialLog, TaskLog, AHSItem, WeeklyReport, CashAdvance, Equipment, Subkon
 } from '../types';
 import { calculateAHSTotal } from '../types';
 import { calculateProjectHealth, formatRupiah } from '../utils/helpers';
@@ -184,15 +184,12 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
     // ========== Auto Schedule Generator (NEW) ==========
     // ========== Auto Schedule Generator (NEW) ==========
-    const handleAutoSchedule = async () => {
+    const handleAutoSchedule = async (mode: '1' | '2') => {
         if (!activeProject) return;
         if (!activeProject.startDate || !activeProject.endDate) {
             alert("Mohon isi Tanggal Mulai dan Selesai Proyek terlebih dahulu di Pengaturan Proyek!");
             return;
         }
-
-        const mode = prompt('Pilih Mode Penjadwalan:\n\n1. TIMPA SEMUA (Reset total berdasarkan algoritma)\n2. ISI YANG KOSONG SAJA (Aman untuk pekerjaan tambah/addendum)\n\nKetik 1 atau 2:', '2');
-        if (mode !== '1' && mode !== '2') return;
 
         try {
             const { generateSmartSchedule, getSchedulePreview } = await import('../utils/scheduleGenerator');
@@ -200,12 +197,6 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             // Generate Analysis
             const analysisLines = getSchedulePreview(activeProject);
             const analysisText = analysisLines.join('\n');
-
-            // Show PREVIEW Explanation (Brief) then Save
-            if (mode === '1') {
-                const confirmPreview = confirm("Sistem akan mengatur ulang jadwal berdasarkan Volume & Produktivitas.\n\nAnalisa detil kebutuhan tukang akan disimpan di halaman Progress.\n\nLanjutkan reset jadwal?");
-                if (!confirmPreview) return;
-            }
 
             const updatedItems = generateSmartSchedule(activeProject, { keepExisting: mode === '2' });
             if (updatedItems.length > 0) {
@@ -461,7 +452,8 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         role: string,
         wageUnit: string,
         realRate: number,
-        mandorRate: number
+        mandorRate: number,
+        cashAdvanceLimit: number
     }) => {
         if (!activeProject) return;
 
@@ -476,7 +468,8 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
                         role: data.role as Worker['role'],
                         wageUnit: data.wageUnit as Worker['wageUnit'],
                         realRate: data.realRate,
-                        mandorRate: data.mandorRate
+                        mandorRate: data.mandorRate,
+                        cashAdvanceLimit: data.cashAdvanceLimit
                     };
                 }
                 return w;
@@ -489,7 +482,8 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
                 role: data.role as Worker['role'],
                 wageUnit: data.wageUnit as Worker['wageUnit'],
                 realRate: data.realRate,
-                mandorRate: data.mandorRate
+                mandorRate: data.mandorRate,
+                cashAdvanceLimit: data.cashAdvanceLimit
             };
             updatedWorkers = [...(activeProject.workers || []), newWorker];
         }
@@ -767,7 +761,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         }
     };
 
-    const saveAttendanceWithEvidence = async () => {
+    const saveAttendanceWithEvidence = async (dailyNotes?: { weather: string; issues: string; visitors: string }) => {
         if (!activeProject) return;
         if (!evidencePhoto) { alert("Wajib ambil foto bukti lapangan!"); return; }
         if (!evidenceLocation) { alert("Lokasi wajib terdeteksi!"); return; }
@@ -806,7 +800,11 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
                 photoUrl: photoUrl,
                 location: evidenceLocation,
                 uploader: user?.displayName || 'Unknown',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                // Site Diary data
+                weather: dailyNotes?.weather as any,
+                issues: dailyNotes?.issues || undefined,
+                visitors: dailyNotes?.visitors || undefined
             }, ...newEvidences];
         }
 
@@ -1216,25 +1214,171 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         await updateProject({ defects: updatedDefects } as any);
     }
 
+    // ========== Cash Advance (Kasbon) Handlers ==========
+    const handleAddCashAdvance = async (workerId: number, amount: number, description: string) => {
+        if (!activeProject) return;
+
+        const worker = activeProject.workers.find(w => w.id === workerId);
+        const workerName = worker?.name || 'Tukang';
+
+        const newCashAdvance: CashAdvance = {
+            id: Date.now(),
+            workerId,
+            date: new Date().toISOString().split('T')[0],
+            amount,
+            remainingAmount: amount,
+            description: description || 'Kasbon',
+            status: 'unpaid'
+        };
+
+        // Also create a transaction (expense) for the kasbon
+        const kasbonTransaction: Transaction = {
+            id: Date.now() + 1,
+            date: new Date().toISOString().split('T')[0],
+            category: 'Kasbon Tukang',
+            description: `Kasbon: ${workerName} - ${description || 'Kasbon'}`,
+            amount: amount,
+            type: 'expense',
+            workerId: workerId
+        };
+
+        const updatedCashAdvances = [newCashAdvance, ...(activeProject.cashAdvances || [])];
+        const updatedTransactions = [kasbonTransaction, ...(activeProject.transactions || [])];
+
+        await updateProject({
+            cashAdvances: updatedCashAdvances,
+            transactions: updatedTransactions
+        });
+    };
+
+    const handlePayCashAdvance = async (cashAdvanceId: number, payAmount: number) => {
+        if (!activeProject) return;
+
+        const cashAdvances = activeProject.cashAdvances || [];
+        const updatedCashAdvances = cashAdvances.map((ca: CashAdvance) => {
+            if (ca.id === cashAdvanceId) {
+                const newRemaining = Math.max(0, ca.remainingAmount - payAmount);
+                let newStatus: CashAdvance['status'] = 'unpaid';
+
+                if (newRemaining === 0) {
+                    newStatus = 'paid';
+                } else if (newRemaining < ca.amount) {
+                    newStatus = 'partial';
+                }
+
+                return {
+                    ...ca,
+                    remainingAmount: newRemaining,
+                    status: newStatus
+                };
+            }
+            return ca;
+        });
+
+        await updateProject({ cashAdvances: updatedCashAdvances });
+    };
+
+    // ========== Equipment (Sewa Alat) Handlers ==========
+    const handleAddEquipment = async (equipment: Omit<Equipment, 'id' | 'status'>) => {
+        if (!activeProject) return;
+
+        const newEquipment: Equipment = {
+            ...equipment,
+            id: Date.now(),
+            status: 'active'
+        };
+
+        // Also create a transaction for the rental deposit (optional - based on settings)
+        const updatedEquipment = [newEquipment, ...(activeProject.equipment || [])];
+        await updateProject({ equipment: updatedEquipment });
+    };
+
+    const handleReturnEquipment = async (equipmentId: number) => {
+        if (!activeProject) return;
+
+        const equipment = activeProject.equipment || [];
+        const updatedEquipment = equipment.map((eq: Equipment) => {
+            if (eq.id === equipmentId) {
+                return {
+                    ...eq,
+                    status: 'returned' as const,
+                    returnDate: new Date().toISOString().split('T')[0]
+                };
+            }
+            return eq;
+        });
+
+        await updateProject({ equipment: updatedEquipment });
+    };
+
+    // =============== SUBKON HANDLERS ===============
+
+    const handleAddSubkon = async (subkonData: Omit<Subkon, 'id' | 'status' | 'payments' | 'progress'>) => {
+        if (!activeProject) return;
+
+        const subkons = activeProject.subkons || [];
+        const newId = subkons.length > 0 ? Math.max(...subkons.map(s => s.id)) + 1 : 1;
+
+        const newSubkon: Subkon = {
+            ...subkonData,
+            id: newId,
+            status: 'active',
+            progress: 0,
+            payments: []
+        };
+
+        await updateProject({ subkons: [...subkons, newSubkon] });
+    };
+
+    const handleUpdateSubkon = async (subkonId: number, updates: Partial<Subkon>) => {
+        if (!activeProject) return;
+
+        const subkons = activeProject.subkons || [];
+        const updatedSubkons = subkons.map(s =>
+            s.id === subkonId ? { ...s, ...updates } : s
+        );
+
+        await updateProject({ subkons: updatedSubkons });
+    };
+
+    const handleAddSubkonPayment = async (subkonId: number, amount: number, note: string) => {
+        if (!activeProject) return;
+
+        const subkons = activeProject.subkons || [];
+        const updatedSubkons = subkons.map(s => {
+            if (s.id === subkonId) {
+                const newPayments = [
+                    ...s.payments,
+                    { date: new Date().toISOString().split('T')[0], amount, note }
+                ];
+                return { ...s, payments: newPayments };
+            }
+            return s;
+        });
+
+        await updateProject({ subkons: updatedSubkons });
+    };
+
     return {
         // QC & Defect
         handleSaveQC,
         handleSaveDefect,
         handleUpdateDefectStatus,
-        // RAB
-        handleSaveRAB,
-        deleteRABItem,
-        handleUpdateProgress,
-        prepareEditRABItem,
-        // Project
+        // Project CRUD
         handleSaveProject,
         prepareEditProject,
         handleSoftDeleteProject,
         handleRestoreProject,
         handlePermanentDeleteProject,
-        handlePayWorker,
+        // RAB
+        handleSaveRAB,
+        deleteRABItem,
+        handleUpdateProgress,
+        prepareEditRABItem,
+        // Worker/Payroll
         handleSaveWorker,
         handleEditWorker,
+        handlePayWorker,
         handleDeleteWorker,
         handleSaveTransaction, // NEW
         // Material/Stock
@@ -1260,6 +1404,16 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         handleAutoSchedule,
         handleGenerateWeeklyReport,
         handleUpdateWeeklyReport,
+        // Cash Advance (Kasbon)
+        handleAddCashAdvance,
+        handlePayCashAdvance,
+        // Equipment (Sewa Alat)
+        handleAddEquipment,
+        handleReturnEquipment,
+        // Subkon
+        handleAddSubkon,
+        handleUpdateSubkon,
+        handleAddSubkonPayment,
     };
 };
 
