@@ -87,7 +87,7 @@ const getCurrentKeyIndex = (): number => {
 };
 
 // Helper: Rotate to next key
-const rotateToNextKey = (keysCount: number): number => {
+export const rotateToNextKey = (keysCount: number): number => {
     let nextIndex = (getCurrentKeyIndex() + 1) % keysCount;
     localStorage.setItem('GEMINI_KEY_INDEX', nextIndex.toString());
     console.log(`🔄 Rotating to API Key #${nextIndex + 1}`);
@@ -95,7 +95,7 @@ const rotateToNextKey = (keysCount: number): number => {
 };
 
 // Helper: Get current API Key (Firestore first, then localStorage, then env)
-const getApiKey = async (): Promise<string> => {
+export const getApiKey = async (): Promise<string> => {
     // 1. Priority: Firestore keys
     const firestoreKeys = await getFirestoreApiKeys();
     if (firestoreKeys.length > 0) {

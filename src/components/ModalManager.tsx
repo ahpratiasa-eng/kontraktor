@@ -70,6 +70,7 @@ interface ModalManagerProps {
     selectedMaterial: Material | null;
 
     aiPrompt: string; setAiPrompt: (s: string) => void;
+    aiFloorPlanImage: string | null; setAiFloorPlanImage: (s: string | null) => void;
     isGeneratingAI: boolean;
 
     attendanceDate: string; setAttendanceDate: (s: string) => void;
@@ -105,7 +106,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         transactionType = 'expense', transactionCategory, setTransactionCategory,
         transactionProof, setTransactionProof,
         inputEmail, setInputEmail, inputRole, setInputRole,
-        aiPrompt, setAiPrompt, isGeneratingAI,
+        aiPrompt, setAiPrompt, aiFloorPlanImage, setAiFloorPlanImage, isGeneratingAI,
         attendanceDate, setAttendanceDate, attendanceData, setAttendanceData, evidencePhoto, evidenceLocation, handlePhotoUpload, isGettingLoc,
         activeProject, selectedRabItem, selectedWorkerId, selectedMaterial,
         ahsItems, resources,
@@ -526,11 +527,81 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                         <div className="space-y-4">
                             <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><Save className="text-purple-600" /> AI Generator RAB</h3>
                             <div className="bg-purple-50 p-4 rounded-xl text-sm text-purple-800">
-                                Ketik deskripsi proyek Anda, AI akan membuatkan daftar item RAB secara otomatis.
+                                <p className="font-bold mb-1">🚀 Mode Pintar dengan Gambar Denah</p>
+                                <p>Upload gambar denah arsitektur, AI akan membaca dimensi dan ruangan secara otomatis. Atau ketik deskripsi proyek manual.</p>
                             </div>
-                            <textarea className="w-full p-4 border rounded-xl h-32" placeholder="Contoh: Renovasi kamar mandi ukuran 2x3 meter, keramik dinding full, closet duduk toto, shower..." value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} />
-                            <button onClick={handleGenerateRAB} disabled={isGeneratingAI} className="w-full bg-purple-600 text-white p-3 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 disabled:bg-slate-400">
-                                {isGeneratingAI ? <><Loader2 className="animate-spin" /> Sedang Berpikir...</> : 'Generate RAB Otomatis'}
+
+                            {/* Floor Plan Image Upload */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-600 ml-1">Upload Gambar Denah (Opsional)</label>
+                                <div className="border-2 border-dashed border-purple-300 rounded-xl p-4 bg-purple-50/50 relative overflow-hidden transition hover:border-purple-400">
+                                    {aiFloorPlanImage ? (
+                                        <div className="relative">
+                                            <img src={aiFloorPlanImage} className="w-full max-h-48 object-contain rounded-lg" alt="Denah" />
+                                            <button
+                                                onClick={() => setAiFloorPlanImage(null)}
+                                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md"
+                                                title="Hapus Gambar"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                            <div className="mt-2 text-center">
+                                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                                                    ✓ Denah siap dianalisis AI
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-4">
+                                            <FileType className="mx-auto text-purple-400 mb-2" size={32} />
+                                            <p className="text-sm text-purple-600 font-medium">Klik atau drag gambar denah</p>
+                                            <p className="text-xs text-purple-400 mt-1">Format: JPG, PNG, WebP</p>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            try {
+                                                const { compressImage } = await import('../utils/imageHelper');
+                                                const compressed = await compressImage(file, 1920, 0.85);
+                                                setAiFloorPlanImage(compressed);
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert('Gagal memproses gambar');
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Text Description */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-600 ml-1">
+                                    {aiFloorPlanImage ? 'Keterangan Tambahan (Opsional)' : 'Deskripsi Proyek'}
+                                </label>
+                                <textarea
+                                    className="w-full p-4 border rounded-xl h-24"
+                                    placeholder={aiFloorPlanImage
+                                        ? "Contoh: Rumah tinggal 2 lantai, finishing premium, keramik granit..."
+                                        : "Contoh: Renovasi kamar mandi ukuran 2x3 meter, keramik dinding full, closet duduk toto, shower..."
+                                    }
+                                    value={aiPrompt}
+                                    onChange={e => setAiPrompt(e.target.value)}
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleGenerateRAB}
+                                disabled={isGeneratingAI || (!aiPrompt && !aiFloorPlanImage)}
+                                className="w-full bg-purple-600 text-white p-3 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 disabled:bg-slate-400 hover:bg-purple-700 transition"
+                            >
+                                {isGeneratingAI ? <><Loader2 className="animate-spin" /> Menganalisis{aiFloorPlanImage ? ' Denah' : ''}...</> : (
+                                    aiFloorPlanImage ? '🔍 Analisis Denah & Generate RAB' : 'Generate RAB Otomatis'
+                                )}
                             </button>
                         </div>
                     )}

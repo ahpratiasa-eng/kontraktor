@@ -59,6 +59,7 @@ export const useFormStates = () => {
 
     // AI/Generation form
     const [aiPrompt, setAiPrompt] = useState('');
+    const [aiFloorPlanImage, setAiFloorPlanImage] = useState<string | null>(null);
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
     // Attendance form
@@ -185,6 +186,7 @@ export const useFormStates = () => {
 
         // AI
         aiPrompt, setAiPrompt,
+        aiFloorPlanImage, setAiFloorPlanImage,
         isGeneratingAI, setIsGeneratingAI,
 
         // Attendance

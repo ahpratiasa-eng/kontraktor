@@ -441,6 +441,7 @@ const App = () => {
         inputEmail={inputEmail} setInputEmail={setInputEmail}
         inputRole={inputRole} setInputRole={setInputRole}
         aiPrompt={aiPrompt} setAiPrompt={setAiPrompt}
+        aiFloorPlanImage={formStates.aiFloorPlanImage} setAiFloorPlanImage={formStates.setAiFloorPlanImage}
         isGeneratingAI={isGeneratingAI}
         attendanceDate={attendanceDate} setAttendanceDate={setAttendanceDate}
         attendanceData={attendanceData} setAttendanceData={setAttendanceData}

@@ -54,6 +54,7 @@ interface UseProjectHandlersProps {
     evidencePhoto: string | null;
     evidenceLocation: string | null;
     aiPrompt: string;
+    aiFloorPlanImage: string | null;
     // Setters
     setInputName: (v: string) => void;
     setInputClient: (v: string) => void;
@@ -97,7 +98,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         selectedRabItem,
         progressInput, progressDate, progressNote, paymentAmount, selectedWorkerId,
         selectedMaterial,
-        attendanceDate, attendanceData, evidencePhoto, evidenceLocation, aiPrompt,
+        attendanceDate, attendanceData, evidencePhoto, evidenceLocation, aiPrompt, aiFloorPlanImage,
         setInputName, setInputClient, setInputLocation, setInputOwnerPhone, setInputBudget, setInputStartDate, setInputEndDate, setInputHeroImage,
         setSelectedRabItem,
         setSelectedWorkerId,
@@ -915,8 +916,283 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
     };
 
     const handleGenerateRAB = async () => {
-        if (!aiPrompt) return alert("Masukkan deskripsi proyek dulu!");
+        if (!aiPrompt && !aiFloorPlanImage) return alert("Masukkan deskripsi proyek atau upload gambar denah!");
         setIsGeneratingAI(true);
+
+        // Post-processing: Validate and correct unrealistic volumes
+        const validateAndCorrectVolumes = (items: any[]) => {
+            console.log('[RAB Validator] Starting validation on', items.length, 'items');
+
+            // Find ALL wall area items (m²) in DINDING category - more permissive matching
+            const wallAreaItems = items.filter((i: any) =>
+                i.category?.toUpperCase().includes('DINDING') &&
+                (i.unit === 'm2' || i.unit === 'm²' || i.unit?.toLowerCase() === 'm2')
+            );
+
+            console.log('[RAB Validator] Found wall area items:', wallAreaItems.map((i: any) => ({ name: i.name, volume: i.volume, unit: i.unit })));
+
+            // Get reference wall area (the largest m² item in DINDING category)
+            const maxWallArea = wallAreaItems.length > 0
+                ? Math.max(...wallAreaItems.map((i: any) => Number(i.volume) || 0))
+                : 0;
+
+            console.log('[RAB Validator] Max wall area reference:', maxWallArea, 'm²');
+
+            // Standard wall thickness is 0.15m for bata merah
+            const STANDARD_WALL_THICKNESS = 0.15;
+            const MAX_VOLUME_RATIO = 0.2; // Volume should never exceed 20% of area
+
+            const processedItems = items.map((item: any) => {
+                const itemCategory = item.category?.toUpperCase() || '';
+                const itemUnit = item.unit?.toLowerCase() || '';
+
+                // Check if this is a wall volume item (m³) 
+                if (itemCategory.includes('DINDING') && (itemUnit === 'm3' || itemUnit === 'm³')) {
+                    const volume = Number(item.volume) || 0;
+                    console.log('[RAB Validator] Checking m³ item:', item.name, 'Volume:', volume);
+
+                    // If we have a reference wall area, validate against it
+                    if (maxWallArea > 0) {
+                        const expectedMaxVolume = maxWallArea * MAX_VOLUME_RATIO;
+                        console.log('[RAB Validator] Expected max volume:', expectedMaxVolume, 'Actual:', volume);
+
+                        if (volume > expectedMaxVolume) {
+                            // Recalculate using standard thickness
+                            const correctedVolume = Math.round(maxWallArea * STANDARD_WALL_THICKNESS * 100) / 100;
+                            console.warn(`[RAB Validator] ✅ CORRECTED wall volume: ${volume} m³ → ${correctedVolume} m³ (based on ${maxWallArea} m² wall area)`);
+                            return { ...item, volume: correctedVolume };
+                        }
+                    }
+
+                    // Fallback: If volume seems unreasonably large (>100 m³ for typical building)
+                    if (volume > 100) {
+                        const correctedVolume = Math.round(volume * 0.15 * 100) / 100; // Assume AI gave m² instead of m³
+                        console.warn(`[RAB Validator] ✅ CORRECTED large volume: ${volume} m³ → ${correctedVolume} m³`);
+                        return { ...item, volume: correctedVolume };
+                    }
+                }
+
+                const name = item.name?.toLowerCase() || '';
+                let cleanVol = String(item.volume).replace(/[^0-9.]/g, '');
+                const volume = Number(cleanVol) || 0;
+                item.volume = volume;
+
+                // 3. Global Special Checks (regardless of category)
+
+                // Bedeng / Gudang / Kantor Sementara -> Max 40 m2
+                if ((name.includes('bedeng') || name.includes('kantor') || name.includes('gudang')) && volume > 40) {
+                    const corrected = 24; // 4x6m standard
+                    console.warn(`[RAB Validator] 🏠 CORRECTED Bedeng Volume (Global): ${volume} m2 -> ${corrected} m2`);
+                    return { ...item, volume: corrected };
+                }
+
+                // Pagar Sementara -> Max 200 m
+                if (name.includes('pagar') && volume > 200) {
+                    const corrected = 100;
+                    return { ...item, volume: corrected };
+                }
+
+                // Bongkar / Pembongkaran -> Max 50 m3
+                if ((name.includes('bongkar') || name.includes('demolition')) && volume > 50) {
+                    const corrected = 20;
+                    console.warn(`[RAB Validator] 🔨 CORRECTED Demolition Volume: ${volume} m3 -> ${corrected} m3`);
+                    return { ...item, volume: corrected };
+                }
+
+                return item;
+            });
+
+            // Deduplicate items (Strict normalization)
+            const uniqueItems: any[] = [];
+            processedItems.forEach(item => {
+                const normalize = (s: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const existing = uniqueItems.find(u =>
+                    normalize(u.name) === normalize(item.name) &&
+                    normalize(u.category) === normalize(item.category)
+                );
+                if (!existing) uniqueItems.push(item);
+            });
+
+            // 4. PRE-CALCULATE DATA FOR INJECTIONS
+            // Get Total Floor Area estimate (from Lantai or Plafond items)
+            const floorItems = uniqueItems.filter(i =>
+                (i.category?.toUpperCase().includes('LANTAI') || i.category?.toUpperCase().includes('PLAFOND')) &&
+                (i.unit === 'm2' || i.unit === 'm²' || i.unit?.toLowerCase().trim() === 'm2')
+            );
+            const maxFloorArea = floorItems.length > 0
+                ? Math.max(...floorItems.map(i => Number(String(i.volume).replace(/[^0-9.]/g, '')) || 0))
+                : 0;
+
+            console.log('[RAB Validator] 📏 Estimated Floor Area:', maxFloorArea, 'm2');
+
+            // 5. INJECT MISSING CORE ITEMS (Hybrid Approach)
+
+            // A. Dinding (Existing Logic)
+            const hasPasanganDinding = uniqueItems.some(i =>
+                i.category?.toUpperCase().includes('DINDING') &&
+                (i.name?.toLowerCase().includes('pasangan') || i.name?.toLowerCase().includes('bata') || i.name?.toLowerCase().includes('hebel'))
+            );
+
+            if (maxWallArea > 20 && !hasPasanganDinding) {
+                console.warn('[RAB Validator] 🧱 AI missed Wall Items! Injecting standard items...');
+                uniqueItems.push(
+                    { category: 'D. DINDING', name: 'Pasangan Dinding Bata Ringan / Hebel', unit: 'm2', volume: maxWallArea, unitPrice: 135000, isAutomated: true },
+                    { category: 'D. DINDING', name: 'Plesteran Dinding (2 Sisi)', unit: 'm2', volume: maxWallArea * 2, unitPrice: 65000, isAutomated: true },
+                    { category: 'D. DINDING', name: 'Acian Dinding (2 Sisi)', unit: 'm2', volume: maxWallArea * 2, unitPrice: 35000, isAutomated: true }
+                );
+
+                // Cat Dinding (2 sisi) if missing
+                const hasCat = uniqueItems.some(i => i.name?.toLowerCase().includes('cat dinding'));
+                if (!hasCat) {
+                    uniqueItems.push({ category: 'G. PENGECATAN', name: 'Pengecatan Dinding Interior & Eksterior', unit: 'm2', volume: maxWallArea * 2, unitPrice: 25000, isAutomated: true });
+                }
+            }
+
+            // B. Struktur (New Logic)
+            // Check current structure volume
+            const structureItems = uniqueItems.filter(i => i.category?.toUpperCase().includes('STRUKTUR'));
+            const totalConcrete = structureItems
+                .filter(i => i.name.toLowerCase().includes('beton') && (i.unit === 'm3' || i.unit === 'm³'))
+                .reduce((acc, curr) => acc + (Number(String(curr.volume).replace(/[^0-9.]/g, '')) || 0), 0);
+
+            const totalSteel = structureItems
+                .filter(i => (i.name.toLowerCase().includes('besi') || i.name.toLowerCase().includes('penulangan')) && (i.unit === 'kg' || i.unit === 'btg'))
+                .reduce((acc, curr) => acc + (Number(String(curr.volume).replace(/[^0-9.]/g, '')) || 0), 0);
+
+            const totalStructureCost = structureItems.reduce((acc, curr) => {
+                const p = Number(String(curr.unitPrice).replace(/[^0-9]/g, '')) || 0;
+                const v = Number(String(curr.volume).replace(/[^0-9.]/g, '')) || 0;
+                return acc + (p * v);
+            }, 0);
+
+            console.log('[RAB Validator] 🏗️ Current Structure: Concrete', totalConcrete, 'm3, Steel', totalSteel, 'kg', 'Cost:', totalStructureCost);
+
+            // If structure seems missing or too small (e.g. < 5m3 concrete or < 100 Juta)
+            // Estimation: 0.25 m3 concrete per m2 floor area.
+            if (maxFloorArea > 20 && (totalConcrete < 5 || totalSteel < 100 || totalStructureCost < 100000000)) {
+                console.warn('[RAB Validator] 🏗️ AI Structure too small! Injecting standard Structure items...');
+
+                const estConcrete = Math.round(maxFloorArea * 0.25 * 100) / 100; // ~0.25 m3 per m2
+
+                // Remove existing tiny items to avoid clutter
+                // Actually, filtering them out is better.
+                // For now, just add the "Borongan" items which covers it.
+
+                uniqueItems.push({
+                    category: 'C. STRUKTUR',
+                    name: 'Pekerjaan Beton Bertulang (Sloof, Kolom, Balok, Plat) - K225',
+                    unit: 'm3',
+                    volume: estConcrete,
+                    unitPrice: 4500000, // Harga jadi termasuk besi & bekisting
+                    isAutomated: true
+                });
+            }
+
+            // 6. FINAL PURGE (Remove Bedeng from wrong categories)
+            return uniqueItems.filter(item => {
+                const name = item.name?.toLowerCase() || '';
+                const cat = item.category?.toUpperCase() || '';
+
+                // If Item is "Bedeng/Kantor" but Category is NOT Persiapan -> REMOVE
+                if ((name.includes('bedeng') || name.includes('kantor sementara') || name.includes('gudang')) && !cat.includes('PERSIAPAN') && !cat.includes('A.')) {
+                    console.warn(`[RAB Validator] 🗑️ Purging misplaced item: ${item.name} from ${item.category}`);
+                    return false;
+                }
+                return true;
+            });
+
+            return uniqueItems;
+        };
+
+        const validateAndCorrectPrices = (items: any[]) => {
+            console.log('[RAB Validator] Starting price validation...');
+            const PRICE_LIMITS: Record<string, number> = {
+                'm2': 1000000,
+                'm3': 20000000,
+                'm': 500000,
+                'bh': 50000000,
+                'ls': 100000000
+            };
+
+            return items.map((item: any) => {
+                let newItem = { ...item };
+
+                // 1. Fix Names (Remove "1 m3 ", "1 m2 ", etc prefix)
+                // 1. Fix Names (Remove "1 m3 ", "1 m2 ", etc prefix)
+                if (newItem.name) {
+                    newItem.name = newItem.name.replace(/^\d+\s*(m3|m2|m¹|m|bh|ls|unit|kg|ton|zak)\s+/i, '');
+                    newItem.name = newItem.name.replace(/^pembuatan\s+\d+\s*(m3|m2|m|kg)\s+/i, 'Pembuatan ');
+                    newItem.name = newItem.name.replace(/^pemasangan\s+\d+\s*(m3|m2|m|kg)\s+/i, 'Pemasangan ');
+                }
+
+                // 2. Validate Price
+                // Robust Price Parsing: Remove "Rp", dots, commas (if used as thousand separator)
+                let priceStr = String(newItem.unitPrice).replace(/[^0-9]/g, '');
+                let price = Number(priceStr) || 0;
+
+                // Verify if parsing resulted in too huge number (e.g. AI sent cents 20000.00 -> 2000000)
+                // Hard to guess, but we trust the Limit check next.
+
+                const unit = (newItem.unit || '').trim().toLowerCase();
+                const limit = PRICE_LIMITS[unit] || 50000000;
+
+                // Merged Safety Check: If price exceeds limit OR exceeds absolute 100M safety cap
+                if (price > limit || price > 100000000) {
+                    // EXCEPTION: Structure Lumpsum can be large (up to 500M)
+                    const isStructureLumpsum = (newItem.category?.toUpperCase().includes('STRUKTUR') && newItem.unit?.toLowerCase().includes('ls'));
+                    if (isStructureLumpsum && price < 500000000) {
+                        // Allow legitimate large structure lumpsum
+                    } else {
+                        console.warn(`[RAB Validator] 💰 Price Anomaly detected: ${newItem.name} (${newItem.unit}) @ ${price}. Capping...`);
+
+                        // Fallback prices
+                        if (unit === 'm3') price = 1500000;
+                        else if (unit === 'm2') price = 250000;
+                        else if (unit === 'm') price = 100000;
+                        else if (unit === 'bh' || unit === 'unit') price = 2500000;
+                        else price = limit / 10;
+
+                        newItem.unitPrice = price;
+                    }
+                }
+
+                // 3. BLACKLIST PURIFIER (Hard Deletion of Hallucinations)
+                // If "Kuda-kuda Kayu" appears (hallucination), Nuke it.
+                if (newItem.name && newItem.name.toLowerCase().includes('kuda-kuda') && newItem.name.toLowerCase().includes('kayu')) {
+                    if (newItem.unitPrice > 10000000) { // If expensive (500M error)
+                        console.warn('[RAB Validator] ☢️ NUCLEAR PURGE: Deleted hallucinated Wood Roof (500M).');
+                        return null; // Remove item
+                    }
+                }
+
+                // 4. DUPLICATE STRUCTURE HEADER FIX
+                // If item is generic "Pekerjaan Struktur" with very small volume/price, it might be a header ghost.
+                if (newItem.name && newItem.category?.toUpperCase().includes('STRUKTUR') && newItem.name.toLowerCase().trim() === 'pekerjaan struktur') {
+                    return null; // Delete generic header item that causes duplication
+                }
+
+                // 3. Special Volume Caps for Earthworks
+                if ((newItem.name?.toLowerCase().includes('galian') || newItem.name?.toLowerCase().includes('urugan')) && newItem.volume > 500) {
+                    const corrected = 200;
+                    console.warn(`[RAB Validator] 🚜 CORRECTED Earthwork Volume: ${newItem.volume} m3 -> ${corrected} m3`);
+                    newItem.volume = corrected;
+                }
+
+                const total = price * (Number(newItem.volume) || 0);
+
+                // Aggressive Total Value Cap
+                const isStructure = newItem.category?.toUpperCase().includes('STRUKTUR');
+                const MAX_TOTAL = isStructure ? 2000000000 : 500000000; // 2 Milyar for Structure, 500 Juta for others
+
+                if (total > MAX_TOTAL) {
+                    console.warn(`[RAB Validator] 💰 Total Value Anomaly: ${newItem.name} = ${total}. Reducing...`);
+                    // Force reduce unit price to fit the max total
+                    newItem.unitPrice = Math.floor(MAX_TOTAL / (Number(newItem.volume) || 1));
+                }
+
+                return newItem;
+            });
+        };
 
         const integrateWithAHS = (items: any[]) => {
             if (!ahsItems || ahsItems.length === 0) return items;
@@ -971,37 +1247,276 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             }
         };
 
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || firebaseConfig.apiKey;
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `Buatkan RAB konstruksi lengkap untuk: ${aiPrompt}. \nOutput JSON array of objects: {category, name, unit, volume, unitPrice}. \nGunakan Bahasa Indonesia. Gunakan harga standar Jakarta 2024. \nKategori harus urut abjad: A. PERSIAPAN, B. TANAH, C. STRUKTUR, D. DINDING, dll. HANYA JSON RAW tanpa markdown.`
-                        }]
-                    }]
-                })
-            });
+            // Build parts array - support multimodal input (image + text)
+            const parts: any[] = [];
 
-            if (!response.ok) throw new Error("API Error");
-            const data = await response.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            // If floor plan image is provided, add it first
+            if (aiFloorPlanImage) {
+                // Extract base64 data (remove data:image/xxx;base64, prefix)
+                const base64Data = aiFloorPlanImage.split(',')[1] || aiFloorPlanImage;
+                const mimeMatch = aiFloorPlanImage.match(/data:(image\/\w+);base64,/);
+                const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
 
-            const items = JSON.parse(cleanJson);
-
-            if (!Array.isArray(items)) throw new Error("Invalid Format");
-
-            const matchedItems = integrateWithAHS(items);
-            const newItems = matchedItems.map((i: any) => ({ ...i, id: Date.now() + Math.random(), progress: 0, isAddendum: false }));
-
-            if (activeProject) {
-                updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
-                alert(`Berhasil generate RAB! Beberapa item otomatis terhubung ke AHS.`);
-                setShowModal(false);
+                parts.push({
+                    inline_data: {
+                        mime_type: mimeType,
+                        data: base64Data
+                    }
+                });
             }
+
+            // Build the prompt text
+            // Build the prompt text (NEW LOGIC - CHAIN OF THOUGHT)
+            // Build the prompt text (PARAMETRIC LOGIC UPGRADE)
+            // User requested: "Don't guess, calculate backwards from Area x Price/m2"
+            const promptText = aiFloorPlanImage
+                ? `Role: Expert Civil Engineer & Quantity Surveyor (Estimator) - INDONESIA.
+                   Persona: "Teknis tapi Santai" (Field Engineer).
+
+                   🚨 CORE ALGORITHM (PARAMETRIC ESTIMATION):
+                   Do NOT guess random prices. Use this TOP-DOWN approach:
+
+                   STEP 1: ANCHOR PRICE (LOGIC GATE 1)
+                   1. Calc Building Area = Length x Width x Floors. Round up.
+                   2. Determine Base Price 2025:
+                      - Jakarta/Bekasi Standard = Rp 3.600.000 - Rp 3.800.000 / m2.
+                      - Luxury = > Rp 5.000.000.
+                   3. Calculate TARGET TOTAL = Area x Base Price. (e.g. 180m2 x 3.6jt = ~648 Juta).
+                   
+                   STEP 2: WEIGHTING DISTRIBUTION (LOGIC GATE 2)
+                   Allocate the TARGET TOTAL into categories:
+                   - II. STRUKTUR BETON (Crucial): ~35-38% (Avg: 38%) -> e.g. 245 Juta.
+                   - III. DINDING: ~14.5% -> e.g. 95 Juta.
+                   - IV. PLAFOND & ATAP: ~8-10% -> e.g. 55 Juta.
+                   - V. LANTAI: ~13% -> e.g. 85 Juta.
+                   - VI. KUSEN/PINTU: ~7%.
+                   - VII. MEP: ~6%.
+                   - VIII. FINISHING: ~5%.
+                   - OTHERS/PREPARATION: ~9%.
+
+                   STEP 3: APPLY MODIFIERS (CONSTRAINTS & USER OVERRIDES)
+                   *CHECK USER PROMPT FIRST for overrides. If not specified, use DEFAULTS.*
+
+                   [DINDING]
+                   - User said "Bata Merah"? -> Use "Pasangan Dinding Bata Merah". (Expensive/Heavy).
+                   - Default -> Use "Pasangan Dinding Bata Ringan (Hebel)". (Standard).
+
+                   [STRUKTUR]
+                   - User said "Pancang" or "Tanah Lunak"? -> Use "Pondasi Tiang Pancang/Mini Pile".
+                   - Default -> Use "Pondasi Tapak / Footplate Beton Bertulang" (Tanah Keras/Standard).
+
+                   [FASAD]
+                   - User said "ACP" or "Aluminium"? -> Use "Pasang ACP Seven/Marks". (Add ~500k-800k/m2 to Finishing Budget).
+                   - Default -> Use "Pengecatan Tembok Eksterior Weathershield".
+
+                   [ATAP]
+                   - User said "Dak Beton" or "Rooftop"? -> Use "Plat Dak Beton". (Add structure cost).
+                   - Default -> Use "Rangka Baja Ringan + Atap Spandek/Genteng Metal".
+
+                   STEP 4: GENERATE LINE ITEMS (MAJOR WORK PACKAGES ONLY)
+                   **CRITICAL RULES (NEGATIVE PROMPTS):**
+                   1. **NO RENOVATION ITEMS**: Strictly FORBID items like "Pembongkaran", "Bobokan", "Perbaikan", "Suntik/Grouting". This is a NEW project.
+                   2. **NO INDUSTRIAL SPECS**: Do not use "Sump Pit", "Cutter Pump", or "Genset" unless requested. Use residential "Septictank Biofil".
+                   3. **NO MISPLACEMENT**: "Galian" & "Urugan" belongs in "Tanah", NOT in "Elektrikal" or "Struktur".
+                   4. **NO LOWBALL PRICES**: Do not use raw material prices. Use "INSTALLED PRICE" (Material + Labor).
+
+                   **REFERENCE PRICING (USE THESE ANCHORS per m2/m3):**
+                   - Structure (Beton Bertulang): IDR 3,500,000 - 4,000,000 per m3 OR IDR 1,200,000 per m2 floor area.
+                   - Wall (Hebel Terpasang): IDR 185,000 - 220,000 per m2.
+                   - Floor (Granit 60x60 Terpasang): IDR 425,000 - 480,000 per m2.
+                   - Roof (Baja Ringan + Spandek): IDR 250,000 - 300,000 per m2.
+                   - Ceiling (Gypsum): IDR 110,000 - 130,000 per m2.
+                   - Paint (Cat Tembok): IDR 35,000 - 50,000 per m2.
+
+                   STEP 5: CHECK SUM & DUPLICATION
+                   - Ensure sum of all items EQUALS the Target Total from Step 1.
+                   - **DO NOT create duplicate headers** (e.g. do not make "C. STRUKTUR" twice).
+                   
+                   FINAL CHECK INSTRUCTIONS (ANTI-HALLUCINATION):
+                   1. SINGLE ENTRY RULE: You have already detailed the "Struktur" in the beginning. DO NOT add a summary "Struktur" or "Beton Bertulang" item at the end of the JSON list.
+                   2. NO DUPLICATE CATEGORIES: Ensure "Category II" (Struktur) appears ONLY ONCE.
+                   3. CONSISTENCY: If you break down structure into components (Pondasi, Sloof, Kolom), DO NOT add a separate "Lumpsum" item for the same work.
+
+                   OUTPUT TASK:
+                   Generate the JSON Array RAB based on this logic.
+                   Format: { category, name, unit, volume, unitPrice }.
+
+                   CRITICAL RULES:
+                   1. Prices MUST be Jakarta 2024.
+                   2. Categories: A. PERSIAPAN, B. TANAH, C. STRUKTUR, D. DINDING, E. LANTAI, F. PLAFOND, G. ATAP, H. PINTU & JENDELA, I. SANITAIR, J. MEKANIKAL, K. ELEKTRIKAL, L. FINISHING.
+                   3. Volume Checks: Wall m3 < (Wall m2 * 0.15).
+                   4. "Bedeng" max 24m2.
+                   5. NO "1 m3" prefix.
+
+                   Output strictly JSON (and if you want to explain, do it outside the JSON block).`
+
+                : `Role: Expert Estimator.
+                   Task: Create detailed RAB for "${aiPrompt}".
+                   Logic:
+                   1. Estimate Floor Area based on description.
+                   2. Target Cost ~4jt/m2 (Standard).
+                   3. Breakdown into: Structure (35%), Walls (20%), Finishing (45%).
+                   Output JSON Array: { category, name, unit, volume, unitPrice }.
+                   Categories: A. PERSIAPAN, B. TANAH, C. STRUKTUR, D. DINDING, etc.
+                   Prices: Jakarta 2024.
+                   Validation: Wall Volume m3 < Wall Area m2 * 0.2.
+                   JSON Only.`;
+
+            parts.push({ text: promptText });
+
+            // Retry logic with exponential backoff AND KEY ROTATION
+            const maxRetries = 3;
+            let lastError: Error | null = null;
+
+            // Dynamic import to allow using the helpers
+            const { getApiKey, rotateToNextKey, getStoredApiKeys } = await import('../utils/aiScheduler');
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    // Get current key (fresh fetch)
+                    const currentApiKey = await getApiKey();
+                    if (!currentApiKey) throw new Error("API Key not found in Settings.");
+
+                    if (attempt > 0) {
+                        const delay = Math.pow(3, attempt) * 2000; // 6s, 18s, 54s (More aggressive backoff)
+                        console.log(`[RAB Generator] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms delay...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${currentApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts }]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        console.error(`[RAB Generator] API Error ${response.status}:`, errorBody);
+                    }
+
+                    if (response.status === 429) {
+                        console.warn(`[RAB Generator] Rate limited (429) on key ...${currentApiKey.slice(-4)}`);
+
+                        // ROTATION LOGIC
+                        const allKeys = await getStoredApiKeys();
+                        if (allKeys.length > 1) {
+                            console.log(`[RAB Generator] 🔄 Rotating to next API key...`);
+                            rotateToNextKey(allKeys.length);
+                        } else {
+                            console.warn(`[RAB Generator] Only 1 key available, cannot rotate. Waiting longer...`);
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                        }
+
+                        lastError = new Error("Rate limited");
+                        continue; // Retry
+                    }
+
+                    if (response.status >= 500) {
+                        console.warn(`[RAB Generator] Server error (${response.status}), will retry...`);
+                        lastError = new Error(`Server error ${response.status}`);
+                        continue; // Retry
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (!text) {
+                        throw new Error("Empty response from AI");
+                    }
+
+                    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+                    // Robust JSON Extraction (in case AI outputs "Thinking" text first)
+                    const startIndex = cleanJson.indexOf('[');
+                    const endIndex = cleanJson.lastIndexOf(']');
+
+                    let jsonStr = cleanJson;
+                    if (startIndex !== -1 && endIndex !== -1) {
+                        jsonStr = cleanJson.substring(startIndex, endIndex + 1);
+                    }
+
+                    const items = JSON.parse(jsonStr);
+
+                    if (!Array.isArray(items)) throw new Error("Invalid Format");
+
+                    // 0. CATEGORY DEDUPLICATION FILTER (Fixes Triple Accounting)
+                    // Logic: Once we see a major category (like STRUCTURE), we ban it from appearing again.
+                    // This kills the "Summary at the end" ghost items.
+                    const finalItems: any[] = [];
+                    const seenCategories = new Set<string>();
+
+                    // Priority Order isn't strictly needed if we just ban repeats.
+
+                    for (const item of items) {
+                        const catNameRaw = (item.category || '').toUpperCase().trim();
+                        // Normalize category name (remove Roman Numerals I. II. C. etc)
+                        // e.g. "C. PEKERJAAN STRUKTUR" -> "PEKERJAAN STRUKTUR"
+                        const catKeyword = catNameRaw.replace(/^[A-Z0-9]+\.\s*/, '');
+
+                        let isDuplicate = false;
+
+                        // Check specific major categories for duplication
+                        if (catKeyword.includes('STRUKTUR') || catKeyword.includes('BETON')) {
+                            if (seenCategories.has('STRUKTUR')) {
+                                console.log('💀 Killing Duplicate Structure Item (Triple Accounting Fix):', item.name);
+                                isDuplicate = true;
+                            } else {
+                                seenCategories.add('STRUKTUR');
+                            }
+                        }
+
+                        // You can extend this logic for other categories if needed
+
+                        if (!isDuplicate) {
+                            finalItems.push(item);
+                        }
+                    }
+
+                    // Validate and correct unrealistic wall volumes before AHS integration
+                    let validatedItems = validateAndCorrectVolumes(finalItems);
+
+                    // Validate and correct unrealistic prices
+                    validatedItems = validateAndCorrectPrices(validatedItems);
+
+                    // AHS Integration DISABLED by User Request (2025-12-23)
+                    // Let AI think for itself.
+                    // let matchedItems = integrateWithAHS(validatedItems);
+                    let matchedItems = validatedItems;
+
+                    // Final Validation Pass: Purge anomalies (e.g. Bedeng in Dinding)
+                    matchedItems = validateAndCorrectVolumes(matchedItems);
+
+                    // Final Price Check (Safety Net)
+                    matchedItems = validateAndCorrectPrices(matchedItems);
+
+                    const newItems = matchedItems.map((i: any) => ({ ...i, id: Date.now() + Math.random(), progress: 0, isAddendum: false }));
+
+                    if (activeProject) {
+                        updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
+                        // alert(`Berhasil generate RAB! Beberapa item otomatis terhubung ke AHS.`); 
+                        alert(`Berhasil generate RAB secara Otomatis (AHS User-Disabled). Logic Murni.`);
+                        setShowModal(false);
+                    }
+                    return; // Success, exit function
+
+                } catch (innerError) {
+                    lastError = innerError as Error;
+                    if (attempt === maxRetries - 1) {
+                        throw lastError;
+                    }
+                }
+            }
+
+            // If we get here, all retries failed
+            if (lastError) throw lastError;
+
         } catch (e) {
             console.warn("Switching to offline generator:", e);
             runOffline();
