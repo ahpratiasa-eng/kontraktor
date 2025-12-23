@@ -1,7 +1,24 @@
 import * as XLSX from 'xlsx';
 import type { RABItem } from '../types';
 
-export const parseRABExcel = (file: File): Promise<RABItem[]> => {
+export const getExcelSheets = (file: File): Promise<string[]> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = e.target?.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                resolve(workbook.SheetNames);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsBinaryString(file);
+    });
+};
+
+export const parseRABExcel = (file: File, sheetName?: string): Promise<RABItem[]> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -10,16 +27,19 @@ export const parseRABExcel = (file: File): Promise<RABItem[]> => {
                 const data = e.target?.result;
                 const workbook = XLSX.read(data, { type: 'binary' });
 
-                // STRATEGY: Find the best sheet
-                let sheetName = workbook.SheetNames.find(s =>
-                    s.toUpperCase().includes('RAB') ||
-                    s.toUpperCase().includes('BOQ') ||
-                    s.toUpperCase().includes('BUDGET')
-                );
+                // STRATEGY: Use selected sheet OR Find the best sheet
+                let selectedSheet = sheetName;
+                if (!selectedSheet) {
+                    selectedSheet = workbook.SheetNames.find(s =>
+                        s.toUpperCase().includes('RAB') ||
+                        s.toUpperCase().includes('BOQ') ||
+                        s.toUpperCase().includes('BUDGET')
+                    );
+                    if (!selectedSheet) selectedSheet = workbook.SheetNames[0];
+                }
 
-                if (!sheetName) sheetName = workbook.SheetNames[0];
-                console.log(`[Import] Using sheet: ${sheetName}`);
-                const sheet = workbook.Sheets[sheetName];
+                console.log(`[Import] Using sheet: ${selectedSheet}`);
+                const sheet = workbook.Sheets[selectedSheet];
 
                 const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as any[][];
 
@@ -39,13 +59,23 @@ export const parseRABExcel = (file: File): Promise<RABItem[]> => {
 
                 // 1. Try to find header by keywords
                 for (let i = 0; i < Math.min(rows.length, 25); i++) {
-                    const row = rows[i].map(c => String(c).toUpperCase());
+                    const row = rows[i].map(c => String(c).toUpperCase().trim());
 
-                    const no = row.findIndex(c => c === 'NO' || c === 'NOMOR');
-                    const n = row.findIndex(c => c.includes('URAIAN') || c.includes('PEKERJAAN') || c.includes('ITEM'));
-                    const v = row.findIndex(c => c === 'VOL' || c.includes('VOLUME') || c.includes('QTY') || c.includes('JUMLAH'));
-                    const u = row.findIndex(c => c.includes('SAT') || c.includes('UNIT'));
-                    const p = row.findIndex(c => c.includes('HARGA') || c.includes('UPAH'));
+                    const no = row.findIndex(c => c === 'NO' || c === 'NOMOR' || c === 'NO.');
+                    const n = row.findIndex(c => c.includes('URAIAN') || c.includes('PEKERJAAN') || c.includes('ITEM') || c === 'NAME' || c === 'NAMA');
+                    const v = row.findIndex(c => c === 'VOL' || c.includes('VOLUME') || c.includes('QTY') || c.includes('JUMLAH') || c === 'V' || c === 'VOL.');
+
+                    // Priority for Unit: 'SAT' or 'UNIT'
+                    // Avoid matching "HARGA SATUAN" as Unit
+                    const u = row.findIndex(c => (c.includes('SAT') || c.includes('UNIT')) && !c.includes('HARGA') && !c.includes('TOTAL'));
+
+                    // Priority for Price: 'HARGA' or 'PRICE' or 'UPAH'
+                    // Look for "HARGA SATUAN" specifically if possible, otherwise just "HARGA"
+                    // But avoid "TOTAL HARGA" if we can find "HARGA SATUAN"
+                    let p = row.findIndex(c => (c.includes('HARGA') && c.includes('SAT')) || c.includes('UNIT PRICE') || c === 'PRICE');
+                    if (p === -1) {
+                        p = row.findIndex(c => (c.includes('HARGA') || c.includes('UPAH') || c === 'PRICE') && !c.includes('TOTAL') && !c.includes('JASA'));
+                    }
 
                     if (n !== -1 && v !== -1) {
                         noIdx = no !== -1 ? no : 0;
@@ -54,13 +84,14 @@ export const parseRABExcel = (file: File): Promise<RABItem[]> => {
                         unitIdx = u !== -1 ? u : -1;
                         priceIdx = p !== -1 ? p : -1;
                         startRow = i + 1;
-                        console.log(`Header found: No=${noIdx}, Name=${n}, Vol=${v}`);
+                        console.log(`[Import] Header found at row ${i + 1}: No=${noIdx}, Name=${nameIdx}, Vol=${volIdx}, Unit=${unitIdx}, Price=${priceIdx}`);
                         break;
                     }
                 }
 
-                // 2. FALLBACK
+                // 2. FALLBACK (Only if header detection failed completely)
                 if (nameIdx === -1) {
+                    console.warn("[Import] Header not found, using fallback columns.");
                     noIdx = 0; // Col A
                     nameIdx = 1; // Col B
                     unitIdx = 4; // Col E
@@ -91,6 +122,7 @@ export const parseRABExcel = (file: File): Promise<RABItem[]> => {
                 let idCounter = 1;
                 let mainCategory = 'Info Umum';
                 let subCategory = '';
+                let isRomanContext = false; // Flag to track if we are inside a Roman numeral parent (I, II, III)
 
                 for (let i = startRow; i < rows.length; i++) {
                     const row = rows[i];
@@ -115,38 +147,64 @@ export const parseRABExcel = (file: File): Promise<RABItem[]> => {
                     const price = parseNumber(priceRaw);
 
                     // LOGIC: Hierarki Kategori
-                    // Header detected if no volume/price
+                    // Header detected if no volume/price OR explicitly looks like a header (Roman numeral only row)
                     const isHeader = (volume === 0 || !volRaw) && price === 0;
 
                     if (isHeader) {
-                        // Check if Main Category (A, B, C or I, II, III)
-                        const hasMainNumbering = /^[A-Z]$/.test(noRaw) || /^[IVX]+$/.test(noRaw);
+                        // Check labeling style
+                        const isRoman = /^[IVX]+$/.test(noRaw);
+                        const isAlpha = /^[A-Z]$/.test(noRaw);
+                        const isNumeric = /^\d+$/.test(noRaw);
 
-                        if (hasMainNumbering) {
-                            // Combine Number + Name -> "A. PEKERJAAN PERSIAPAN"
+                        if (isRoman) {
+                            // LEVEL 1: Roman Numeral (I, II, III)
+                            isRomanContext = true;
                             if (name.startsWith(`${noRaw}.`)) {
                                 mainCategory = name;
                             } else {
                                 mainCategory = `${noRaw}. ${name}`;
                             }
-                            // Normalize dot spacing: "A.PEKERJAAN" -> "A. PEKERJAAN"
-                            mainCategory = mainCategory.replace(/^([A-Z0-9IVX]+\.)(?!\s)/, '$1 ');
-
-                            subCategory = ''; // Reset sub
+                            // Normalize dot spacing: "I.PEKERJAAN" -> "I. PEKERJAAN"
+                            mainCategory = mainCategory.replace(/^([IVX]+\.)(?!\s)/, '$1 ');
+                            subCategory = ''; // Reset sibling subcategory
                         }
-                        else if (mainCategory === 'Info Umum' && name.length > 3) {
+                        else if (isAlpha && isRomanContext) {
+                            // LEVEL 2: Alpha under Roman (A, B, C under I, II)
+                            if (name.startsWith(`${noRaw}.`)) {
+                                subCategory = name;
+                            } else {
+                                subCategory = `${noRaw}. ${name}`;
+                            }
+                            // Normalize: "A.PEKERJAAN" -> "A. PEKERJAAN"
+                            subCategory = subCategory.replace(/^([A-Z]+\.)(?!\s)/, '$1 ');
+                        }
+                        else if (isAlpha && !isRomanContext && mainCategory === 'Info Umum') {
+                            // LEVEL 1 (Fallback): Alpha as main if no Roman context yet (A, B, C)
+                            if (name.startsWith(`${noRaw}.`)) {
+                                mainCategory = name;
+                            } else {
+                                mainCategory = `${noRaw}. ${name}`;
+                            }
+                            mainCategory = mainCategory.replace(/^([A-Z]+\.)(?!\s)/, '$1 ');
+                            subCategory = '';
+                        }
+                        else if (isNumeric && name.length > 5) {
+                            // NEW: Numeric subcategory (1, 2, 3) - treat as subcategory if name is substantial
+                            // This handles cases like "2. Pekerjaan Pasang Granit Lantai"
+                            if (name.startsWith(`${noRaw}.`)) {
+                                subCategory = name;
+                            } else {
+                                subCategory = `${noRaw}. ${name}`;
+                            }
+                            // Normalize: "2.PEKERJAAN" -> "2. PEKERJAAN"
+                            subCategory = subCategory.replace(/^(\d+\.)(?!\s)/, '$1 ');
+                            console.log(`[Import] Numeric subcategory detected: ${subCategory}`);
+                        }
+                        else if (mainCategory === 'Info Umum' && name.length > 3 && !isNumeric) {
+                            // Fallback for unlabeled headers
                             mainCategory = name;
                         }
-                        else {
-                            if (name.length > 2) {
-                                // SUB CATEGORY DETECTED
-                                // Strategy: Add invisible sorting prefix using Row Index to preserve Excel order
-                                // Format: "000ROW||RealName"
-                                // This ensures sorting works but we can strip it in UI
-                                const sortPrefix = String(i).padStart(5, '0');
-                                subCategory = `${sortPrefix}||${name}`;
-                            }
-                        }
+                        // Note: If isNumeric (1, 2, 3), usually it's just an item list header or noise, ignore as category unless very specific
                         continue;
                     }
 

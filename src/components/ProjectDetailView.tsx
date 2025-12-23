@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
     Settings, FileText, Sparkles, History, Edit, Trash2, Banknote, Calendar, TrendingUp,
     ImageIcon, ExternalLink, Upload, Lock, AlertTriangle, ShoppingCart, Users, Package, Plus, CheckCircle,
-    ShieldAlert, Minimize2, X, Camera, Download, Copy, MessageSquare
+    ShieldAlert, Minimize2, X, Camera, Download, Copy, MessageSquare, ChevronRight
 } from 'lucide-react';
 import ProjectHeader from './project-detail/ProjectHeader';
 import SCurveChart from './SCurveChart';
@@ -189,6 +189,38 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
     // Schedule Mode Modal State
     const [showScheduleModeModal, setShowScheduleModeModal] = useState(false);
+
+    // Bulk Delete RAB State
+    const [selectedRabIds, setSelectedRabIds] = useState<Set<number>>(new Set());
+    const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+    const [bulkDeleteType, setBulkDeleteType] = useState<'all' | 'selected'>('selected');
+
+    const toggleRabSelection = (id: number) => {
+        setSelectedRabIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) newSet.delete(id);
+            else newSet.add(id);
+            return newSet;
+        });
+    };
+
+    const selectAllRab = () => {
+        const allIds = (activeProject.rabItems || []).map((item: RABItem) => item.id);
+        setSelectedRabIds(new Set(allIds));
+    };
+
+    const deselectAllRab = () => setSelectedRabIds(new Set());
+
+    const confirmBulkDelete = async () => {
+        if (bulkDeleteType === 'all') {
+            await updateProject({ rabItems: [] });
+        } else {
+            const remaining = (activeProject.rabItems || []).filter((item: RABItem) => !selectedRabIds.has(item.id));
+            await updateProject({ rabItems: remaining });
+        }
+        setSelectedRabIds(new Set());
+        setShowBulkDeleteConfirm(false);
+    };
 
 
 
@@ -968,20 +1000,72 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                     });
 
                                     // DEFAULT: All categories collapsed (use undefined check to default to true)
-                                    const timelineRows: Array<{ type: 'header' | 'item', data: any, id: string, catTimeline?: any }> = [];
+                                    // NEW: Two-level hierarchy - Group sub-categories under main categories
+                                    const timelineRows: Array<{ type: 'header' | 'subheader' | 'item', data: any, id: string, catTimeline?: any, mainCat?: string, subCat?: string }> = [];
+
+                                    // Group categories by main category (before " - ")
+                                    const mainCatGroups: Record<string, string[]> = {};
                                     Object.keys(groups).sort().forEach(cat => {
-                                        // Default collapsed = true (if not explicitly set to false)
-                                        const isCollapsed = collapsedCategories[cat] !== false;
+                                        const parts = cat.split(' - ');
+                                        const mainCat = parts[0];
+                                        if (!mainCatGroups[mainCat]) mainCatGroups[mainCat] = [];
+                                        mainCatGroups[mainCat].push(cat);
+                                    });
+
+                                    // Build rows with two-level hierarchy
+                                    Object.keys(mainCatGroups).sort().forEach(mainCat => {
+                                        const subCats = mainCatGroups[mainCat];
+                                        const isMainCollapsed = collapsedCategories[`main-${mainCat}`] !== false;
+
+                                        // Calculate totals for main category header
+                                        let mainTotalTeams = 0;
+                                        subCats.forEach(cat => {
+                                            if (categoryTimelines[cat]) {
+                                                mainTotalTeams += categoryTimelines[cat].teamsNeeded || 0;
+                                            }
+                                        });
+
+                                        // Main Category Header
                                         timelineRows.push({
                                             type: 'header',
-                                            data: cat,
-                                            id: `cat-${cat}`,
-                                            catTimeline: categoryTimelines[cat]
+                                            data: mainCat,
+                                            id: `main-${mainCat}`,
+                                            catTimeline: { teamsNeeded: mainTotalTeams },
+                                            mainCat: mainCat
                                         });
-                                        if (!isCollapsed) {
-                                            groups[cat].forEach((item: any) => {
-                                                timelineRows.push({ type: 'item', data: item, id: item.id });
-                                            });
+
+                                        if (!isMainCollapsed) {
+                                            // If only 1 sub-category and it's the same as main, show items directly
+                                            if (subCats.length === 1 && subCats[0] === mainCat) {
+                                                const cat = subCats[0];
+                                                groups[cat].forEach((item: any) => {
+                                                    timelineRows.push({ type: 'item', data: item, id: item.id, mainCat, subCat: '' });
+                                                });
+                                            } else {
+                                                // Multiple sub-categories: show sub-headers
+                                                subCats.forEach(cat => {
+                                                    const subName = cat.includes(' - ') ? cat.split(' - ').slice(1).join(' - ') : '';
+                                                    const isSubCollapsed = collapsedCategories[cat] !== false;
+
+                                                    if (subName) {
+                                                        // Sub-category Header (only if there's a sub-name)
+                                                        timelineRows.push({
+                                                            type: 'subheader',
+                                                            data: cat,
+                                                            id: `sub-${cat}`,
+                                                            catTimeline: categoryTimelines[cat],
+                                                            mainCat,
+                                                            subCat: subName
+                                                        });
+                                                    }
+
+                                                    if (!isSubCollapsed || !subName) {
+                                                        groups[cat].forEach((item: any) => {
+                                                            timelineRows.push({ type: 'item', data: item, id: item.id, mainCat, subCat: subName });
+                                                        });
+                                                    }
+                                                });
+                                            }
                                         }
                                     });
 
@@ -1007,16 +1091,18 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                 <div className="bg-white pb-2">
                                                     {displayedRows.map((row) => {
                                                         if (row.type === 'header') {
+                                                            // Main Category Header
                                                             const peopleNeeded = row.catTimeline?.teamsNeeded ? Math.ceil(row.catTimeline.teamsNeeded * 2) : 0;
+                                                            const toggleKey = `main-${row.data}`;
                                                             return (
                                                                 <div
                                                                     key={row.id}
-                                                                    onClick={() => toggleCategory(row.data)}
-                                                                    className="h-8 flex items-center px-4 text-[10px] font-bold text-slate-500 bg-slate-100/50 uppercase tracking-wider border-b border-white hover:bg-slate-200 cursor-pointer select-none"
+                                                                    onClick={() => toggleCategory(toggleKey)}
+                                                                    className="h-8 flex items-center px-4 text-[10px] font-bold text-slate-600 bg-slate-200/70 uppercase tracking-wider border-b border-white hover:bg-slate-300 cursor-pointer select-none"
                                                                     title={row.data}
                                                                 >
                                                                     <div className="flex items-center gap-2 w-full min-w-0">
-                                                                        <span className="transform transition-transform duration-200 flex-shrink-0" style={{ transform: collapsedCategories[row.data] === false ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+                                                                        <span className="transform transition-transform duration-200 flex-shrink-0" style={{ transform: collapsedCategories[toggleKey] === false ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
                                                                             ▼
                                                                         </span>
                                                                         <div className="flex items-center gap-1 overflow-hidden">
@@ -1024,9 +1110,34 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                                             {!isClientView && peopleNeeded > 0 && (
                                                                                 <span
                                                                                     className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[9px] font-extrabold whitespace-nowrap flex-shrink-0 cursor-help"
-                                                                                    title={`Rata-rata beban kerja harian kategori ini butuh ${peopleNeeded} orang (Akumulasi item yang berjalan paralel).`}
+                                                                                    title={`Rata-rata beban kerja harian kategori ini butuh ${peopleNeeded} orang.`}
                                                                                 >
                                                                                     Rata²: {peopleNeeded} Org
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        } else if (row.type === 'subheader') {
+                                                            // Sub-Category Header (indented)
+                                                            const peopleNeeded = row.catTimeline?.teamsNeeded ? Math.ceil(row.catTimeline.teamsNeeded * 2) : 0;
+                                                            return (
+                                                                <div
+                                                                    key={row.id}
+                                                                    onClick={() => toggleCategory(row.data)}
+                                                                    className="h-7 flex items-center pl-8 pr-4 text-[9px] font-semibold text-slate-500 bg-slate-100/50 tracking-wide border-b border-white hover:bg-slate-200 cursor-pointer select-none"
+                                                                    title={row.subCat}
+                                                                >
+                                                                    <div className="flex items-center gap-2 w-full min-w-0">
+                                                                        <span className="transform transition-transform duration-200 flex-shrink-0 text-[8px]" style={{ transform: collapsedCategories[row.data] === false ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+                                                                            ▼
+                                                                        </span>
+                                                                        <div className="flex items-center gap-1 overflow-hidden">
+                                                                            <span className="truncate">{row.subCat}</span>
+                                                                            {!isClientView && peopleNeeded > 0 && (
+                                                                                <span className="text-purple-600 bg-purple-50 px-1 py-0.5 rounded text-[8px] font-bold whitespace-nowrap flex-shrink-0">
+                                                                                    {peopleNeeded} Org
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -1105,34 +1216,47 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                     <div className="pb-2">
                                                         {displayedRows.map((row, idx) => {
                                                             if (row.type === 'header') {
-                                                                // Category aggregate timeline bar
+                                                                // Main Category aggregate timeline bar
+                                                                const catTimeline = row.catTimeline || { startOffset: 0, width: 20, avgProgress: 0 };
+                                                                const toggleKey = `main-${row.data}`;
+                                                                return (
+                                                                    <div
+                                                                        key={row.id}
+                                                                        className="h-8 bg-slate-100/50 border-b border-slate-100 w-full flex items-center px-2 md:px-4 cursor-pointer hover:bg-slate-200"
+                                                                        onClick={() => toggleCategory(toggleKey)}
+                                                                    >
+                                                                        <div className="flex-1 relative h-5 bg-slate-300/80 rounded-full overflow-hidden w-full">
+                                                                            {/* Main category bar - just summary */}
+                                                                            <div
+                                                                                className="absolute top-0 bottom-0 bg-slate-500"
+                                                                                style={{ left: '0%', width: '100%', opacity: 0.3 }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            } else if (row.type === 'subheader') {
+                                                                // Sub-Category timeline bar
                                                                 const catTimeline = row.catTimeline || { startOffset: 0, width: 20, avgProgress: 0 };
                                                                 return (
                                                                     <div
                                                                         key={row.id}
-                                                                        className="h-8 bg-slate-50/50 border-b border-slate-100 w-full flex items-center px-2 md:px-4 cursor-pointer hover:bg-slate-100"
+                                                                        className="h-7 bg-slate-50/50 border-b border-slate-100 w-full flex items-center px-2 md:px-4 cursor-pointer hover:bg-slate-100"
                                                                         onClick={() => toggleCategory(row.data)}
                                                                     >
-                                                                        <div className="flex-1 relative h-5 bg-slate-200/80 rounded-full overflow-hidden w-full">
-                                                                            {/* Plan Bar (full width for category) */}
+                                                                        <div className="flex-1 relative h-4 bg-slate-200/80 rounded-full overflow-hidden w-full">
+                                                                            {/* Plan Bar */}
                                                                             <div
-                                                                                className="absolute top-0 bottom-0 bg-slate-400 opacity-40"
+                                                                                className="absolute top-0 bottom-0 bg-purple-300 opacity-50"
                                                                                 style={{ left: `${catTimeline.startOffset}%`, width: `${catTimeline.width}%` }}
                                                                             />
                                                                             {/* Realization Bar */}
                                                                             <div
-                                                                                className="absolute top-0 bottom-0 bg-slate-600"
+                                                                                className="absolute top-0 bottom-0 bg-purple-500"
                                                                                 style={{
                                                                                     left: `${catTimeline.startOffset}%`,
                                                                                     width: `${catTimeline.width * (catTimeline.avgProgress / 100)}%`
                                                                                 }}
-                                                                            >
-                                                                                {catTimeline.width * (catTimeline.avgProgress / 100) > 10 && (
-                                                                                    <span className="text-[9px] text-white px-1 font-bold flex items-center h-full overflow-hidden whitespace-nowrap">
-                                                                                        {catTimeline.avgProgress.toFixed(0)}%
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
+                                                                            />
                                                                         </div>
                                                                     </div>
                                                                 );
@@ -1679,17 +1803,48 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 px-1">
                                     <div>
                                         <h3 className="font-bold text-lg text-slate-700">Rincian Pekerjaan (RAB)</h3>
-                                        <p className="text-xs text-slate-400">Update progres pekerjaan di sini.</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-xs text-slate-400">Update progres pekerjaan di sini.</p>
+                                            <span className="text-slate-300">•</span>
+                                            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                                                Total: {formatRupiah((activeProject.rabItems || []).reduce((acc, item) => acc + (item.volume * item.unitPrice), 0))}
+                                            </span>
+                                        </div>
                                     </div>
                                     {!isClientView && rabViewMode !== 'client' && canEditProject && (
                                         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                             <button onClick={() => { setSelectedRabItem(null); openModal('newRAB'); }} className="flex-1 sm:flex-none text-xs bg-blue-600 text-white px-4 py-2.5 rounded-xl font-bold shadow-md active:scale-95 transition-transform flex items-center justify-center gap-1">
                                                 <Plus size={16} /> Item Baru
                                             </button>
-                                            <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-white text-slate-600 px-3 py-2.5 rounded-xl font-bold border shadow-sm hover:bg-slate-50 flex items-center gap-1"><Upload size={14} /></button>
-                                            <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-50 text-purple-600 px-3 py-2.5 rounded-xl font-bold border border-purple-100 hover:bg-purple-100 flex items-center gap-1"><Sparkles size={14} /></button>
+                                            {rabViewMode !== 'client' && (
+                                                <>
+                                                    <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-white text-slate-600 px-3 py-2.5 rounded-xl font-bold border shadow-sm hover:bg-slate-50 flex items-center gap-1"><Upload size={14} /></button>
+                                                    <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-50 text-purple-600 px-3 py-2.5 rounded-xl font-bold border border-purple-100 hover:bg-purple-100 flex items-center gap-1"><Sparkles size={14} /></button>
+                                                </>
+                                            )}
                                             {handleAutoSchedule && (
                                                 <button onClick={() => setShowScheduleModeModal(true)} className="text-xs bg-orange-50 text-orange-600 px-3 py-2.5 rounded-xl font-bold border border-orange-100 hover:bg-orange-100 flex items-center gap-1" title="Buat Jadwal Otomatis"><Calendar size={14} /></button>
+                                            )}
+                                            {/* Bulk Delete Buttons */}
+                                            {(activeProject.rabItems || []).length > 0 && (
+                                                <>
+                                                    <button
+                                                        onClick={() => { setBulkDeleteType('all'); setShowBulkDeleteConfirm(true); }}
+                                                        className="text-xs bg-red-50 text-red-600 px-3 py-2.5 rounded-xl font-bold border border-red-100 hover:bg-red-100 flex items-center gap-1"
+                                                        title="Hapus Semua RAB"
+                                                    >
+                                                        <Trash2 size={14} /> Hapus Semua
+                                                    </button>
+                                                    {selectedRabIds.size > 0 && (
+                                                        <button
+                                                            onClick={() => { setBulkDeleteType('selected'); setShowBulkDeleteConfirm(true); }}
+                                                            className="text-xs bg-red-600 text-white px-3 py-2.5 rounded-xl font-bold shadow-md hover:bg-red-700 flex items-center gap-1"
+                                                            title={`Hapus ${selectedRabIds.size} Item Terpilih`}
+                                                        >
+                                                            <Trash2 size={14} /> Hapus ({selectedRabIds.size})
+                                                        </button>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     )}
@@ -1730,121 +1885,145 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
                                             return (
                                                 <div key={mainCat} className="bg-white rounded-3xl border shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] overflow-hidden mb-4">
-                                                    {/* MAIN CATEGORY HEADER */}
-                                                    <div className="bg-slate-50/80 p-4 border-b flex justify-between items-center backdrop-blur-sm">
-                                                        <span className="font-bold text-slate-800 text-sm uppercase tracking-wide">{mainCat}</span>
-                                                        <span className="text-[10px] font-bold bg-white px-2 py-1 rounded-lg text-slate-400 border shadow-sm">
-                                                            {totalMainItems} Item
-                                                        </span>
-                                                    </div>
-
-                                                    {/* SUB CATEGORIES LOOP */}
-                                                    {subCats.map(fullCategoryName => {
-                                                        const isSub = fullCategoryName.includes(' - ');
-                                                        let subName = isSub ? fullCategoryName.split(' - ').slice(1).join(' - ') : '';
-                                                        if (subName.includes('||')) subName = subName.split('||')[1];
-
-                                                        return (
-                                                            <div key={fullCategoryName}>
-                                                                {/* SUB HEADER (Only show if it's a sub-category and there are multiple subgroups, or just styling preference) */}
-                                                                {isSub && (
-                                                                    <div className="bg-blue-50/30 px-4 py-2 border-b border-t border-slate-100 text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-2">
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                                                                        {subName}
-                                                                    </div>
-                                                                )}
-
-                                                                {/* ITEMS LIST */}
-                                                                {(!isClientView && rabViewMode === 'internal') && (
-                                                                    <div className="divide-y divide-slate-100">
-                                                                        {rabGroups[fullCategoryName].map(item => (
-                                                                            <div key={item.id} className={`p-4 hover:bg-slate-50 transition-colors ${item.isAddendum ? 'bg-orange-50/50' : ''}`}>
-                                                                                <div className="flex justify-between items-start mb-3">
-                                                                                    <div className="flex-1 pr-2">
-                                                                                        <div className="font-bold text-slate-800 text-sm mb-1 leading-snug">
-                                                                                            {item.name}
-                                                                                            {item.isAddendum && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded ml-1 align-middle font-bold border border-orange-200">CCO</span>}
-                                                                                            {(() => {
-                                                                                                const logs = activeProject?.qcLogs?.filter(l => l.rabItemId === item.id).sort((a, b) => b.id - a.id);
-                                                                                                const latest = logs?.[0];
-                                                                                                if (!latest) return null;
-                                                                                                return (
-                                                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-2 align-middle font-bold border flex-inline items-center gap-1 ${latest.status === 'Passed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
-                                                                                                        {latest.status === 'Passed' ? <CheckCircle size={10} /> : <X size={10} />} QC {latest.status === 'Passed' ? 'OK' : 'Gagal'}
-                                                                                                    </span>
-                                                                                                );
-                                                                                            })()}
-                                                                                        </div>
-                                                                                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                                                                                            <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">Vol: {item.volume} {item.unit}</span>
-                                                                                            <span>x</span>
-                                                                                            <span className="font-mono">{formatRupiah(item.unitPrice)}</span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="text-right flex flex-col items-end">
-                                                                                        <div className="font-bold text-slate-700 text-sm mb-1">{formatRupiah(item.volume * item.unitPrice)}</div>
-                                                                                        {item.priceLockedAt && <Lock size={10} className="text-amber-500" />}
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div className="mb-4">
-                                                                                    <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1.5">
-                                                                                        <span>Progress Fisik</span>
-                                                                                        <span className={item.progress === 100 ? 'text-green-600' : 'text-blue-600'}>{item.progress}%</span>
-                                                                                    </div>
-                                                                                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
-                                                                                        <div
-                                                                                            className={`h-full rounded-full transition-all duration-700 ${item.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                                                                                            style={{ width: `${item.progress}%` }}
-                                                                                        ></div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                {canEditProject && (
-                                                                                    <div className="flex gap-2 border-t pt-3 border-dashed border-slate-200">
-                                                                                        <button
-                                                                                            onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }}
-                                                                                            className="flex-1 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl active:scale-95 transition-all hover:bg-blue-700 shadow-md shadow-blue-200 flex items-center justify-center gap-2"
-                                                                                        >
-                                                                                            <TrendingUp size={14} /> Update Progress
-                                                                                        </button>
-                                                                                        <button onClick={() => { setSelectedRabItem(item); setModalType('qcModal'); setShowModal(true); }} className="px-3 py-2 bg-green-50 text-green-600 rounded-xl active:scale-95 hover:bg-green-100 border border-green-200" title="Quality Control"><CheckCircle size={16} /></button>
-                                                                                        <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded-xl active:scale-95 hover:bg-slate-100"><History size={16} /></button>
-                                                                                        <button onClick={() => prepareEditRABItem(item)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-yellow-500 hover:border-yellow-200"><Edit size={16} /></button>
-                                                                                        <button onClick={(e) => { e.stopPropagation(); openDeleteConfirm(item.id, item.name); }} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-red-500 hover:border-red-200"><Trash2 size={16} /></button>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                                {rabViewMode === 'client' && (
-                                                                    <div className="divide-y divide-slate-100">
-                                                                        {rabGroups[fullCategoryName].map(item => (
-                                                                            <div key={item.id} className="p-4 flex justify-between items-center hover:bg-slate-50">
-                                                                                <div className="min-w-0 flex-1 pr-4">
-                                                                                    <div className="font-bold text-slate-800 text-sm truncate mb-0.5">{item.name}</div>
-                                                                                    <div className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded w-fit">Vol: {item.volume} {item.unit}</div>
-                                                                                </div>
-                                                                                <div className="text-right flex-shrink-0">
-                                                                                    <div className={`text-xs px-3 py-1.5 rounded-lg font-bold border ${item.progress === 100 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-                                                                                        {item.progress}%
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                        <div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t flex justify-between items-center">
-                                                                            <span className="uppercase text-[10px] text-slate-400 tracking-wider">Subtotal</span>
-                                                                            <span className="text-sm">{formatRupiah(rabGroups[fullCategoryName].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
+                                                    <details className="group" open>
+                                                        {/* MAIN CATEGORY HEADER */}
+                                                        <summary className="bg-slate-50/80 p-4 border-b flex justify-between items-center backdrop-blur-sm cursor-pointer list-none select-none hover:bg-slate-100 transition-colors">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="transition-transform duration-200 group-open:rotate-90 text-slate-400">
+                                                                    <ChevronRight size={16} />
+                                                                </div>
+                                                                <span className="font-bold text-slate-800 text-sm uppercase tracking-wide">{mainCat}</span>
                                                             </div>
-                                                        );
-                                                    })}
+                                                            <span className="text-[10px] font-bold bg-white px-2 py-1 rounded-lg text-slate-400 border shadow-sm">
+                                                                {totalMainItems} Item
+                                                            </span>
+                                                        </summary>
+
+                                                        {/* SUB CATEGORIES LOOP */}
+                                                        {subCats.map(fullCategoryName => {
+                                                            const isSub = fullCategoryName.includes(' - ');
+                                                            let subName = isSub ? fullCategoryName.split(' - ').slice(1).join(' - ') : '';
+                                                            if (subName.includes('||')) subName = subName.split('||')[1];
+
+                                                            return (
+                                                                <div key={fullCategoryName}>
+                                                                    {/* SUB HEADER (Only show if it's a sub-category and there are multiple subgroups, or just styling preference) */}
+                                                                    {isSub && (
+                                                                        <div className="bg-blue-50/30 px-4 py-2 border-b border-t border-slate-100 text-[11px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-2 pl-10">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                                                                            {subName}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* ITEMS LIST */}
+                                                                    {(!isClientView && rabViewMode === 'internal') && (
+                                                                        <div>
+                                                                            <div className="divide-y divide-slate-100">
+                                                                                {rabGroups[fullCategoryName].map(item => (
+                                                                                    <div key={item.id} className={`p-4 hover:bg-slate-50 transition-colors ${item.isAddendum ? 'bg-orange-50/50' : ''} ${selectedRabIds.has(item.id) ? 'bg-blue-50/50 ring-1 ring-blue-200' : ''}`}>
+                                                                                        <div className="flex justify-between items-start mb-3">
+                                                                                            <div className="flex items-start gap-3 flex-1 pr-2">
+                                                                                                {/* Selection Checkbox */}
+                                                                                                {canEditProject && (
+                                                                                                    <input
+                                                                                                        type="checkbox"
+                                                                                                        checked={selectedRabIds.has(item.id)}
+                                                                                                        onChange={() => toggleRabSelection(item.id)}
+                                                                                                        className="w-4 h-4 mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                                                                    />
+                                                                                                )}
+                                                                                                <div className="flex-1">
+                                                                                                    <div className="font-bold text-slate-800 text-sm mb-1 leading-snug">
+                                                                                                        {item.name}
+                                                                                                        {item.isAddendum && <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded ml-1 align-middle font-bold border border-orange-200">CCO</span>}
+                                                                                                        {(() => {
+                                                                                                            const logs = activeProject?.qcLogs?.filter(l => l.rabItemId === item.id).sort((a, b) => b.id - a.id);
+                                                                                                            const latest = logs?.[0];
+                                                                                                            if (!latest) return null;
+                                                                                                            return (
+                                                                                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-2 align-middle font-bold border flex-inline items-center gap-1 ${latest.status === 'Passed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
+                                                                                                                    {latest.status === 'Passed' ? <CheckCircle size={10} /> : <X size={10} />} QC {latest.status === 'Passed' ? 'OK' : 'Gagal'}
+                                                                                                                </span>
+                                                                                                            );
+                                                                                                        })()}
+                                                                                                    </div>
+                                                                                                    <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                                                        <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">Vol: {item.volume} {item.unit}</span>
+                                                                                                        <span>x</span>
+                                                                                                        <span className="font-mono">{formatRupiah(item.unitPrice)}</span>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="text-right flex flex-col items-end">
+                                                                                                <div className="font-bold text-slate-700 text-sm mb-1">{formatRupiah(item.volume * item.unitPrice)}</div>
+                                                                                                {item.priceLockedAt && <Lock size={10} className="text-amber-500" />}
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <div className="mb-4">
+                                                                                            <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1.5">
+                                                                                                <span>Progress Fisik</span>
+                                                                                                <span className={item.progress === 100 ? 'text-green-600' : 'text-blue-600'}>{item.progress}%</span>
+                                                                                            </div>
+                                                                                            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
+                                                                                                <div
+                                                                                                    className={`h-full rounded-full transition-all duration-700 ${item.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                                                                                    style={{ width: `${item.progress}%` }}
+                                                                                                ></div>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        {canEditProject && (
+                                                                                            <div className="flex gap-2 border-t pt-3 border-dashed border-slate-200">
+                                                                                                <button
+                                                                                                    onClick={() => { setSelectedRabItem(item); setProgressInput(item.progress); setProgressDate(new Date().toISOString().split('T')[0]); setModalType('updateProgress'); setShowModal(true); }}
+                                                                                                    className="flex-1 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl active:scale-95 transition-all hover:bg-blue-700 shadow-md shadow-blue-200 flex items-center justify-center gap-2"
+                                                                                                >
+                                                                                                    <TrendingUp size={14} /> Update Progress
+                                                                                                </button>
+                                                                                                <button onClick={() => { setSelectedRabItem(item); setModalType('qcModal'); setShowModal(true); }} className="px-3 py-2 bg-green-50 text-green-600 rounded-xl active:scale-95 hover:bg-green-100 border border-green-200" title="Quality Control"><CheckCircle size={16} /></button>
+                                                                                                <button onClick={() => { setSelectedRabItem(item); setModalType('taskHistory'); setShowModal(true); }} className="px-3 py-2 bg-slate-50 text-slate-500 rounded-xl active:scale-95 hover:bg-slate-100"><History size={16} /></button>
+                                                                                                <button onClick={() => prepareEditRABItem(item)} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-yellow-500 hover:border-yellow-200"><Edit size={16} /></button>
+                                                                                                <button onClick={(e) => { e.stopPropagation(); openDeleteConfirm(item.id, item.name); }} className="px-3 py-2 bg-white text-slate-400 border rounded-xl active:scale-95 hover:text-red-500 hover:border-red-200"><Trash2 size={16} /></button>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                            <div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t flex justify-between items-center">
+                                                                                <span className="uppercase text-[10px] text-slate-400 tracking-wider">Subtotal</span>
+                                                                                <span className="text-sm">{formatRupiah(rabGroups[fullCategoryName].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    {rabViewMode === 'client' && (
+                                                                        <div className="divide-y divide-slate-100">
+                                                                            {rabGroups[fullCategoryName].map(item => (
+                                                                                <div key={item.id} className="p-4 flex justify-between items-center hover:bg-slate-50">
+                                                                                    <div className="min-w-0 flex-1 pr-4">
+                                                                                        <div className="font-bold text-slate-800 text-sm truncate mb-0.5">{item.name}</div>
+                                                                                        <div className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded w-fit">Vol: {item.volume} {item.unit}</div>
+                                                                                    </div>
+                                                                                    <div className="text-right flex-shrink-0">
+                                                                                        <div className={`text-xs px-3 py-1.5 rounded-lg font-bold border ${item.progress === 100 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                                                            {item.progress}%
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                            <div className="p-4 bg-slate-50 text-right text-xs font-bold text-slate-700 border-t flex justify-between items-center">
+                                                                                <span className="uppercase text-[10px] text-slate-400 tracking-wider">Subtotal</span>
+                                                                                <span className="text-sm">{formatRupiah(rabGroups[fullCategoryName].reduce((a, b) => a + (b.volume * b.unitPrice), 0))}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </details>
                                                 </div>
                                             );
-                                        });
+                                        })
                                     })()}
                                 </div>
                             </div>
@@ -3253,6 +3432,43 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                 className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors shadow-md"
                             >
                                 Ya, Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Delete Confirmation Modal */}
+            {showBulkDeleteConfirm && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Trash2 size={32} className="text-red-600" />
+                            </div>
+                            <h3 className="font-bold text-lg text-slate-800 mb-2">
+                                {bulkDeleteType === 'all' ? 'Hapus Semua RAB?' : `Hapus ${selectedRabIds.size} Item?`}
+                            </h3>
+                            <p className="text-sm text-slate-500">
+                                {bulkDeleteType === 'all'
+                                    ? `Semua ${(activeProject.rabItems || []).length} item RAB akan dihapus permanen.`
+                                    : `${selectedRabIds.size} item yang dipilih akan dihapus permanen.`
+                                }
+                                <br />Lanjutkan?
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowBulkDeleteConfirm(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmBulkDelete}
+                                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors shadow-md"
+                            >
+                                Ya, Hapus {bulkDeleteType === 'all' ? 'Semua' : selectedRabIds.size}
                             </button>
                         </div>
                     </div>

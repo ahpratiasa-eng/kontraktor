@@ -128,6 +128,11 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
     // State for Resource picker moved to WorkerModal
     const [isUploading, setIsUploading] = useState(false);
 
+    // Sheet Selection State for RAB Import
+    const [availableSheets, setAvailableSheets] = useState<string[]>([]);
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [importDate, setImportDate] = useState(new Date().toISOString().split('T')[0]);
+
 
 
     const handleSaveTransactionWrapper = async () => {
@@ -161,15 +166,44 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
         if (!file) return;
 
         try {
-            // Dynamic import the new utility
-            const { parseRABExcel } = await import('../utils/excelImport');
-            const items = await parseRABExcel(file);
-            handleImportRAB(items);
-            alert(`Berhasil mengimpor ${items.length} item pekerjaan!`);
-            setShowModal(false);
+            // Dynamic import
+            const { getExcelSheets, parseRABExcel } = await import('../utils/excelImport');
+
+            // 1. Check sheets first
+            const sheets = await getExcelSheets(file);
+
+            if (sheets.length > 1) {
+                // If multiple sheets, let user choose
+                setUploadedFile(file);
+                setAvailableSheets(sheets);
+            } else {
+                // Single sheet, auto import
+                const items = await parseRABExcel(file, sheets[0]);
+                handleImportRAB(items, importDate);
+                alert(`Berhasil mengimpor ${items.length} item pekerjaan!`);
+                setShowModal(false);
+            }
         } catch (error) {
             console.error(error);
             alert('Gagal membaca file Excel. Pastikan format sesuai.');
+        }
+    };
+
+    const handleSelectSheet = async (sheetName: string) => {
+        if (!uploadedFile) return;
+
+        try {
+            const { parseRABExcel } = await import('../utils/excelImport');
+            const items = await parseRABExcel(uploadedFile, sheetName);
+            handleImportRAB(items);
+            alert(`Berhasil mengimpor ${items.length} item pekerjaan dari sheet "${sheetName}"!`);
+            setShowModal(false);
+            // Reset
+            setAvailableSheets([]);
+            setUploadedFile(null);
+        } catch (error) {
+            console.error(error);
+            alert('Gagal membaca sheet ini.');
         }
     };
 
@@ -505,29 +539,73 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
                         <div className="space-y-4">
                             <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><Upload size={24} className="text-green-600" /> Import RAB Excel</h3>
 
-                            <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-800 space-y-2">
-                                <p className="font-bold">Panduan:</p>
-                                <ul className="list-disc pl-5">
-                                    <li>Sistem cerdas akan mencari kolom: <b>Uraian, Volume, Satuan, Harga Satuan</b>.</li>
-                                    <li>Format Excel bebas (tidak harus template), asalkan ada header kolom tersebut.</li>
-                                    <li>Baris tanpa volume akan dianggap sebagai Kategori Pekerjaan.</li>
-                                </ul>
-                            </div>
+                            {availableSheets.length > 0 ? (
+                                <div className="space-y-3 animate-in fade-in">
+                                    <div className="bg-yellow-50 p-4 rounded-xl text-sm text-yellow-800 border border-yellow-200">
+                                        <p className="font-bold flex items-center gap-2">⚠️ Pilih Sheet RAB</p>
+                                        <p className="mt-1">Kami menemukan {availableSheets.length} sheet dalam file Excel ini. Silakan pilih mana yang berisi RAB.</p>
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto border rounded-xl divide-y">
+                                        {availableSheets.map((sheet) => (
+                                            <button
+                                                key={sheet}
+                                                onClick={() => handleSelectSheet(sheet)}
+                                                className="w-full text-left p-4 hover:bg-green-50 hover:text-green-700 transition flex items-center justify-between group"
+                                            >
+                                                <span className="font-bold">{sheet}</span>
+                                                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded group-hover:bg-green-200 group-hover:text-green-800 transition">Pilih</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setAvailableSheets([]);
+                                            setUploadedFile(null);
+                                        }}
+                                        className="text-slate-400 text-sm hover:text-slate-600 w-full text-center mt-2"
+                                    >
+                                        Batal / Upload Ulang
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="bg-blue-50 p-4 rounded-xl text-sm text-blue-800 space-y-2">
+                                        <p className="font-bold">Panduan:</p>
+                                        <ul className="list-disc pl-5">
+                                            <li>Sistem cerdas akan mencari kolom: <b>Uraian, Volume, Satuan, Harga Satuan</b>.</li>
+                                            <li>Format Excel bebas (tidak harus template), asalkan ada header kolom tersebut.</li>
+                                            <li>Baris tanpa volume akan dianggap sebagai Kategori Pekerjaan.</li>
+                                        </ul>
+                                    </div>
 
-                            <button onClick={downloadTemplate} className="w-full border border-green-600 text-green-600 p-3 rounded-xl font-bold hover:bg-green-50 flex items-center justify-center gap-2">
-                                <Download size={18} /> Download Template Excel
-                            </button>
+                                    <button onClick={downloadTemplate} className="w-full border border-green-600 text-green-600 p-3 rounded-xl font-bold hover:bg-green-50 flex items-center justify-center gap-2">
+                                        <Download size={18} /> Download Template Excel
+                                    </button>
 
-                            <div className="relative border-2 border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center justify-center hover:bg-slate-50 transition cursor-pointer">
-                                <FileType size={32} className="text-slate-400 mb-2" />
-                                <p className="text-sm text-slate-500 mb-2">Upload file .xlsx atau .xls</p>
-                                <input
-                                    type="file"
-                                    accept=".xlsx, .xls"
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                    onChange={handleFileUpload}
-                                />
-                            </div>
+                                    {/* Import Date Picker */}
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">Tanggal Opname / Data (Untuk Kurva S)</label>
+                                        <input
+                                            type="date"
+                                            className="w-full p-2 border rounded-lg"
+                                            value={importDate}
+                                            onChange={(e) => setImportDate(e.target.value)}
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1">Jika Excel berisi progress ("PRESTASI"), data akan dicatat per tanggal ini.</p>
+                                    </div>
+
+                                    <div className="relative border-2 border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center justify-center hover:bg-slate-50 transition cursor-pointer">
+                                        <FileType size={32} className="text-slate-400 mb-2" />
+                                        <p className="text-sm text-slate-500 mb-2">Upload file .xlsx atau .xls</p>
+                                        <input
+                                            type="file"
+                                            accept=".xlsx, .xls"
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            onChange={handleFileUpload}
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
 

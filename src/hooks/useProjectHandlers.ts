@@ -973,7 +973,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
 
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY || firebaseConfig.apiKey;
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1010,17 +1010,35 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
         }
     };
 
-    const handleImportRAB = async (importedItems: any[]) => {
-        const newItems = importedItems.map(item => ({
-            id: Date.now() + Math.random(),
-            category: item.category || 'Uncategorized',
-            name: item.name || 'Unnamed Item',
-            unit: item.unit || 'ls',
-            volume: Number(item.volume) || 0,
-            unitPrice: Number(item.unitPrice) || 0,
-            progress: 0,
-            isAddendum: false
-        }));
+    const handleImportRAB = async (importedItems: any[], importDate?: string) => {
+        const date = importDate || new Date().toISOString().split('T')[0];
+        const newLogs: any[] = [];
+        const newItems = importedItems.map(item => {
+            const newItemId = Date.now() + Math.random();
+            const progress = Number(item.progress) || 0;
+
+            if (progress > 0) {
+                newLogs.push({
+                    id: Date.now() + Math.random(),
+                    date: date,
+                    taskId: newItemId,
+                    previousProgress: 0,
+                    newProgress: progress,
+                    note: 'Imported Progress'
+                });
+            }
+
+            return {
+                id: newItemId,
+                category: item.category || 'Uncategorized',
+                name: item.name || 'Unnamed Item',
+                unit: item.unit || 'ls',
+                volume: Number(item.volume) || 0,
+                unitPrice: Number(item.unitPrice) || 0,
+                progress: progress,
+                isAddendum: false
+            };
+        });
 
         if (!activeProject) {
             // Case: User imports from "New Project" menu but hasn't created one yet.
@@ -1033,8 +1051,8 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
                 client: 'Edit Klien',
                 location: 'Lokasi Proyek',
                 budgetLimit: 0,
-                startDate: new Date().toISOString().split('T')[0],
-                endDate: new Date().toISOString().split('T')[0],
+                startDate: date, // Use import date as start date
+                endDate: new Date((new Date(date)).getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 3 months
                 status: 'Berjalan',
                 rabItems: newItems,
                 transactions: [],
@@ -1044,7 +1062,7 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
                 tasks: [],
                 attendanceLogs: [],
                 attendanceEvidences: [],
-                taskLogs: [],
+                taskLogs: newLogs, // Include logs
                 galleryItems: [],
                 isDeleted: false,
                 createdAt: new Date().toISOString()
@@ -1060,7 +1078,10 @@ export const useProjectHandlers = (props: UseProjectHandlersProps) => {
             }
         } else {
             // Case: Adding items to existing project
-            updateProject({ rabItems: [...(activeProject.rabItems || []), ...newItems] });
+            updateProject({
+                rabItems: [...(activeProject.rabItems || []), ...newItems],
+                taskLogs: [...(activeProject.taskLogs || []), ...newLogs]
+            });
             alert(`Berhasil menambahkan ${newItems.length} item ke RAB proyek aktif!`);
             setShowModal(false);
         }

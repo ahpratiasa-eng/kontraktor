@@ -183,7 +183,7 @@ const callGemini = async (prompt: string, expectJson: boolean = true, retryCount
 
     const generationConfig: any = {
         temperature: 0.2,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 65536,
     };
 
     if (expectJson) {
@@ -336,16 +336,45 @@ EXAMPLE RESPONSE:
         const textOutput = await callGemini(prompt);
         console.log("🤖 AI Raw Output:", textOutput); // DEBUGGING
 
-        // Robust JSON Parsing
-        const jsonStart = textOutput.indexOf('[');
-        const jsonEnd = textOutput.lastIndexOf(']');
+        // Robust JSON Parsing - Handle various AI response formats
+        let jsonStr = textOutput;
 
-        if (jsonStart === -1 || jsonEnd === -1) {
-            console.error("AI Response invalid:", textOutput);
-            throw new Error("Invalid AI Format (No JSON array found in response)");
+        // 1. Remove markdown code blocks if present
+        if (jsonStr.includes('```json')) {
+            jsonStr = jsonStr.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+        } else if (jsonStr.includes('```')) {
+            jsonStr = jsonStr.replace(/```\s*/g, '');
         }
 
-        const jsonStr = textOutput.substring(jsonStart, jsonEnd + 1);
+        // 2. Trim whitespace
+        jsonStr = jsonStr.trim();
+
+        // 3. Find the actual JSON array
+        const jsonStart = jsonStr.indexOf('[');
+        const jsonEnd = jsonStr.lastIndexOf(']');
+
+        if (jsonStart === -1 || jsonEnd === -1) {
+            console.error("AI Response invalid (no JSON array found):", textOutput);
+            // Fallback: Try to parse as-is (maybe it's already pure JSON)
+            try {
+                const directParse = JSON.parse(jsonStr);
+                if (Array.isArray(directParse)) {
+                    console.log("✅ Direct parse succeeded");
+                    const scheduleData: AIResponseItem[] = directParse;
+                    const updatedItems = items.map(item => {
+                        const aiData = scheduleData.find(d => d.id === item.id);
+                        return aiData ? { ...item, startDate: aiData.startDate, endDate: aiData.endDate } : item;
+                    });
+                    updatedItems.sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime());
+                    return updatedItems;
+                }
+            } catch (e) {
+                // Direct parse failed too
+            }
+            throw new Error("Invalid AI Format (No JSON array found in response). Raw: " + textOutput.substring(0, 200));
+        }
+
+        jsonStr = jsonStr.substring(jsonStart, jsonEnd + 1);
         const scheduleData: AIResponseItem[] = JSON.parse(jsonStr);
 
         const updatedItems = items.map(item => {
