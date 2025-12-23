@@ -204,12 +204,6 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         });
     };
 
-    const _selectAllRab = () => {
-        const allIds = (activeProject.rabItems || []).map((item: RABItem) => item.id);
-        setSelectedRabIds(new Set(allIds));
-    };
-
-    const _deselectAllRab = () => setSelectedRabIds(new Set());
 
     const confirmBulkDelete = async () => {
         if (bulkDeleteType === 'all') {
@@ -1217,7 +1211,6 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                         {displayedRows.map((row, idx) => {
                                                             if (row.type === 'header') {
                                                                 // Main Category aggregate timeline bar
-                                                                const _catTimeline = row.catTimeline || { startOffset: 0, width: 20, avgProgress: 0 };
                                                                 const toggleKey = `main-${row.data}`;
                                                                 return (
                                                                     <div

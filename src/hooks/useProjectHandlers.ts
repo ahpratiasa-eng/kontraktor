@@ -1,5 +1,5 @@
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db, appId, firebaseConfig } from '../lib/firebase';
+import { db, appId } from '../lib/firebase';
 import type {
     Project, RABItem, Transaction, Worker, Material, MaterialLog, TaskLog, AHSItem, WeeklyReport, CashAdvance, Equipment, Subkon
 } from '../types';
