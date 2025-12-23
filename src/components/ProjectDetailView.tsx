@@ -204,12 +204,12 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         });
     };
 
-    const selectAllRab = () => {
+    const _selectAllRab = () => {
         const allIds = (activeProject.rabItems || []).map((item: RABItem) => item.id);
         setSelectedRabIds(new Set(allIds));
     };
 
-    const deselectAllRab = () => setSelectedRabIds(new Set());
+    const _deselectAllRab = () => setSelectedRabIds(new Set());
 
     const confirmBulkDelete = async () => {
         if (bulkDeleteType === 'all') {
@@ -1217,7 +1217,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                                         {displayedRows.map((row, idx) => {
                                                             if (row.type === 'header') {
                                                                 // Main Category aggregate timeline bar
-                                                                const catTimeline = row.catTimeline || { startOffset: 0, width: 20, avgProgress: 0 };
+                                                                const _catTimeline = row.catTimeline || { startOffset: 0, width: 20, avgProgress: 0 };
                                                                 const toggleKey = `main-${row.data}`;
                                                                 return (
                                                                     <div
@@ -1816,7 +1816,7 @@ const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                                             <button onClick={() => { setSelectedRabItem(null); openModal('newRAB'); }} className="flex-1 sm:flex-none text-xs bg-blue-600 text-white px-4 py-2.5 rounded-xl font-bold shadow-md active:scale-95 transition-transform flex items-center justify-center gap-1">
                                                 <Plus size={16} /> Item Baru
                                             </button>
-                                            {rabViewMode !== 'client' && (
+                                            {rabViewMode === 'internal' && (
                                                 <>
                                                     <button onClick={() => { setModalType('importRAB'); setShowModal(true); }} className="text-xs bg-white text-slate-600 px-3 py-2.5 rounded-xl font-bold border shadow-sm hover:bg-slate-50 flex items-center gap-1"><Upload size={14} /></button>
                                                     <button onClick={() => { setModalType('aiRAB'); setShowModal(true); }} className="text-xs bg-purple-50 text-purple-600 px-3 py-2.5 rounded-xl font-bold border border-purple-100 hover:bg-purple-100 flex items-center gap-1"><Sparkles size={14} /></button>

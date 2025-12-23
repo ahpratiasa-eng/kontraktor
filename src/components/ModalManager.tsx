@@ -180,7 +180,7 @@ const ModalManager: React.FC<ModalManagerProps> = (props) => {
             } else {
                 // Single sheet, auto import
                 const items = await parseRABExcel(file, sheets[0]);
-                handleImportRAB(items, importDate);
+                handleImportRAB(items);
                 alert(`Berhasil mengimpor ${items.length} item pekerjaan!`);
                 setShowModal(false);
             }
